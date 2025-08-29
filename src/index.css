@@ -1,0 +1,159 @@
+/* stylelint-disable at-rule-no-unknown */
+/* postcss */
+/* eslint-disable */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ------------------ */
+/* 🎨 Root Variables  */
+/* ------------------ */
+:root {
+  --cyansoft: #0ff;
+  --cyanglow: #00e5ff;
+}
+
+/* -------------------------- */
+/* ✨ Base Styles & Defaults  */
+/* -------------------------- */
+@layer base {
+  html, body, #root {
+    height: 100%;
+  }
+  body {
+    font-family: 'Poppins', sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    overflow-x: hidden;
+    background: #0b0b0d;
+    color: #f4f4f4;
+  }
+}
+
+/* --------------------- */
+/* 🌌 Global Background Layer */
+/* --------------------- */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background-image:
+    linear-gradient(120deg, rgba(0,229,255,0.03), rgba(0,229,255,0.02)),
+    radial-gradient(600px 200px at 10% 10%, rgba(0,229,255,0.02), transparent 30%),
+    radial-gradient(500px 180px at 90% 90%, rgba(0,229,255,0.015), transparent 30%);
+  background-size: 400% 400%, 600px 200px, 500px 180px;
+  background-position: 0% 50%, 10% 10%, 90% 90%;
+  background-repeat: no-repeat;
+  backdrop-filter: blur(6px);
+  animation:
+    gradientShift 18s ease-in-out infinite,
+    radialPulse 8s ease-in-out infinite;
+}
+
+/* --------------------------- */
+/* 🖱️ Mouse Glow Global Layer */
+/* --------------------------- */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(0,229,255,0.07), transparent 40%);
+  transition: background-position 0.2s ease;
+}
+
+/* Use JS to update --mouse-x and --mouse-y */
+/* Example: document.body.style.setProperty('--mouse-x', e.clientX + 'px'); */
+
+/* ------------------ */
+/* 🔁 Animations */
+/* ------------------ */
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes radialPulse {
+  0%   { opacity: .06; transform: scale(1); }
+  50%  { opacity: .12; transform: scale(1.06); }
+  100% { opacity: .06; transform: scale(1); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes glow {
+  from { text-shadow: 0 0 10px var(--cyansoft); }
+  to   { text-shadow: 0 0 20px var(--cyanglow), 0 0 30px var(--cyanglow); }
+}
+
+@keyframes spin {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes dots {
+  0%   { content: '.'; }
+  33%  { content: '..'; }
+  66%  { content: '...'; }
+  100% { content: ''; }
+}
+
+/* ------------------- */
+/* ⚙️ Loader Styles */
+/* ------------------- */
+#loading-screen {
+  position: fixed;
+  inset: 0;
+  background: #121212;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.loading-text {
+  font-size: 3rem;
+  color: var(--cyansoft);
+  font-weight: bold;
+  text-shadow: 0 0 10px var(--cyansoft), 0 0 20px var(--cyanglow);
+  animation: glow 1.5s infinite alternate;
+}
+
+.dots::after {
+  content: '.';
+  animation: dots 1.5s infinite;
+}
+
+.spinner {
+  width: 80px;
+  height: 80px;
+  border: 8px solid rgba(0,255,255,0.2);
+  border-top: 8px solid var(--cyanglow);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* ------------------------- */
+/* ✨ Utilities & Shortcuts */
+/* ------------------------- */
+.animate-fadeInUp    { animation: fadeInUp 420ms ease both; }
+.animate-fadeInDown  { animation: fadeInDown 420ms ease both; }
+.animate-slideUp     { animation: fadeInUp 420ms ease both; }
+
+.section-large {
+  padding-top: 6rem;
+  padding-bottom: 6rem;
+}
