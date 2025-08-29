@@ -17,7 +17,7 @@ export default function Header() {
 
   const asciiPigeon = [
     "   ,     #_",
-    "   ~\\_  ####_        Amazon Linux 2023",
+    "   ~\\_  ####_ Amazon Linux 2023",
     "  ~~  \\_#####\\",
     "  ~~     \\###|",
     "  ~~       \\#/ ____",
