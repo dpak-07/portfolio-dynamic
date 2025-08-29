@@ -10,7 +10,7 @@ export default function Projects() {
         long: "Contributed as a backend and cloud engineer for my college website. Implemented backend APIs, handled server deployment, and managed cloud infrastructure. The code is private, so no public repository is available.",
         img: "images/image.png",
         tech: ["Flask", "MongoDB", "Nginx", "AWS"],
-        url: null, // no repo available
+        url: null,
         live: "https://velammal.edu.in/webteam"
       }
     ],
@@ -58,7 +58,7 @@ export default function Projects() {
         url: "https://github.com/Deepak-S-github/CODSOFT-TASK-3-CALCULATOR-PPROJECT"
       },
       {
-        title: "Landing Page ",
+        title: "Landing Page",
         desc: "Static responsive landing page",
         long: "Clean and responsive static landing page built using HTML, CSS, and JS.",
         img: "images/project2.jpg",
@@ -76,23 +76,18 @@ export default function Projects() {
         url: "https://github.com/dpak-07/py_spark_learing"
       }
     ],
-    
   }
 
   const [active, setActive] = useState("Cloud / Backend")
   const [open, setOpen] = useState(null)
 
-  const gridCols = categories[active].length > 3 
-    ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-2" 
-    : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-
   return (
-    <section id="projects" className="section-large px-6 relative">
+    <section id="projects" className="section-large px-4 md:px-6 relative">
       <div className="site-container text-center">
 
         {/* Heading */}
         <motion.h2
-          className="text-5xl font-extrabold text-white mb-12 relative inline-block"
+          className="text-4xl sm:text-5xl font-extrabold text-white mb-8 sm:mb-12 relative inline-block"
           initial={{ opacity: 0, y: -40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -111,12 +106,12 @@ export default function Projects() {
         </motion.h2>
 
         {/* Tabs */}
-        <div className="relative flex justify-center gap-6 mb-12">
+        <div className="flex flex-wrap justify-center gap-4 mb-8 sm:mb-12">
           {Object.keys(categories).map((cat) => (
             <button
               key={cat}
               onClick={() => setActive(cat)}
-              className={`relative px-6 py-2 rounded-full text-lg transition-all duration-300
+              className={`relative px-4 sm:px-6 py-2 rounded-full text-sm sm:text-lg transition-all duration-300
               ${active === cat ? "text-black font-bold" : "text-white/70 hover:text-cyansoft"}`}
             >
               {cat}
@@ -135,7 +130,7 @@ export default function Projects() {
         <AnimatePresence mode="wait">
           <motion.div
             key={active}
-            className={`grid ${gridCols} gap-8`}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -147,12 +142,10 @@ export default function Projects() {
                 initial={{ opacity: 0, y: 40 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: i * 0.1 }}
-                className="h-full"
+                className="h-full flex"
               >
-                <article
-                  className="group bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-lg hover:shadow-cyanglow transition-all h-full flex flex-col"
-                >
-                  <div className="relative h-52 overflow-hidden">
+                <article className="group bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-lg hover:shadow-cyanglow transition-all flex flex-col w-full">
+                  <div className="relative h-48 sm:h-52 md:h-56 overflow-hidden">
                     <img
                       src={c.img}
                       alt={c.title}
@@ -160,18 +153,18 @@ export default function Projects() {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
                   </div>
-                  <div className="p-5 text-left flex flex-col flex-grow">
-                    <h4 className="text-xl font-semibold text-white">{c.title}</h4>
-                    <p className="text-sm text-white/70 mt-2 flex-grow">{c.desc}</p>
-                    <div className="mt-4 flex items-center justify-between">
+                  <div className="p-4 sm:p-5 text-left flex flex-col flex-grow">
+                    <h4 className="text-lg sm:text-xl font-semibold text-white">{c.title}</h4>
+                    <p className="text-sm sm:text-base text-white/70 mt-2 flex-grow">{c.desc}</p>
+                    <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
                       {c.url ? (
-                        <a href={c.url} target="_blank" rel="noreferrer" className="text-cyansoft font-medium flex items-center gap-2">
+                        <a href={c.url} target="_blank" rel="noreferrer" className="text-cyansoft font-medium flex items-center gap-1 text-sm sm:text-base">
                           <i className="fab fa-github"></i> Repo
                         </a>
                       ) : (
-                        <span className="text-gray-400 italic">Private</span>
+                        <span className="text-gray-400 italic text-sm sm:text-base">Private</span>
                       )}
-                      <button onClick={() => setOpen(c)} className="text-white/60 hover:text-cyansoft text-sm">
+                      <button onClick={() => setOpen(c)} className="text-white/60 hover:text-cyansoft text-sm sm:text-base">
                         View More →
                       </button>
                     </div>
@@ -187,52 +180,52 @@ export default function Projects() {
       <AnimatePresence>
         {open && (
           <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center"
+            className="fixed inset-0 z-50 flex items-center justify-center px-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
             <div className="absolute inset-0 bg-black/70 backdrop-blur-lg" onClick={() => setOpen(null)} />
             <motion.div
-              initial={{ scale: 0.7, y: 100, opacity: 0 }}
+              initial={{ scale: 0.8, y: 50, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.8, y: -50, opacity: 0 }}
               transition={{ duration: 0.5, type: "spring" }}
-              className="relative z-10 max-w-3xl w-[90%] bg-gradient-to-br from-[#111] via-[#1a1a1a] to-[#222] border border-white/10 rounded-2xl p-8 shadow-2xl"
+              className="relative z-10 w-full max-w-md sm:max-w-2xl bg-gradient-to-br from-[#111] via-[#1a1a1a] to-[#222] border border-white/10 rounded-2xl p-6 sm:p-8 shadow-2xl overflow-y-auto max-h-[90vh]"
             >
-              <div className="flex flex-col md:flex-row items-start gap-6">
+              <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
                 <img
                   src={open.img}
                   alt={open.title}
-                  className="w-32 h-32 rounded-lg object-cover shadow-md"
+                  className="w-full sm:w-40 h-40 sm:h-40 rounded-lg object-cover shadow-md"
                 />
-                <div>
-                  <h3 className="text-3xl font-bold text-white">{open.title}</h3>
-                  <p className="text-white/80 mt-3">{open.long}</p>
-                  <div className="mt-4 flex flex-wrap gap-2">
+                <div className="flex flex-col flex-grow">
+                  <h3 className="text-2xl sm:text-3xl font-bold text-white">{open.title}</h3>
+                  <p className="text-white/80 mt-2 sm:mt-3 text-sm sm:text-base">{open.long}</p>
+                  <div className="mt-3 sm:mt-4 flex flex-wrap gap-2">
                     {open.tech.map((t) => (
                       <span
                         key={t}
-                        className="px-3 py-1 text-sm rounded-full bg-white/10 text-white/80 border border-white/20"
+                        className="px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-full bg-white/10 text-white/80 border border-white/20"
                       >
                         {t}
                       </span>
                     ))}
                   </div>
-                  <div className="mt-6 flex gap-4">
+                  <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3 sm:gap-4">
                     {open.live && (
-                      <a href={open.live} target="_blank" rel="noreferrer" className="bg-green-500 text-white px-5 py-2 rounded-md font-semibold shadow hover:shadow-lg transition">
+                      <a href={open.live} target="_blank" rel="noreferrer" className="bg-green-500 text-white px-4 sm:px-5 py-2 rounded-md font-semibold shadow hover:shadow-lg transition text-center">
                         View Live Site
                       </a>
                     )}
                     {open.url ? (
-                      <a href={open.url} target="_blank" rel="noreferrer" className="bg-cyansoft text-black px-5 py-2 rounded-md font-semibold shadow hover:shadow-lg transition">
+                      <a href={open.url} target="_blank" rel="noreferrer" className="bg-cyansoft text-black px-4 sm:px-5 py-2 rounded-md font-semibold shadow hover:shadow-lg transition text-center">
                         View Repo
                       </a>
                     ) : (
-                      <span className="text-gray-400 italic">No Public Repo</span>
+                      <span className="text-gray-400 italic text-center">No Public Repo</span>
                     )}
-                    <button onClick={() => setOpen(null)} className="border border-white/20 text-white px-5 py-2 rounded-md hover:bg-white/10">
+                    <button onClick={() => setOpen(null)} className="border border-white/20 text-white px-4 sm:px-5 py-2 rounded-md hover:bg-white/10">
                       Close
                     </button>
                   </div>
