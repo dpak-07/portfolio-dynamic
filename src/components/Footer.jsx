@@ -89,7 +89,7 @@ export default function Footer() {
           <div className="flex justify-center md:justify-start gap-4 mt-5">
             {[
               {
-                href: "https://github.com/Deepak-S-github",
+                href: "https://github.com/dpak-07",
                 icon: "fab fa-github",
               },
               {
