@@ -1,14 +1,17 @@
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import { Github, Loader2 } from "lucide-react"
 
 export default function Projects() {
+  const placeholder = "images/placeholder.jpg"
+
   const categories = {
     "Cloud / Backend": [
       {
         title: "College Website (Backend & Cloud)",
         desc: "Worked as backend & cloud engineer",
-        long: "Contributed as a backend and cloud engineer for my college website. Implemented backend APIs, handled server deployment, and managed cloud infrastructure. The code is private, so no public repository is available.",
-        img: "images/image.png",
+        long: "Developed APIs, deployed backend on AWS, managed cloud infra, and integrated Nginx for production hosting.",
+        img: "https://onedrive.live.com/embed?resid=XXXXXXXXXX",
         tech: ["Flask", "MongoDB", "Nginx", "AWS"],
         url: null,
         live: "https://velammal.edu.in/webteam"
@@ -18,50 +21,42 @@ export default function Projects() {
       {
         title: "Hotel Management",
         desc: "MongoDB + Flask project",
-        long: "Full-stack hotel and restaurant management system with user auth, CRUD operations, and admin dashboard. Backend in Flask and MongoDB, deployed on a cloud VM.",
-        img: "images/project3.jpg",
+        long: "Full-stack hotel & restaurant management system with CRUD, authentication, and admin dashboards.",
+        img: "https://onedrive.live.com/embed?resid=XXXXXXXXXX",
         tech: ["Flask", "MongoDB", "HTML"],
         url: "https://github.com/Deepak-S-github/hotel-management"
       },
       {
         title: "Study Spark Platform",
         desc: "Full-stack learning platform",
-        long: "Comprehensive learning platform with frontend and backend architecture, designed to support interactive study modules.",
-        img: "images/placeholder.jpg",
+        long: "Comprehensive platform designed to support interactive study modules with front & backend integration.",
+        img: "https://onedrive.live.com/embed?resid=XXXXXXXXXX",
         tech: ["JavaScript", "HTML", "CSS"],
         url: "https://github.com/dpak-07/STUDY_SPARK_01"
       },
       {
         title: "Phushit",
         desc: "Multi-platform app + dashboard",
-        long: "Feature-rich project including an app, dashboard, API, and browser extension—built with Flutter (Dart), C++, Python.",
-        img: "images/placeholder.jpg",
+        long: "Includes an app, dashboard, API, and browser extension built using Flutter, Python, and C++.",
+        img: "https://onedrive.live.com/embed?resid=XXXXXXXXXX",
         tech: ["Dart", "Python", "C++", "Flutter"],
         url: "https://github.com/dpak-07/phushit"
       },
-      {
-        title: "Walmart Project",
-        desc: "HTML/CSS/Python web project",
-        long: "Web-based project with templated frontend and Python backend components—likely a retail or ecommerce prototype.",
-        img: "images/placeholder.jpg",
-        tech: ["HTML", "CSS", "Python"],
-        url: "https://github.com/dpak-07/walmart-project-final"
-      }
     ],
     Frontend: [
       {
         title: "Calculator",
         desc: "Simple calculator built with JS",
-        long: "A small web calculator supporting basic arithmetic with a clean responsive interface. Built with vanilla JS and CSS for rapid prototyping.",
-        img: "images/project1.jpg",
+        long: "A clean web calculator supporting basic arithmetic operations built with HTML, CSS, and JS.",
+        img: "https://onedrive.live.com/embed?resid=XXXXXXXXXX",
         tech: ["HTML", "CSS", "JavaScript"],
         url: "https://github.com/Deepak-S-github/CODSOFT-TASK-3-CALCULATOR-PPROJECT"
       },
       {
         title: "Landing Page",
         desc: "Static responsive landing page",
-        long: "Clean and responsive static landing page built using HTML, CSS, and JS.",
-        img: "images/project2.jpg",
+        long: "Responsive and aesthetic landing page designed using pure HTML, CSS, and JS.",
+        img: "https://onedrive.live.com/embed?resid=XXXXXXXXXX",
         tech: ["HTML", "CSS", "JavaScript"],
         url: "https://github.com/dpak-07/CODSOFT-TASK-2-LANDING-PAGE"
       }
@@ -70,8 +65,8 @@ export default function Projects() {
       {
         title: "PySpark Learning",
         desc: "PySpark exercises in notebooks",
-        long: "Interactive PySpark learning workspace with hands-on examples using DataFrame APIs—ideal for beginners in Big Data.",
-        img: "images/placeholder.jpg",
+        long: "Hands-on PySpark learning workspace with DataFrame API examples for beginners in Big Data.",
+        img: "https://onedrive.live.com/embed?resid=XXXXXXXXXX",
         tech: ["Python", "PySpark", "Jupyter"],
         url: "https://github.com/dpak-07/py_spark_learing"
       }
@@ -80,161 +75,283 @@ export default function Projects() {
 
   const [active, setActive] = useState("Cloud / Backend")
   const [open, setOpen] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [currentIndex, setCurrentIndex] = useState(0)
+
+  const handleImageError = (e) => (e.target.src = placeholder)
+
+  const handleCategoryChange = (cat) => {
+    setLoading(true)
+    setTimeout(() => {
+      setActive(cat)
+      setLoading(false)
+      setCurrentIndex(0)
+    }, 600)
+  }
+
+  const handleSwipe = (direction, total) => {
+    if (direction === "left") {
+      setCurrentIndex((prev) => (prev + 1) % total)
+    } else if (direction === "right") {
+      setCurrentIndex((prev) => (prev - 1 + total) % total)
+    }
+  }
 
   return (
-    <section id="projects" className="section-large px-4 md:px-6 relative">
-      <div className="site-container text-center">
+    <section
+      id="projects"
+      className="relative min-h-screen py-20 px-6 overflow-hidden bg-gradient-to-br from-[#050505] via-[#0a0a0a] to-[#101010]"
+    >
+      {/* Floating background glow */}
+      <motion.div
+        className="absolute inset-0 bg-[radial-gradient(circle_at_30%_40%,rgba(0,255,255,0.1),transparent_70%)]"
+        animate={{ scale: [1, 1.1, 1], opacity: [0.8, 1, 0.8] }}
+        transition={{ repeat: Infinity, duration: 10, ease: "easeInOut" }}
+      />
 
-        {/* Heading */}
-        <motion.h2
-          className="text-4xl sm:text-5xl font-extrabold text-white mb-8 sm:mb-12 relative inline-block"
-          initial={{ opacity: 0, y: -40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-        >
-          <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 bg-clip-text text-transparent animate-pulse">
-            My Projects
-          </span>
-          <motion.div
-            className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-full"
-            initial={{ scaleX: 0 }}
-            whileInView={{ scaleX: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7, delay: 0.3 }}
-          />
-        </motion.h2>
+      {/* Header */}
+      <motion.div
+        className="relative z-10 text-center mb-14"
+        initial={{ opacity: 0, y: -30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7 }}
+      >
+        <h2 className="text-5xl sm:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 animate-gradient">
+          My Projects
+        </h2>
+        <p className="text-white/70 mt-3 text-sm sm:text-base">
+          Explore some of my major works across different domains
+        </p>
+      </motion.div>
 
-        {/* Tabs */}
-        <div className="flex flex-wrap justify-center gap-4 mb-8 sm:mb-12">
-          {Object.keys(categories).map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setActive(cat)}
-              className={`relative px-4 sm:px-6 py-2 rounded-full text-sm sm:text-lg transition-all duration-300
-              ${active === cat ? "text-black font-bold" : "text-white/70 hover:text-cyansoft"}`}
-            >
-              {cat}
-              {active === cat && (
-                <motion.span
-                  layoutId="activeTab"
-                  className="absolute inset-0 bg-cyansoft rounded-full -z-10"
-                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                />
-              )}
-            </button>
-          ))}
-        </div>
-
-        {/* Cards */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={active}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
+      {/* Tabs */}
+      <div className="flex flex-wrap justify-center gap-4 mb-10">
+        {Object.keys(categories).map((cat) => (
+          <motion.button
+            key={cat}
+            onClick={() => handleCategoryChange(cat)}
+            whileHover={{ scale: 1.08 }}
+            className={`relative px-5 py-2.5 rounded-full text-sm sm:text-lg font-semibold transition-all duration-300 ${
+              active === cat
+                ? "bg-gradient-to-r from-cyan-400 to-purple-600 text-black shadow-[0_0_15px_rgba(0,255,255,0.6)]"
+                : "text-white/70 border border-white/10 hover:text-cyan-300"
+            }`}
           >
-            {categories[active].map((c, i) => (
-              <motion.div
-                key={c.title}
-                initial={{ opacity: 0, y: 40 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: i * 0.1 }}
-                className="h-full flex"
-              >
-                <article className="group bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-lg hover:shadow-cyanglow transition-all flex flex-col w-full">
-                  <div className="relative h-48 sm:h-52 md:h-56 overflow-hidden">
-                    <img
-                      src={c.img}
-                      alt={c.title}
-                      className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-                  </div>
-                  <div className="p-4 sm:p-5 text-left flex flex-col flex-grow">
-                    <h4 className="text-lg sm:text-xl font-semibold text-white">{c.title}</h4>
-                    <p className="text-sm sm:text-base text-white/70 mt-2 flex-grow">{c.desc}</p>
-                    <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-                      {c.url ? (
-                        <a href={c.url} target="_blank" rel="noreferrer" className="text-cyansoft font-medium flex items-center gap-1 text-sm sm:text-base">
-                          <i className="fab fa-github"></i> Repo
-                        </a>
-                      ) : (
-                        <span className="text-gray-400 italic text-sm sm:text-base">Private</span>
-                      )}
-                      <button onClick={() => setOpen(c)} className="text-white/60 hover:text-cyansoft text-sm sm:text-base">
-                        View More →
-                      </button>
-                    </div>
-                  </div>
-                </article>
-              </motion.div>
-            ))}
-          </motion.div>
-        </AnimatePresence>
+            {cat}
+          </motion.button>
+        ))}
       </div>
 
-      {/* Modal */}
+      {/* Loader */}
       <AnimatePresence>
-        {open && (
+        {loading && (
           <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center px-4"
+            key="loader"
+            className="flex justify-center items-center h-40"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            <div className="absolute inset-0 bg-black/70 backdrop-blur-lg" onClick={() => setOpen(null)} />
             <motion.div
-              initial={{ scale: 0.8, y: 50, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.8, y: -50, opacity: 0 }}
-              transition={{ duration: 0.5, type: "spring" }}
-              className="relative z-10 w-full max-w-md sm:max-w-2xl bg-gradient-to-br from-[#111] via-[#1a1a1a] to-[#222] border border-white/10 rounded-2xl p-6 sm:p-8 shadow-2xl overflow-y-auto max-h-[90vh]"
+              animate={{ rotate: 360 }}
+              transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }}
             >
-              <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
-                <img
-                  src={open.img}
-                  alt={open.title}
-                  className="w-full sm:w-40 h-40 sm:h-40 rounded-lg object-cover shadow-md"
-                />
-                <div className="flex flex-col flex-grow">
-                  <h3 className="text-2xl sm:text-3xl font-bold text-white">{open.title}</h3>
-                  <p className="text-white/80 mt-2 sm:mt-3 text-sm sm:text-base">{open.long}</p>
-                  <div className="mt-3 sm:mt-4 flex flex-wrap gap-2">
-                    {open.tech.map((t) => (
-                      <span
-                        key={t}
-                        className="px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-full bg-white/10 text-white/80 border border-white/20"
-                      >
-                        {t}
-                      </span>
-                    ))}
-                  </div>
-                  <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3 sm:gap-4">
-                    {open.live && (
-                      <a href={open.live} target="_blank" rel="noreferrer" className="bg-green-500 text-white px-4 sm:px-5 py-2 rounded-md font-semibold shadow hover:shadow-lg transition text-center">
-                        View Live Site
-                      </a>
-                    )}
-                    {open.url ? (
-                      <a href={open.url} target="_blank" rel="noreferrer" className="bg-cyansoft text-black px-4 sm:px-5 py-2 rounded-md font-semibold shadow hover:shadow-lg transition text-center">
-                        View Repo
-                      </a>
-                    ) : (
-                      <span className="text-gray-400 italic text-center">No Public Repo</span>
-                    )}
-                    <button onClick={() => setOpen(null)} className="border border-white/20 text-white px-4 sm:px-5 py-2 rounded-md hover:bg-white/10">
-                      Close
-                    </button>
-                  </div>
-                </div>
-              </div>
+              <Loader2 size={40} className="text-cyan-400" />
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* 🟩 Desktop Grid + Mobile Carousel */}
+      <AnimatePresence mode="wait">
+        {!loading && (
+          <>
+            {/* Desktop Grid */}
+            <motion.div
+              key={active + "-desktop"}
+              className="hidden sm:grid grid-cols-2 lg:grid-cols-3 gap-8"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.6 }}
+            >
+              {categories[active].map((p, i) => (
+                <ProjectCard key={p.title} p={p} i={i} setOpen={setOpen} handleImageError={handleImageError} />
+              ))}
+            </motion.div>
+
+            {/* Mobile Carousel */}
+            <motion.div
+              key={active + "-mobile"}
+              className="sm:hidden relative overflow-hidden"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6 }}
+            >
+              <motion.div
+                className="flex"
+                drag="x"
+                dragConstraints={{ left: 0, right: 0 }}
+                onDragEnd={(e, info) => {
+                  if (info.offset.x < -50) handleSwipe("left", categories[active].length)
+                  else if (info.offset.x > 50) handleSwipe("right", categories[active].length)
+                }}
+                animate={{ x: `-${currentIndex * 100}%` }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              >
+                {categories[active].map((p, i) => (
+                  <div key={p.title} className="min-w-full px-4">
+                    <ProjectCard p={p} i={i} setOpen={setOpen} handleImageError={handleImageError} />
+                  </div>
+                ))}
+              </motion.div>
+
+              {/* Progress Dots */}
+              <div className="flex justify-center mt-6 gap-2">
+                {categories[active].map((_, i) => (
+                  <div
+                    key={i}
+                    className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                      i === currentIndex ? "bg-cyan-400 scale-125" : "bg-white/30"
+                    }`}
+                  />
+                ))}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Modal */}
+      <AnimatePresence>
+        {open && <ProjectModal open={open} setOpen={setOpen} handleImageError={handleImageError} />}
+      </AnimatePresence>
     </section>
+  )
+}
+
+/* 🔹 Project Card */
+function ProjectCard({ p, i, setOpen, handleImageError }) {
+  const [imgLoaded, setImgLoaded] = useState(false)
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 50 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: i * 0.1 }}
+      className="group bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl overflow-hidden relative shadow-lg hover:shadow-cyan-400/30 transition-all duration-500 hover:-translate-y-2"
+    >
+      <div className="relative max-h-56 overflow-hidden">
+        {!imgLoaded && (
+          <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-[#111] via-[#1a1a1a] to-[#111]" />
+        )}
+        <motion.img
+          src={p.img}
+          alt={p.title}
+          onLoad={() => setImgLoaded(true)}
+          onError={handleImageError}
+          initial={{ opacity: 0, filter: "blur(10px)" }}
+          animate={{
+            opacity: imgLoaded ? 1 : 0,
+            filter: imgLoaded ? "blur(0px)" : "blur(10px)",
+          }}
+          transition={{ duration: 0.6 }}
+          className="w-full h-auto object-contain group-hover:scale-105 transition-transform duration-700"
+        />
+      </div>
+
+      <div className="p-5 text-left">
+        <h3 className="text-xl font-bold text-white">{p.title}</h3>
+        <p className="text-white/60 mt-2 text-sm">{p.desc}</p>
+        <div className="flex flex-wrap gap-2 mt-3">
+          {p.tech.map((t) => (
+            <span key={t} className="text-xs bg-white/10 px-2 py-1 rounded-full border border-white/20 text-white/80">
+              {t}
+            </span>
+          ))}
+        </div>
+        <div className="flex justify-between items-center mt-5">
+          {p.url ? (
+            <a href={p.url} target="_blank" rel="noreferrer" className="text-cyan-400 text-sm flex items-center gap-1 hover:underline">
+              <Github size={16} /> Repo
+            </a>
+          ) : (
+            <span className="text-gray-400 italic text-sm">Private</span>
+          )}
+          <button onClick={() => setOpen(p)} className="text-white/60 hover:text-cyan-400 transition">
+            View →
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
+/* 🔹 Modal */
+function ProjectModal({ open, setOpen, handleImageError }) {
+  const [loaded, setLoaded] = useState(false)
+  return (
+    <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-6"
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-lg" onClick={() => setOpen(null)} />
+      <motion.div
+        initial={{ scale: 0.8, opacity: 0, y: 30 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.8, opacity: 0, y: -30 }}
+        transition={{ duration: 0.4, type: "spring" }}
+        className="relative z-10 bg-gradient-to-br from-[#111] to-[#1c1c1c] border border-white/10 rounded-3xl p-6 sm:p-8 max-w-3xl w-full shadow-2xl overflow-y-auto max-h-[90vh]"
+      >
+        <div className="flex flex-col sm:flex-row gap-6 sm:gap-8 items-start sm:items-stretch">
+          <div className="flex-shrink-0 w-full sm:w-2/5 relative">
+            {!loaded && <div className="absolute inset-0 animate-pulse bg-[#1a1a1a]" />}
+            <motion.img
+              src={open.img}
+              alt={open.title}
+              onLoad={() => setLoaded(true)}
+              onError={handleImageError}
+              initial={{ opacity: 0, scale: 1.1, filter: "blur(10px)" }}
+              animate={{
+                opacity: loaded ? 1 : 0,
+                scale: loaded ? 1 : 1.1,
+                filter: loaded ? "blur(0px)" : "blur(10px)",
+              }}
+              transition={{ duration: 0.6 }}
+              className="w-full h-auto rounded-xl object-contain shadow-lg border border-white/10"
+            />
+          </div>
+
+          <div className="flex flex-col justify-between w-full">
+            <div>
+              <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2">{open.title}</h3>
+              <p className="text-white/80 mb-4 text-sm sm:text-base leading-relaxed">{open.long}</p>
+              <div className="flex flex-wrap gap-2 mb-4">
+                {open.tech.map((t) => (
+                  <span key={t} className="px-3 py-1 rounded-full bg-white/10 text-white/70 text-xs border border-white/20">
+                    {t}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-3 mt-auto">
+              {open.live && (
+                <a href={open.live} target="_blank" rel="noreferrer" className="bg-green-500 px-4 py-2 rounded-md font-semibold text-white shadow hover:shadow-green-400/40 transition">
+                  Live Site
+                </a>
+              )}
+              {open.url ? (
+                <a href={open.url} target="_blank" rel="noreferrer" className="bg-cyan-400 px-4 py-2 rounded-md font-semibold text-black shadow hover:shadow-cyan-400/40 transition flex items-center gap-2">
+                  <Github size={18} /> GitHub
+                </a>
+              ) : (
+                <span className="text-gray-400 italic self-center">Private Repo</span>
+              )}
+              <button onClick={() => setOpen(null)} className="border border-white/20 text-white px-4 py-2 rounded-md hover:bg-white/10 transition">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
   )
 }

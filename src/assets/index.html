@@ -1,0 +1,556 @@
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Real Firmware Crypto Analysis – Animated Prototype</title>
+    <style>
+        /* ===== THEME ===== */
+        :root{
+        --bg:#07080c; --bg2:#0a0c12; --panel:#0f1320; --panel2:#101626; --ink:#eaf2ff; --muted:#a8b4c7;
+        --edge:#1d2740; --glow:#64f; --glow2:#38f; --ok:#42ffb3; --warn:#ffc36a; --bad:#ff6b88; --info:#7ab7ff;
+        --card-r:18px; --chip:#121a2e; --shadow:0 10px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
+        }
+        *{box-sizing:border-box}
+        html,body{height:100%}
+        body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Ubuntu,Helvetica,Arial,sans-serif;color:var(--ink);
+        background: radial-gradient(1200px 600px at 20% -10%, #18203b55 0%, transparent 60%),
+                    radial-gradient(900px 600px at 100% 10%, #10225a66 0%, transparent 55%),
+                    linear-gradient(180deg,var(--bg),var(--bg2));
+        overflow:hidden;
+        }
+        a{color:#9ec7ff}
+
+        /* ===== BACKGROUND FX (Particles) ===== */
+        #fx{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.55;filter:saturate(1.1)}
+
+        /* ===== LAYOUT ===== */
+        .app{position:relative;z-index:1;display:grid;grid-template-columns:320px 1fr;gap:16px;height:100%;padding:16px}
+        .sidebar{background:linear-gradient(180deg,#0e1426,#0b1120);border:1px solid #141c33;border-radius:22px;box-shadow:var(--shadow);padding:16px}
+        .main{display:grid;grid-template-rows:auto 1fr;gap:14px;min-height:0}
+
+        .brand{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+        .logo{width:42px;height:42px;border-radius:14px;background:conic-gradient(from 240deg,#6ab3ff,#8a7dff,#59ffd2,#6ab3ff);
+        display:grid;place-items:center;box-shadow:0 0 0 3px #1a2341, 0 6px 30px rgba(77,150,255,.25)}
+        .logo svg{filter:drop-shadow(0 6px 12px rgba(100,140,255,.45))}
+        .brand h1{font-size:18px;margin:0}
+        .muted{color:var(--muted);font-size:12px}
+
+        .section{margin:14px 0 8px;font-weight:700;letter-spacing:.3px;color:#dfe7ff}
+        .chip{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(180deg,#0f172e,#0b1326);
+        border:1px solid #1a2748;border-radius:999px;padding:8px 10px;color:#cfe0ff;font-size:12px}
+        .stack{display:flex;flex-wrap:wrap;gap:8px}
+        .btn{background:linear-gradient(180deg,#182442,#121c33);border:1px solid #24345c;border-radius:14px;color:#eaf2ff;font-weight:700;
+        padding:10px 14px;display:inline-flex;align-items:center;gap:8px;cursor:pointer;transition:transform .15s ease, box-shadow .3s}
+        .btn:hover{transform:translateY(-1px);box-shadow:0 12px 30px rgba(63,115,255,.25)}
+        .btn:active{transform:translateY(0)}
+        .btn.acc{background:radial-gradient(120% 120% at 20% 0%, #1f2e57 0%, #172545 50%, #151f39 100%);border-color:#2e4480}
+        .btn.ghost{background:transparent;border:1px dashed #26375f}
+
+        .select, .input, .textarea{width:100%;background:#0b1326;border:1px solid #1b2a4f;border-radius:12px;color:#eaf2ff;padding:10px 12px;outline:none}
+        .textarea{min-height:84px;resize:vertical}
+
+        .tabs{display:flex;gap:8px;flex-wrap:wrap}
+        .tab{padding:10px 12px;border-radius:999px;background:#0c142b;border:1px solid #1a2748;color:#bcd0e6;font-weight:700;cursor:pointer}
+        .tab.active{background:linear-gradient(180deg,#152246,#101a34);border-color:#2b3f76;box-shadow:0 12px 34px rgba(63,115,255,.25)}
+
+        .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+        .card{grid-column:span 12;background:linear-gradient(180deg,var(--panel),var(--panel2));
+        border:1px solid var(--edge);border-radius:var(--card-r);box-shadow:var(--shadow);padding:16px;position:relative;overflow:hidden}
+        .card::after{content:"";position:absolute;inset:-2px;pointer-events:none;border-radius:inherit;opacity:.3;
+        background:radial-gradient(400px 120px at 10% -10%, rgba(120,160,255,.15), transparent 60%),
+                    radial-gradient(320px 120px at 110% -10%, rgba(60,230,200,.12), transparent 60%)}
+        .card h3{margin:0 0 10px}
+        @media(min-width:1100px){.half{grid-column:span 6}.third{grid-column:span 4}.twothird{grid-column:span 8}}
+
+        .kv{background:#0b1224;border:1px solid #1a2748;border-radius:10px;padding:6px 10px;font-size:12px;color:#cfe0ff}
+        .row{display:flex;gap:10px;flex-wrap:wrap}
+
+        .progress, .ring{--p:0%;}
+        .progress{height:12px;border-radius:999px;background:#0b1222;border:1px solid #1a2748;overflow:hidden}
+        .progress>span{display:block;height:100%;width:var(--p);background:linear-gradient(90deg,#6ab3ff,#59ffd2)}
+        .ring{width:80px;height:80px;display:grid;place-items:center;position:relative}
+        .ring svg{transform:rotate(-90deg)}
+        .ring circle{fill:none;stroke-width:10;stroke-linecap:round}
+        .ring .bg{stroke:#1a2748}
+        .ring .fg{stroke:url(#grad);stroke-dasharray:251;stroke-dashoffset:calc(251 - 2.51 * var(--val,0));transition:stroke-dashoffset .3s ease}
+
+        .table{width:100%;border-collapse:separate;border-spacing:0 10px;font-size:13px}
+        .table th{color:#9fb2c9;text-align:left;padding:8px 10px}
+        .table td{background:#0c142b;border:1px solid #1a2748;padding:10px;border-left:none;border-right:none}
+        .pill{padding:4px 8px;border-radius:999px;font-size:12px;border:1px solid #243149}
+        .pill.ok{background:rgba(66,255,179,.1);border-color:#2d6; color:#aefbdc}
+        .pill.warn{background:rgba(255,195,106,.1);border-color:#a86; color:#ffd7a8}
+        .pill.bad{background:rgba(255,107,136,.1);border-color:#a66; color:#ffbac8}
+
+        .code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;background:#0a1122;border:1px solid #1a2748;border-radius:12px;padding:12px;color:#d7e4ff;line-height:1.5;overflow:auto}
+
+        /* Animated glow divider */
+        .glowline{height:2px;background:linear-gradient(90deg,transparent,#6ab3ff,transparent);opacity:.55;filter:blur(.3px);margin:8px 0}
+
+        /* Floating badges */
+        .badge{background:#0b1224;border:1px solid #223361;padding:6px 10px;border-radius:10px;color:#aecdff;font-size:12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}
+
+        /* Slide-in animations */
+        .pop{animation:pop .45s ease both}
+        @keyframes pop{0%{transform:translateY(8px) scale(.98);opacity:0}100%{transform:none;opacity:1}}
+
+        /* Shimmer text */
+        .shimmer{position:relative;display:inline-block}
+        .shimmer::after{content:"";position:absolute;inset:0;background:linear-gradient(120deg,transparent,rgba(255,255,255,.2),transparent);
+        transform:skewX(-20deg) translateX(-120%);animation:shine 3.2s infinite}
+        @keyframes shine{to{transform:skewX(-20deg) translateX(220%)}}
+
+        /* Tab transitions */
+        .tabpanel{transition:opacity .35s ease, transform .35s ease}
+        .tabpanel[hidden]{opacity:0;transform:translateY(8px)}
+
+        /* Topbar */
+        .topbar{display:flex;align-items:center;justify-content:space-between}
+        .title{font-size:22px;font-weight:900;letter-spacing:.3px}
+
+        /* Tilt on hover */
+        .tilt{transform-style:preserve-3d;perspective:900px}
+        .tilt:hover{transform:rotateX(.5deg) rotateY(.5deg)}
+
+        /* Notification toast */
+        .toast{position:fixed;right:16px;bottom:16px;background:#0b1326;border:1px solid #27407a;color:#dfe8ff;padding:12px 14px;border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,.35);opacity:0;transform:translateY(10px);transition:.35s}
+        .toast.show{opacity:1;transform:none}
+    </style>
+    </head>
+    <body>
+    <canvas id="fx"></canvas>
+
+    <div class="app">
+        <!-- ===== SIDEBAR ===== -->
+        <aside class="sidebar tilt">
+        <div class="brand pop">
+            <div class="logo" aria-hidden="true">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#7ab7ff"/>
+                    <stop offset="100%" stop-color="#59ffd2"/>
+                </linearGradient>
+                </defs>
+                <path d="M12 2l7 4v12l-7 4-7-4V6l7-4z" fill="url(#g1)" opacity=".95"/>
+                <circle cx="12" cy="12" r="3" fill="#0b1120"/>
+            </svg>
+            </div>
+            <div>
+            <h1>Crypto Analysis – Real Firmware</h1>
+            <div class="muted">Full interactive prototype • no libs</div>
+            </div>
+        </div>
+
+        <div class="section">Quick Presets</div>
+        <div class="stack pop">
+            <button class="btn" data-preset="core">Core Flow</button>
+            <button class="btn" data-preset="deep">Deep + CFG</button>
+            <button class="btn" data-preset="speed">Speed Mode</button>
+        </div>
+
+        <div class="section">Workload</div>
+        <div class="stack pop" id="archChips"></div>
+
+        <div class="section">Controls</div>
+        <div class="stack pop">
+            <button class="btn acc" id="runAll">Run Full Pipeline</button>
+            <button class="btn" id="reset">Reset</button>
+            <button class="btn ghost" id="export">Export Report</button>
+        </div>
+
+        <div class="section">Notes</div>
+        <div class="textarea pop" contenteditable id="notes">Paste reminders here. Export bundles these as JSON. Shortcuts: [R]un, [E]xport, [L]ogs.</div>
+
+        <div style="margin-top:12px" class="pop">
+            <span class="badge">Neon FX</span>
+            <span class="badge">Canvas Charts</span>
+            <span class="badge">Headless Ready</span>
+        </div>
+        </aside>
+
+        <!-- ===== MAIN ===== -->
+        <section class="main">
+        <div class="topbar pop">
+            <div class="title shimmer">Workflow: Real Dataset ➜ Crypto Detection ➜ Protocol Insight</div>
+            <div class="stack">
+            <span class="chip" title="Total functions scanned"><strong id="fnCount">0</strong> funcs</span>
+            <span class="chip" title="Model status">Model: <strong id="modelState">untrained</strong></span>
+            <span class="chip" title="Run time">⏱ <strong id="runtime">0.0s</strong></span>
+            </div>
+        </div>
+
+        <div class="tabs pop" role="tablist">
+            <button class="tab active" data-tab="collect">1. Collect</button>
+            <button class="tab" data-tab="disasm">2. Disasm</button>
+            <button class="tab" data-tab="features">3. Features</button>
+            <button class="tab" data-tab="train">4. Train</button>
+            <button class="tab" data-tab="infer">5. Inference</button>
+            <button class="tab" data-tab="protocol">6. Protocol</button>
+            <button class="tab" data-tab="eval">7. Evaluate</button>
+            <button class="tab" data-tab="logs">Logs</button>
+        </div>
+
+        <!-- ===== PANELS ===== -->
+        <div id="collect" class="grid tabpanel" role="tabpanel">
+            <article class="card twothird pop">
+            <h3>Real Firmware Dataset Collection</h3>
+            <div class="row">
+                <label class="btn">
+                <input type="file" id="fwPicker" webkitdirectory directory multiple hidden>
+                Choose Firmware Folder
+                </label>
+                <button class="btn acc" id="scanFirmwares">Scan</button>
+            </div>
+            <div class="glowline"></div>
+            <div class="row">
+                <div class="kv">Sources: <strong id="srcCount">0</strong></div>
+                <div class="kv">Binaries Found: <strong id="binCount">0</strong></div>
+                <div class="kv">Signed/Encrypted: <strong id="encCount">0</strong></div>
+            </div>
+            <div style="margin-top:12px" class="progress"><span id="progCollect" style="--p:0%"></span></div>
+            <pre class="code" id="collectLog" aria-live="polite"># Ready. Import a firmware folder or click Scan to simulate.</pre>
+            </article>
+            <article class="card third pop">
+            <h3>Status</h3>
+            <div class="row" style="align-items:center">
+                <div class="ring" id="ringCollect" style="--val:0">
+                <svg width="80" height="80" viewBox="0 0 100 100">
+                    <defs>
+                    <linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stop-color="#7ab7ff"/>
+                        <stop offset="100%" stop-color="#59ffd2"/>
+                    </linearGradient>
+                    </defs>
+                    <circle class="bg" cx="50" cy="50" r="40" />
+                    <circle class="fg" cx="50" cy="50" r="40" />
+                </svg>
+                </div>
+                <div>
+                <div class="kv">Progress: <strong id="pctCollect">0%</strong></div>
+                <div class="kv">Mode: <strong id="modeCollect">manual</strong></div>
+                </div>
+            </div>
+            </article>
+        </div>
+
+        <div id="disasm" class="grid tabpanel" hidden>
+            <article class="card twothird pop">
+            <h3>Disassembly & Function Extraction</h3>
+            <div class="row">
+                <button class="btn acc" id="runDisasm">Run Disassembly</button>
+                <button class="btn" id="liftIR">Lift to IR (PCode/VEX)</button>
+                <button class="btn ghost" id="stripSyms">Strip Symbols (simulate)</button>
+            </div>
+            <div class="progress" style="margin-top:12px"><span id="progDisasm"></span></div>
+            <pre class="code" id="disasmLog"># Waiting…</pre>
+            </article>
+            <article class="card third pop">
+            <h3>Functions</h3>
+            <table class="table" id="fnTable">
+                <thead><tr><th>Function</th><th>Arch</th><th>Size</th><th>Blocks</th></tr></thead>
+                <tbody></tbody>
+            </table>
+            </article>
+        </div>
+
+        <div id="features" class="grid tabpanel" hidden>
+            <article class="card half pop">
+            <h3>Feature Extraction</h3>
+            <div class="row">
+                <label class="chip"><input type="checkbox" checked> Opcode n‑grams</label>
+                <label class="chip"><input type="checkbox" checked> CFG stats</label>
+                <label class="chip"><input type="checkbox" checked> Magic constants</label>
+                <label class="chip"><input type="checkbox"> S‑box scans</label>
+                <label class="chip"><input type="checkbox"> Entropy windows</label>
+            </div>
+            <div class="row" style="margin-top:8px">
+                <button class="btn acc" id="extract">Extract</button>
+                <button class="btn" id="previewVec">Preview Vector</button>
+            </div>
+            <div class="progress" style="margin-top:12px"><span id="progFeat"></span></div>
+            <pre class="code" id="featLog"># Waiting…</pre>
+            </article>
+            <article class="card half pop">
+            <h3>Embedding Space</h3>
+            <canvas id="scatter" width="640" height="340" style="width:100%;height:340px;background:#0a1122;border:1px solid #1a2748;border-radius:12px"></canvas>
+            <div class="muted" style="margin-top:6px">Crypto vs non‑crypto clusters separate over time. Animated t‑SNE mock.</div>
+            </article>
+        </div>
+
+        <div id="train" class="grid tabpanel" hidden>
+            <article class="card half pop">
+            <h3>Model Training</h3>
+            <div class="row">
+                <label class="chip"><input type="radio" name="mdl" value="mlp" checked> MLP</label>
+                <label class="chip"><input type="radio" name="mdl" value="xgb"> XGBoost</label>
+                <label class="chip"><input type="radio" name="mdl" value="cnn"> 1D‑CNN</label>
+                <label class="chip"><input type="radio" name="mdl" value="gnn"> GNN</label>
+            </div>
+            <div class="row" style="margin-top:8px">
+                <label class="chip"><input type="checkbox" checked> Cross‑arch aug</label>
+                <label class="chip"><input type="checkbox" checked> Obf‑robust</label>
+            </div>
+            <div class="row" style="margin-top:8px">
+                <button class="btn acc" id="trainBtn">Train</button>
+                <button class="btn" id="autotune">Auto‑Tune</button>
+            </div>
+            <div class="progress" style="margin-top:12px"><span id="progTrain"></span></div>
+            <pre class="code" id="trainLog"># Waiting…</pre>
+            </article>
+            <article class="card half pop">
+            <h3>Metrics</h3>
+            <div class="row">
+                <span class="kv">Acc: <strong id="mAcc">–</strong></span>
+                <span class="kv">Prec: <strong id="mPrec">–</strong></span>
+                <span class="kv">Recall: <strong id="mRec">–</strong></span>
+                <span class="kv">F1: <strong id="mF1">–</strong></span>
+            </div>
+            <canvas id="bar" width="640" height="300" style="width:100%;height:300px;background:#0a1122;border:1px solid #1a2748;border-radius:12px;margin-top:10px"></canvas>
+            <div class="muted" style="margin-top:6px">Per‑class F1 bars (AES, RSA, ECC, SHA, XOR, PRNG, Non).</div>
+            </article>
+        </div>
+
+        <div id="infer" class="grid tabpanel" hidden>
+            <article class="card twothird pop">
+            <h3>Inference on New Firmware</h3>
+            <div class="row">
+                <label class="btn">
+                <input type="file" id="fwUpload" hidden>
+                Upload Firmware Image
+                </label>
+                <button class="btn acc" id="inferBtn">Analyze</button>
+            </div>
+            <div class="progress" style="margin-top:12px"><span id="progInfer"></span></div>
+            <table class="table" style="margin-top:12px">
+                <thead><tr><th>Function</th><th>Prediction</th><th>Algorithm</th><th>Confidence</th><th>Arch</th><th>Status</th></tr></thead>
+                <tbody id="inferRows"></tbody>
+            </table>
+            </article>
+            <article class="card third pop">
+            <h3>Protocol Mini‑Graph</h3>
+            <svg id="proto" viewBox="0 0 420 320" style="width:100%;height:320px;background:#0a1122;border:1px solid #1a2748;border-radius:12px">
+                <defs>
+                <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#7ab7ff"/></marker>
+                </defs>
+                <g id="nodes" font-family="inherit" font-size="12" fill="#cfe2ff"></g>
+                <g id="edges" stroke="#7ab7ff" stroke-width="2" marker-end="url(#arrow)"></g>
+            </svg>
+            <div class="muted">Animated edges draw in sequence when inference completes.</div>
+            </article>
+        </div>
+
+        <div id="protocol" class="grid tabpanel" hidden>
+            <article class="card pop">
+            <h3>Protocol Recognition – Timeline</h3>
+            <div class="progress"><span id="progProto"></span></div>
+            <div class="row" style="margin-top:12px">
+                <div class="kv">States: <strong id="stateCount">0</strong></div>
+                <div class="kv">Confidence: <strong id="protoConf">–</strong></div>
+            </div>
+            <pre class="code" id="protoLog"># Waiting…</pre>
+            </article>
+        </div>
+
+        <div id="eval" class="grid tabpanel" hidden>
+            <article class="card half pop">
+            <h3>Confusion Matrix</h3>
+            <canvas id="heat" width="640" height="340" style="width:100%;height:340px;background:#0a1122;border:1px solid #1a2748;border-radius:12px"></canvas>
+            <div class="muted" style="margin-top:6px">Rows: true, Cols: predicted. Values animate in.</div>
+            </article>
+            <article class="card half pop">
+            <h3>Robustness Suite</h3>
+            <div class="row">
+                <label class="chip"><input type="checkbox" checked> Cross‑arch holdout</label>
+                <label class="chip"><input type="checkbox" checked> Obfuscation noise</label>
+                <label class="chip"><input type="checkbox"> Compiler variance</label>
+            </div>
+            <button class="btn acc" id="runEval" style="margin-top:8px">Evaluate</button>
+            <div class="progress" style="margin-top:12px"><span id="progEval"></span></div>
+            <pre class="code" id="evalLog"># Waiting…</pre>
+            </article>
+        </div>
+
+        <div id="logs" class="grid tabpanel" hidden>
+            <article class="card pop">
+            <h3>Event Log</h3>
+            <pre class="code" id="eventLog"># Ready.</pre>
+            </article>
+        </div>
+        </section>
+    </div>
+
+    <div class="toast" id="toast">Exported report</div>
+
+    <script>
+        /* ===== Utilities ===== */
+        const qs=(s,r=document)=>r.querySelector(s); const qsa=(s,r=document)=>[...r.querySelectorAll(s)];
+        const sleep=ms=>new Promise(r=>setTimeout(r,ms)); const rand=(a,b)=>Math.random()*(b-a)+a;
+        const now=()=>performance.now(); let t0=now(); const time=()=>((now()-t0)/1000).toFixed(1)+'s';
+        const setP=(el,p)=>el.style.setProperty('--p',p+'%');
+        const toast=msg=>{const t=qs('#toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1800)}
+
+        function log(el,msg){ el.textContent += (el.textContent.trim()?"\n":"") + msg; el.scrollTop = el.scrollHeight; }
+        function event(msg){ const el=qs('#eventLog'); log(el,msg) }
+
+        // ===== Fancy particles background =====
+        const canvas=qs('#fx'); const ctx=canvas.getContext('2d');
+        let W,H,parts=[]; function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight}
+        addEventListener('resize',resize); resize();
+        for(let i=0;i<110;i++){parts.push({x:Math.random()*W,y:Math.random()*H,vx:rand(-.2,.2),vy:rand(-.2,.2),r:rand(0.6,2.2)})}
+        (function loop(){ctx.clearRect(0,0,W,H); ctx.globalAlpha=.6; ctx.fillStyle='#97b6ff22';
+        for(const p of parts){ p.x+=p.vx; p.y+=p.vy; if(p.x<0||p.x>W) p.vx*=-1; if(p.y<0||p.y>H) p.vy*=-1; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,6.28); ctx.fill(); }
+        ctx.globalAlpha=.25; ctx.strokeStyle='#59ffd255';
+        for(let i=0;i<parts.length;i++) for(let j=i+1;j<parts.length;j++){ const a=parts[i],b=parts[j]; const d=(a.x-b.x)**2+(a.y-b.y)**2; if(d<120*120){ ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke() }}
+        requestAnimationFrame(loop);
+        })();
+
+        // ===== Sidebar dynamic workload chips =====
+        const ARCHES=['x86_64','ARM64','ARMv7','MIPS32','RISC‑V'];
+        const archWrap=qs('#archChips');
+        ARCHES.forEach(a=>{ const l=document.createElement('label'); l.className='chip'; l.innerHTML=`<input type="checkbox" ${a==='ARM64'||a==='x86_64'?'checked':''}> ${a}`; archWrap.appendChild(l) })
+
+        // ===== Tabs =====
+        qsa('.tab').forEach(t=>t.addEventListener('click',()=>{ qsa('.tab').forEach(x=>x.classList.remove('active')); t.classList.add('active'); qsa('.tabpanel').forEach(p=>p.hidden=true); qs('#'+t.dataset.tab).hidden=false; }))
+
+        // ===== Collect =====
+        const collectLog=qs('#collectLog'), ring=qs('#ringCollect'), pct=qs('#pctCollect');
+        async function scan(){ t0=now(); qs('#runtime').textContent=time();
+        const prog=qs('#progCollect'); setP(prog,0); ring.style.setProperty('--val',0);
+        qs('#modeCollect').textContent='auto'; collectLog.textContent='# scanning firmware directories…';
+        let steps=['Indexing folders…','Extracting images (binwalk)…','Parsing headers…','Detecting encrypted segments…','Cataloging binaries…'];
+        let total=0, bins=0, enc=0;
+        for(let i=0;i<steps.length;i++){
+            log(collectLog,'> '+steps[i]); await sleep(350+rand(120,350)); setP(prog,(i+1)/steps.length*100); ring.style.setProperty('--val', (i+1)/steps.length*100); pct.textContent=Math.round((i+1)/steps.length*100)+'%';
+            total += Math.floor(rand(2,6)); bins += Math.floor(rand(8,20)); enc += Math.random()<.3?1:0;
+        }
+        qs('#srcCount').textContent=total; qs('#binCount').textContent=bins; qs('#encCount').textContent=enc; qs('#fnCount').textContent=(bins*rand(80,140)|0);
+        log(collectLog,'# done. Found '+bins+' ELF/PE binaries.'); event('# collect complete');
+        qsa('.tab').find(x=>x.dataset.tab==='disasm').click();
+        }
+        qs('#scanFirmwares').addEventListener('click',scan);
+
+        // ===== Disasm =====
+        const disasmLog=qs('#disasmLog'), fnBody=qs('#fnTable tbody');
+        async function runDisasm(){ const prog=qs('#progDisasm'); setP(prog,0); disasmLog.textContent='# starting disassembly…'; fnBody.innerHTML='';
+        for(let i=0;i<12;i++){ await sleep(140); setP(prog,(i+1)/12*100); const name='sub_'+(4000+i).toString(16);
+            log(disasmLog, `> decoded ${name} (ARM64, ${Math.floor(rand(320,1200))}B, ${Math.floor(rand(6,18))} blocks)`);
+            const tr=document.createElement('tr'); tr.innerHTML=`<td>${name}</td><td>ARM64</td><td>${Math.floor(rand(220,1200))}B</td><td>${Math.floor(rand(5,18))}</td>`; fnBody.appendChild(tr)
+        }
+        log(disasmLog,'# disassembly complete.'); event('# disasm complete'); qsa('.tab').find(x=>x.dataset.tab==='features').click();
+        }
+        qs('#runDisasm').addEventListener('click',runDisasm);
+        qs('#liftIR').addEventListener('click',()=>log(disasmLog,'> lifted to IR PCode (mock)'))
+        qs('#stripSyms').addEventListener('click',()=>log(disasmLog,'> stripped symbols (mock)'))
+
+        // ===== Features + Scatter animation =====
+        const featLog=qs('#featLog'), s=qs('#scatter'), sctx=s.getContext('2d');
+        function drawScatter(step=0){ sctx.clearRect(0,0,s.width,s.height); // grid
+        sctx.globalAlpha=.25; sctx.fillStyle='#1a2a55'; for(let x=0;x<s.width;x+=60){ sctx.fillRect(x,0,1,s.height) } for(let y=0;y<s.height;y+=60){ sctx.fillRect(0,y,s.width,1) }
+        sctx.globalAlpha=1; const n=150;
+        for(let i=0;i<n;i++){ const x=120 + Math.sin(i/7+step*.03)*30 + rand(-8,8) + (step<50?rand(0,2*step):rand(0,120)); const y=80 + Math.cos(i/5+step*.02)*26 + rand(-8,8);
+            sctx.beginPath(); sctx.arc(x,y,3,0,6.28); sctx.fillStyle='#7ab7ff'; sctx.fill(); }
+        for(let i=0;i<n;i++){ const x=380 + Math.sin(i/6+step*.03)*30 + rand(-8,8) - (step<50?rand(0,2*step):rand(0,120)); const y=200 + Math.cos(i/4+step*.02)*26 + rand(-8,8);
+            sctx.beginPath(); sctx.arc(x,y,3,0,6.28); sctx.fillStyle='#59ffd2'; sctx.fill(); }
+        }
+        let scatterTick=0; function scatterLoop(){ drawScatter(scatterTick++); requestAnimationFrame(scatterLoop) } scatterLoop();
+
+        async function extract(){ const prog=qs('#progFeat'); setP(prog,0); featLog.textContent='# extracting features…';
+        for(let i=0;i<8;i++){ await sleep(180); setP(prog,(i+1)/8*100); log(featLog,'> pass '+(i+1)+' complete') }
+        log(featLog,'# features ready.'); event('# features extracted'); qsa('.tab').find(x=>x.dataset.tab==='train').click();
+        }
+        qs('#extract').addEventListener('click',extract);
+        qs('#previewVec').addEventListener('click',()=>{ const sample={fn:'sub_4012A0',arch:'ARM64',features:{opcode_ngrams:{xor_rol_and:0.41, add_xor:0.33},cfg:{blocks:12,loops:2},constants:['0x9e3779b9','0x6a09e667'],entropy:{in:7.8,out:7.2}}}; featLog.textContent=JSON.stringify(sample,null,2) })
+
+        // ===== Train + Bars =====
+        const bar=qs('#bar'), bctx=bar.getContext('2d');
+        function bars(vals,labels){ const W=bar.width,H=bar.height,pad=40,gw=W-pad*2,gh=H-pad*2,n=vals.length,bw=gw/n*.7; bctx.clearRect(0,0,W,H);
+        bctx.globalAlpha=.35; bctx.strokeStyle='#1a2a55'; for(let i=0;i<=5;i++){ const y=pad+i*(gh/5); bctx.beginPath(); bctx.moveTo(pad,y); bctx.lineTo(W-pad,y); bctx.stroke() } bctx.globalAlpha=1;
+        labels.forEach((l,i)=>{ const x=pad+(i+0.5)*(gw/n); const target=vals[i]; let v=0; const anim=()=>{ v=Math.min(target,(v+.02)); const h=v*gh, y=H-pad-h; bctx.clearRect(x-bw/2-2,0,bw+4,H);
+            bctx.globalCompositeOperation='source-over'; bctx.fillStyle=i%2?'#7ab7ff':'#59ffd2'; bctx.fillRect(x-bw/2,y,bw,h);
+            bctx.fillStyle='#cfe2ff'; bctx.textAlign='center'; bctx.font='12px sans-serif'; bctx.fillText(l,x,H-12); bctx.fillText((v*100).toFixed(1)+'%',x,y-6);
+            if(v<target) requestAnimationFrame(anim)
+        }; anim(); });
+        }
+
+        async function train(){ const prog=qs('#progTrain'); setP(prog,0); const tlog=qs('#trainLog'); tlog.textContent='# training…';
+        for(let i=0;i<12;i++){ await sleep(220); setP(prog,(i+1)/12*100); log(tlog,'> epoch '+(i+1)+' – loss '+(0.9/(i+1)).toFixed(3)) }
+        const acc=rand(.92,.97), prec=rand(.90,.96), rec=rand(.90,.96), f1=2*(prec*rec)/(prec+rec);
+        qs('#mAcc').textContent=(acc*100).toFixed(2)+'%'; qs('#mPrec').textContent=(prec*100).toFixed(2)+'%'; qs('#mRec').textContent=(rec*100).toFixed(2)+'%'; qs('#mF1').textContent=(f1*100).toFixed(2)+'%';
+        bars([.96,.94,.92,.95,.86,.88,.98],["AES","RSA","ECC","SHA","XOR","PRNG","Non"]);
+        qs('#modelState').textContent='trained'; event('# model trained'); qsa('.tab').find(x=>x.dataset.tab==='infer').click();
+        }
+        qs('#trainBtn').addEventListener('click',train);
+        qs('#autotune').addEventListener('click',()=>log(qs('#trainLog'),'> tuner: LR=3e‑4, wd=1e‑5 (mock)'))
+
+        // ===== Inference + Protocol graph =====
+        const inferRows=qs('#inferRows'); function addRow(fn,pred,alg,conf,arch,ok=true){ const tr=document.createElement('tr');
+        tr.innerHTML=`<td>${fn}</td><td>${pred}</td><td>${alg||'–'}</td><td>${(conf*100).toFixed(1)}%</td><td>${arch}</td><td>${ok?'<span class="pill ok">crypto</span>':'<span class="pill bad">non‑crypto</span>'}`; inferRows.appendChild(tr) }
+
+        function protoGraph(){ const g=qs('#proto'), nodes=qs('#nodes'), edges=qs('#edges'); nodes.innerHTML=''; edges.innerHTML='';
+        const ns=[{x:36,y:28,t:'ClientHello'},{x:260,y:28,t:'ServerHello'},{x:36,y:125,t:'ECDHE'},{x:260,y:125,t:'Cert Verify'},{x:150,y:225,t:'App Data (AES‑GCM)'}];
+        ns.forEach(n=>{ const r=document.createElementNS('http://www.w3.org/2000/svg','rect'); r.setAttribute('x',n.x); r.setAttribute('y',n.y); r.setAttribute('rx',10); r.setAttribute('width',140); r.setAttribute('height',48);
+            r.setAttribute('fill','#142034'); r.setAttribute('stroke','#2a3a58'); nodes.appendChild(r); const tx=document.createElementNS('http://www.w3.org/2000/svg','text'); tx.setAttribute('x',n.x+20); tx.setAttribute('y',n.y+28); tx.textContent=n.t; nodes.appendChild(tx) })
+        const lines=[[176,52,260,52],[90,76,90,125],[330,76,330,125],[90,173,220,225],[330,173,220,225]];
+        let i=0; const anim=()=>{ if(i>=lines.length) return; const [x1,y1,x2,y2]=lines[i++]; const l=document.createElementNS('http://www.w3.org/2000/svg','line'); l.setAttribute('x1',x1); l.setAttribute('y1',y1); l.setAttribute('x2',x1); l.setAttribute('y2',y1);
+            l.setAttribute('stroke','#7ab7ff'); l.setAttribute('stroke-width','2'); l.setAttribute('marker-end','url(#arrow)'); edges.appendChild(l);
+            let t=0; const step=()=>{ t=Math.min(1,t+.06); l.setAttribute('x2', x1+(x2-x1)*t); l.setAttribute('y2', y1+(y2-y1)*t); if(t<1) requestAnimationFrame(step); else anim() }; step() };
+        anim();
+        }
+
+        async function infer(){ const prog=qs('#progInfer'); setP(prog,0); inferRows.innerHTML='';
+        const sample=[['sub_4012A0','Crypto','AES‑GCM',.97,'ARM64',true],['sub_401B10','Crypto','SHA‑256',.94,'ARM64',true],['sub_402210','Non‑crypto','',.05,'ARM64',false],['sub_4031AF','Crypto','ECDHE‑P256',.91,'ARM64',true],['sub_4040FF','Crypto','XChaCha20',.88,'ARM64',true]];
+        for(let i=0;i<sample.length;i++){ await sleep(220); setP(prog,(i+1)/sample.length*100); addRow(...sample[i]) }
+        protoGraph(); event('# inference finished'); qsa('.tab').find(x=>x.dataset.tab==='protocol').click();
+        }
+        qs('#inferBtn').addEventListener('click',infer);
+
+        // ===== Protocol Timeline =====
+        async function proto(){ const prog=qs('#progProto'); setP(prog,0); const logEl=qs('#protoLog'); logEl.textContent='# inferring protocol state machine…';
+        const steps=['Match hello sequence','Detect ECDHE exchange','Verify certificate chain','Derive session keys','Encrypt app data (AES‑GCM)'];
+        for(let i=0;i<steps.length;i++){ await sleep(300); setP(prog,(i+1)/steps.length*100); log(logEl,'> '+steps[i]) }
+        qs('#stateCount').textContent=steps.length; qs('#protoConf').textContent=(rand(.86,.97)*100).toFixed(1)+'%'; log(logEl,'# protocol: TLS‑like handshake'); event('# protocol recognized'); qsa('.tab').find(x=>x.dataset.tab==='eval').click();
+        }
+        // Trigger protocol panel when opened
+        qsa('.tab').find(x=>x.dataset.tab==='protocol').addEventListener('click',proto);
+
+        // ===== Evaluation =====
+        const heat=qs('#heat'), hctx=heat.getContext('2d');
+        function drawHeat(){ const labels=['AES','RSA','ECC','SHA','XOR','PRNG','Non']; const W=heat.width,H=heat.height,pad=54,n=labels.length,cw=(W-pad*2)/n,ch=(H-pad*2)/n;
+        hctx.clearRect(0,0,W,H); hctx.fillStyle='#cfe2ff'; hctx.font='12px sans-serif';
+        labels.forEach((l,i)=>{ hctx.fillText(l,pad-10,pad+ch*(i+0.5)); hctx.fillText(l,pad+cw*(i+0.5)-10,H-12)})
+        for(let r=0;r<n;r++) for(let c=0;c<n;c++){ const x=pad+c*cw,y=pad+r*ch; const target = r===c? rand(.88,.98): rand(0,.12); let v=0; (function anim(){ v=Math.min(target,v+.02); hctx.fillStyle=`rgba(122,183,255,${v})`; hctx.fillRect(x,y,cw-3,ch-3); hctx.fillStyle='#eaf2ff'; hctx.fillText((v*100).toFixed(0)+'%',x+cw/2-12,y+ch/2+4); if(v<target) requestAnimationFrame(anim) })() }
+        }
+
+        async function evalRun(){ const prog=qs('#progEval'); setP(prog,0); const elog=qs('#evalLog'); elog.textContent='# running robustness…';
+        for(let i=0;i<5;i++){ await sleep(240); setP(prog,(i+1)/5*100); log(elog,'> test '+(i+1)+' ok') } drawHeat(); log(elog,'# evaluation done'); event('# evaluation done') }
+        qs('#runEval').addEventListener('click',evalRun);
+
+        // ===== Presets =====
+        qsa('[data-preset]').forEach(b=>b.addEventListener('click',()=>{ const k=b.dataset.preset; if(k==='core'){ qsa('#archChips input').forEach(x=>x.checked=false); ['x86_64','ARM64'].forEach(sel=>{ const m=qsa('#archChips label').find(l=>l.textContent.includes(sel)); m.querySelector('input').checked=true }) }
+        if(k==='deep'){ qsa('#archChips input').forEach(x=>x.checked=true) }
+        if(k==='speed'){ qsa('#archChips input').forEach(x=>x.checked=false); ['ARM64'].forEach(sel=>{ const m=qsa('#archChips label').find(l=>l.textContent.includes(sel)); m.querySelector('input').checked=true }) }
+        toast('Preset: '+k)
+        }))
+
+        // ===== Export =====
+        qs('#export').addEventListener('click',()=>{ const report={
+        when:new Date().toISOString(), model:qs('#modelState').textContent, functions:qs('#fnCount').textContent,
+        notes:qs('#notes').innerText.trim(), metrics:{acc:qs('#mAcc').textContent,prec:qs('#mPrec').textContent,rec:qs('#mRec').textContent,f1:qs('#mF1').textContent}
+        }; const blob=new Blob([JSON.stringify(report,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='real-firmware-report.json'; a.click(); URL.revokeObjectURL(url); toast('Report exported') })
+
+        // ===== Run All =====
+        qs('#runAll').addEventListener('click',async()=>{ qsa('.tab').find(x=>x.dataset.tab==='collect').click(); await scan(); qsa('.tab').find(x=>x.dataset.tab==='disasm').click(); await runDisasm(); qsa('.tab').find(x=>x.dataset.tab==='features').click(); await extract(); qsa('.tab').find(x=>x.dataset.tab==='train').click(); await train(); qsa('.tab').find(x=>x.dataset.tab==='infer').click(); await infer(); qsa('.tab').find(x=>x.dataset.tab==='protocol').click(); await proto(); qsa('.tab').find(x=>x.dataset.tab==='eval').click(); await evalRun(); toast('Pipeline complete') })
+
+        // ===== Reset =====
+        qs('#reset').addEventListener('click',()=>location.reload())
+
+        // ===== Shortcuts =====
+        addEventListener('keydown',e=>{ if(e.key.toLowerCase()==='r') qs('#runAll').click(); if(e.key.toLowerCase()==='e') qs('#export').click(); if(e.key.toLowerCase()==='l') qsa('.tab').find(x=>x.dataset.tab==='logs').click() })
+    
+    
+    </script>
+    </body>
+    </html>
+    

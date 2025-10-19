@@ -1,11 +1,17 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),  // ✅ allows "@/..." imports
+    },
+  },
   server: {
-    host: true,   // allows LAN access (e.g. phone on same Wi-Fi)
-    port: 3000    // use desired port here
-  }
+    host: true,   // allows LAN access (e.g. test on phone)
+    port: 3000,   // you can change this if needed
+  },
 })

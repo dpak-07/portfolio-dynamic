@@ -11,24 +11,34 @@
 :root {
   --cyansoft: #0ff;
   --cyanglow: #00e5ff;
+
+  /* mobile-safe viewport unit (set by JS on app load) */
+  --vh: 1vh;
 }
 
 /* -------------------------- */
 /* ✨ Base Styles & Defaults  */
 /* -------------------------- */
 @layer base {
+  /* make sure root can grow to full viewport height */
   html, body, #root {
     height: 100%;
   }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
   body {
     font-family: 'Poppins', sans-serif;
     line-height: 1.6;
     margin: 0;
     padding: 0;
-    box-sizing: border-box;
     overflow-x: hidden;
     background: #0b0b0d;
     color: #f4f4f4;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
@@ -65,9 +75,6 @@ body::after {
   background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(0,229,255,0.07), transparent 40%);
   transition: background-position 0.2s ease;
 }
-
-/* Use JS to update --mouse-x and --mouse-y */
-/* Example: document.body.style.setProperty('--mouse-x', e.clientX + 'px'); */
 
 /* ------------------ */
 /* 🔁 Animations */
@@ -157,3 +164,119 @@ body::after {
   padding-top: 6rem;
   padding-bottom: 6rem;
 }
+
+/* -------------------------- */
+/* Full-screen admin helpers  */
+/* -------------------------- */
+
+/* admin-fullscreen uses --vh (set by JS) to avoid mobile address-bar jumps */
+.admin-fullscreen {
+  height: calc(var(--vh, 1vh) * 100);
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* inner areas will scroll independently */
+  background: transparent; /* keep body background visible */
+}
+
+/* main layout area (editor + preview) */
+.admin-layout {
+  flex: 1 1 auto;
+  display: flex;
+  min-height: 0; /* critical so children with overflow-auto can shrink properly */
+  gap: 1.5rem;
+  padding: 1.5rem;
+}
+
+/* scrollable admin panels (editor / preview) */
+.admin-panel {
+  overflow: auto;
+  min-height: 0; /* allows flex children to shrink properly */
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+/* small helper for header + body pattern inside the admin */
+.admin-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* make form controls visually consistent and not grow taller unexpectedly */
+.admin-about-editor input,
+.admin-about-editor textarea,
+.admin-about-editor select,
+.admin-panel input,
+.admin-panel textarea,
+.admin-panel select {
+  line-height: 1.2;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+/* optional nicer thin scrollbar (WebKit) */
+.admin-panel::-webkit-scrollbar { width: 10px; height: 10px; }
+.admin-panel::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.04);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+/* ----------------------------- */
+/* Tiny responsive helpers used */
+/* ----------------------------- */
+.min-w-zero { min-width: 0; }
+.truncate-ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ----------------------------- */
+/* Specific admin tweaks (optional) */
+/* ----------------------------- */
+
+/* top action bar inside admin */
+.admin-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+}
+
+/* panels */
+.admin-panel-card {
+  background: linear-gradient(180deg, rgba(10,12,15,0.75), rgba(8,12,16,0.6));
+  border: 1px solid rgba(255,255,255,0.04);
+  border-radius: 1rem;
+  padding: 1rem;
+}
+
+/* small buttons */
+.btn-ghost {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.06);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+}
+
+/* utility: full-viewport explicit class (alternative to admin-fullscreen) */
+.full-viewport {
+  height: 100vh;
+  width: 100vw;
+}
+
+/* ----------------------------- */
+/* Accessibility focus styles    */
+/* ----------------------------- */
+:focus {
+  outline: none;
+}
+button:focus, a:focus, input:focus, textarea:focus, select:focus {
+  box-shadow: 0 0 0 3px rgba(0,229,255,0.08);
+  outline: none;
+}
+
+/* ----------------------------- */
+/* End of file                 */
+/* ----------------------------- */

@@ -1,17 +1,28 @@
+"use client";
 import { useState, useEffect, useRef } from "react";
 import { FaBars, FaTimes } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Navbar() {
+  // ✅ Section control via JSON
+  const [sectionsConfig] = useState({
+    home: true,
+    about: true,
+    "tech-stack": true,
+    projects: true,
+    resume: true,
+    contact: true,
+  });
+
+  const sections = Object.keys(sectionsConfig);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState("home");
   const [isScrolled, setIsScrolled] = useState(false);
+  const buttonsRef = useRef({});
 
-  const sections = ["home", "about", "tech-stack", "projects", "resume", "contact"];
-  const buttonsRef = useRef({}); // store refs for active underline
-
-  // Smooth scroll with dynamic navbar height
+  // Smooth Scroll
   const scrollTo = (id) => {
+    if (!sectionsConfig[id]) return;
     const el = document.getElementById(id);
     const navbar = document.querySelector("header");
     if (el && navbar) {
@@ -22,7 +33,7 @@ export default function Navbar() {
     setOpen(false);
   };
 
-  // Track active section
+  // Track Active Section
   useEffect(() => {
     const navbar = document.querySelector("header");
     const navbarHeight = navbar ? navbar.offsetHeight : 80;
@@ -30,7 +41,7 @@ export default function Navbar() {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting) {
+          if (entry.isIntersecting && sectionsConfig[entry.target.id]) {
             setActive(entry.target.id || "home");
           }
         });
@@ -43,23 +54,27 @@ export default function Navbar() {
 
     sections.forEach((id) => {
       const el = document.getElementById(id);
-      if (el) observer.observe(el);
+      if (el && sectionsConfig[id]) observer.observe(el);
     });
 
     return () => observer.disconnect();
-  }, []);
+  }, [sectionsConfig]);
 
-  // Detect scroll for navbar style
+  // Scroll effect for navbar style
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 50);
+    const handleScroll = () => setIsScrolled(window.scrollY > 40);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Desktop + mobile link styling
+  // Classes
   const linkClass = (id) =>
-    `relative px-4 py-2 text-sm font-medium transition-colors duration-500 ${
-      active === id ? "text-cyansoft" : "text-white/80 hover:text-cyansoft"
+    `relative px-4 py-2 text-sm md:text-base font-medium tracking-wide transition-all duration-500 ${
+      sectionsConfig[id]
+        ? active === id
+          ? "text-cyansoft glow-text"
+          : "text-white/80 hover:text-cyansoft hover:glow-text"
+        : "text-gray-500 cursor-not-allowed opacity-50"
     }`;
 
   return (
@@ -67,108 +82,92 @@ export default function Navbar() {
       initial={{ y: -80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: "spring", stiffness: 80, damping: 20 }}
-      className="fixed inset-x-0 top-0 z-50 pointer-events-none"
+      className="fixed inset-x-0 top-0 z-50"
     >
       <motion.nav
         animate={{
-          backgroundColor: isScrolled ? "rgba(0,0,0,0.5)" : "transparent",
-          backdropFilter: isScrolled ? "blur(10px)" : "blur(0px)",
+          backgroundColor: isScrolled ? "rgba(0,0,0,0.55)" : "rgba(0,0,0,0.25)",
+          backdropFilter: isScrolled ? "blur(10px)" : "blur(4px)",
+          boxShadow: isScrolled
+            ? "0 0 20px rgba(0,255,255,0.15)"
+            : "0 0 0 rgba(0,255,255,0)",
         }}
         transition={{ duration: 0.6 }}
-        className={`pointer-events-auto relative w-full px-6 py-3 border-b ${
-          isScrolled ? "border-white/10 shadow-lg" : "border-transparent"
-        }`}
+        className="relative w-full px-6 py-3 border-b border-white/10"
       >
-        <motion.div
-          className={`w-full max-w-7xl mx-auto flex items-center transition-all duration-700 ${
-            isScrolled ? "justify-between" : "justify-center"
-          }`}
-        >
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
           {/* 🚀 Logo */}
           <motion.h1
             whileHover={{ scale: 1.08 }}
-            transition={{ type: "spring", stiffness: 200 }}
-            className={`font-extrabold cursor-pointer bg-gradient-to-r from-cyan-300 to-cyansoft bg-clip-text text-transparent font-[Playfair] ${
-              isScrolled ? "text-xl md:text-2xl" : "text-3xl md:text-5xl"
-            }`}
+            className="font-extrabold cursor-pointer bg-gradient-to-r from-cyan-300 to-cyansoft bg-clip-text text-transparent text-2xl md:text-3xl font-[Playfair] glow-text"
             onClick={() => scrollTo("home")}
           >
             Deepak | Portfolio
           </motion.h1>
 
-          {/* 🖥 Desktop Nav */}
-          <AnimatePresence>
-            {isScrolled && (
-              <motion.div
-                key="desktop-nav"
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ type: "spring", stiffness: 120, damping: 18 }}
-                className="hidden md:flex gap-6 items-center relative"
+          {/* 🖥 Desktop Navigation */}
+          <div className="hidden md:flex gap-6 items-center relative">
+            {sections.map((sec) => (
+              <motion.button
+                key={sec}
+                ref={(el) => (buttonsRef.current[sec] = el)}
+                onClick={() => scrollTo(sec)}
+                disabled={!sectionsConfig[sec]}
+                whileHover={{ scale: 1.08 }}
+                className={linkClass(sec)}
               >
-                {sections.map((sec) => (
-                  <motion.button
-                    key={sec}
-                    ref={(el) => (buttonsRef.current[sec] = el)}
-                    onClick={() => scrollTo(sec)}
-                    className={linkClass(sec)}
-                    whileHover={{ scale: 1.1 }}
-                  >
-                    {sec.replace("-", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-                  </motion.button>
-                ))}
+                {sec.replace("-", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+              </motion.button>
+            ))}
 
-                {/* 🔥 Animated underline */}
-                <motion.div
-                  layoutId="underline"
-                  className="absolute bottom-0 h-[2px] bg-cyansoft rounded-full"
-                  initial={false}
-                  animate={{
-                    x: buttonsRef.current[active]?.offsetLeft || 0,
-                    width: buttonsRef.current[active]?.offsetWidth || 0,
-                  }}
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
+            {/* 🔥 Neon underline */}
+            <motion.div
+              layoutId="underline"
+              className="absolute bottom-0 h-[2px] bg-cyansoft/90 rounded-full shadow-[0_0_10px_#00ffff]"
+              initial={false}
+              animate={{
+                x: buttonsRef.current[active]?.offsetLeft || 0,
+                width: buttonsRef.current[active]?.offsetWidth || 0,
+              }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            />
+          </div>
 
           {/* 📱 Mobile Toggle */}
-          <AnimatePresence>
-            {isScrolled && (
-              <motion.div
-                key="mobile-toggle"
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ type: "spring", stiffness: 120, damping: 18 }}
-                className="md:hidden z-50"
-              >
-                <button
-                  onClick={() => setOpen(!open)}
-                  aria-label="Toggle menu"
-                  className="text-white/90 hover:text-cyansoft transition-all"
-                >
-                  {open ? <FaTimes size={24} /> : <FaBars size={24} />}
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
+          <motion.div
+            whileTap={{ scale: 0.85 }}
+            className="md:hidden z-50"
+          >
+            <button
+              onClick={() => setOpen(!open)}
+              aria-label="Toggle menu"
+              className="text-white/90 hover:text-cyansoft transition-all"
+            >
+              {open ? <FaTimes size={24} /> : <FaBars size={24} />}
+            </button>
+          </motion.div>
+        </div>
 
-        {/* 📱 Mobile Drawer */}
+        {/* 📱 Mobile Drawer — Innovative Style */}
         <AnimatePresence>
-          {open && isScrolled && (
+          {open && (
             <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ type: "spring", stiffness: 120, damping: 18 }}
-              className="absolute top-full mt-4 left-1/2 -translate-x-1/2 w-[92%] max-w-sm bg-black/70 border border-white/10 backdrop-blur-xl rounded-xl p-5 shadow-lg md:hidden"
+              key="mobile-menu"
+              initial={{ opacity: 0, y: -20, rotateX: -20 }}
+              animate={{ opacity: 1, y: 0, rotateX: 0 }}
+              exit={{ opacity: 0, y: -20, rotateX: 20 }}
+              transition={{
+                type: "spring",
+                stiffness: 120,
+                damping: 18,
+              }}
+              className="absolute top-full mt-4 left-1/2 -translate-x-1/2 w-[92%] max-w-sm 
+                bg-gradient-to-b from-black/90 to-black/60 border border-cyansoft/30 
+                backdrop-blur-xl rounded-2xl p-5 shadow-[0_0_30px_rgba(0,255,255,0.2)] 
+                md:hidden"
             >
               <motion.div
-                className="flex flex-col gap-3"
+                className="flex flex-col gap-4"
                 initial="hidden"
                 animate="visible"
                 exit="hidden"
@@ -181,17 +180,31 @@ export default function Navbar() {
                   <motion.button
                     key={sec}
                     onClick={() => scrollTo(sec)}
+                    disabled={!sectionsConfig[sec]}
                     whileTap={{ scale: 0.95 }}
                     variants={{
-                      hidden: { opacity: 0, x: -20 },
-                      visible: { opacity: 1, x: 0 },
+                      hidden: { opacity: 0, y: 20 },
+                      visible: { opacity: 1, y: 0 },
                     }}
                     transition={{ type: "spring", stiffness: 100, damping: 15 }}
-                    className={`text-left px-4 py-2 rounded-md text-white/90 hover:bg-white/10 transition-all duration-200 ${
-                      active === sec ? "bg-cyansoft text-black font-semibold" : ""
-                    }`}
+                    className={`text-left px-4 py-2 rounded-md text-white transition-all duration-200 
+                      relative overflow-hidden group ${
+                        sectionsConfig[sec]
+                          ? active === sec
+                            ? "bg-cyansoft text-black font-semibold"
+                            : "hover:bg-cyansoft/10"
+                          : "text-gray-500 cursor-not-allowed opacity-50"
+                      }`}
                   >
-                    {sec.replace("-", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                    {/* 💡 Animated Gradient Shine on hover */}
+                    <span className="relative z-10">
+                      {sec.replace("-", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                    </span>
+                    <motion.span
+                      className="absolute inset-0 bg-gradient-to-r from-cyansoft/20 via-cyansoft/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                      initial={false}
+                      animate={{ x: open ? 0 : -50 }}
+                    />
                   </motion.button>
                 ))}
               </motion.div>
@@ -199,6 +212,14 @@ export default function Navbar() {
           )}
         </AnimatePresence>
       </motion.nav>
+
+      {/* ✨ Global Glow Styles */}
+      <style jsx>{`
+        .glow-text {
+          text-shadow: 0 0 10px rgba(0, 255, 255, 0.6),
+            0 0 20px rgba(0, 255, 255, 0.4);
+        }
+      `}</style>
     </motion.header>
   );
 }

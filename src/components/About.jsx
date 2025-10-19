@@ -1,150 +1,1414 @@
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import React, { useEffect, useRef, useState, useMemo } from "react";
+import { motion, AnimatePresence, useInView } from "framer-motion";
+import {
+  FaCloud,
+  FaBrain,
+  FaLaptopCode,
+  FaGraduationCap,
+  FaTrophy,
+  FaCompass,
+  FaChevronDown,
+  FaChevronUp,
+  FaEnvelope,
+  FaMapMarkerAlt,
+  FaCalendarAlt,
+  FaBolt,
+} from "react-icons/fa";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../firebase";
 
-export default function About() {
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+/* ============================================================================
+   DEFAULT CONFIG (Fallback if Firestore fails)
+============================================================================ */
+const defaultConfig = {
+  image: {
+    url: "https://1drv.ms/i/c/ac01abdcf0387f53/IQTDfhsFAQDOQ5Zeh9Df-4-vAbMANaw6yEm8EdW4q4NpN4w?width=1280&height=1280",
+    iframeFallbackUrl: null,
+  },
+  initialMode: "holo",
+  cards: [
+    { id: "edu", title: "Education", icon: "graduation", short: "B.Tech — AI & Data Science (pre-final)", long: "Velammal Engineering College — Coursework in ML, DL, Data Mining. GPA: (add yours)" },
+    { id: "ai", title: "AI & ML", icon: "brain", short: "Computer vision, NLP, model deployment", long: "Model experience: classification, object detection, transformers; deployed with Flask/Node and Docker." },
+    { id: "full", title: "Full Stack", icon: "laptop", short: "React, Node.js, Flask, MongoDB", long: "Built responsive apps, auth flows, REST/GraphQL APIs, real-time features and CI/CD pipelines." },
+    { id: "cloud", title: "Cloud", icon: "cloud", short: "AWS / GCP basics; containerization", long: "Experience with EC2, S3, Cloud Run, Docker, and simple infra-as-code for reproducible deployments." },
+    { id: "awards", title: "Achievements", icon: "trophy", short: "Hackathons, Certificates, Internships", long: "Won campus hackathon; completed specializations and internships focusing on ML engineering and MLOps." },
+    { id: "goals", title: "Goals", icon: "compass", short: "Build production-ready AI systems", long: "Aim to scale AI systems in cloud-native ways, mentor others, and open-source useful tools." },
+  ],
+  counters: [
+    { id: "models", label: "ML Models Built", value: 12 },
+    { id: "projects", label: "Projects Completed", value: 25 },
+    { id: "clouds", label: "Cloud Deployments", value: 8 },
+  ],
+  bio: {
+    short: "I'm a pre-final year AI & Data Science student at Velammal Engineering College. I build practical ML systems and full-stack apps that solve real problems.",
+    badges: ["Production ML", "Full-stack", "MLOps"],
+    expanded: {
+      strengths: [
+        "End-to-end model lifecycle: training → deployment → monitoring",
+        "Frontend + backend: modern React, REST/APIs, realtime features",
+        "Lightweight MLOps: Docker, simple CI/CD, reproducible infra",
+      ],
+      recent: "Built a civic issue reporting prototype: photo & voice capture, auto-routing to authorities, duplicate detection, and a dashboard for tracking resolutions.",
+      values: "I focus on projects that deliver measurable public impact and scale reliably for actual users.",
+    },
+  },
+  holoSections: [
+    { type: "bio" },
+    { type: "interests", content: "Computer Vision, NLP, MLOps, Cloud-native AI, Open-source" },
+    { type: "learning", content: "Kubernetes for ML, transformer optimization, distributed training" },
+  ],
+  resumeTarget: "resume",
+};
 
-  // 🖱️ Mouse glow effect
+/* ============================================================================
+   UTILITY FUNCTIONS
+============================================================================ */
+function mergeDeep(defaultObj, overrideObj) {
+  if (!overrideObj) return defaultObj;
+  const out = JSON.parse(JSON.stringify(defaultObj));
+  const merge = (t, s) => {
+    for (const k of Object.keys(s)) {
+      const v = s[k];
+      if (v && typeof v === 'object' && !Array.isArray(v)) {
+        t[k] = t[k] || {};
+        merge(t[k], v);
+      } else {
+        t[k] = v;
+      }
+    }
+  };
+  merge(out, overrideObj);
+  return out;
+}
+
+/* ============================================================================
+   ICON MAPPING
+============================================================================ */
+const iconMap = {
+  graduation: <FaGraduationCap size={22} />,
+  brain: <FaBrain size={22} />,
+  laptop: <FaLaptopCode size={22} />,
+  cloud: <FaCloud size={22} />,
+  trophy: <FaTrophy size={22} />,
+  compass: <FaCompass size={22} />,
+};
+
+/* ============================================================================
+   LOADING SPINNER
+============================================================================ */
+function LoadingSpinner() {
+  return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="relative">
+        <motion.div
+          className="w-16 h-16 rounded-full border-4 border-cyan-500/20"
+          animate={{
+            scale: [1, 1.2, 1],
+            rotate: [0, 180, 360],
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+        <motion.div
+          className="absolute inset-0 w-16 h-16 rounded-full border-4 border-transparent border-t-cyan-500"
+          animate={{ rotate: 360 }}
+          transition={{
+            duration: 1,
+            repeat: Infinity,
+            ease: "linear",
+          }}
+        />
+        <motion.div
+          className="absolute inset-0 m-auto w-2 h-2 rounded-full bg-cyan-500"
+          animate={{
+            scale: [1, 1.5, 1],
+            opacity: [0.5, 1, 0.5],
+          }}
+          transition={{
+            duration: 1.5,
+            repeat: Infinity,
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================================
+   COUNTER COMPONENT - OPTIMIZED
+============================================================================ */
+function Counter({ to = 0, ms = 1200, play = false }) {
+  const [val, setVal] = useState(0);
+  const hasAnimatedRef = useRef(false);
+  
   useEffect(() => {
-    const handleMouseMove = (e) => {
-      setMousePos({ x: e.clientX, y: e.clientY });
+    if (!play || hasAnimatedRef.current) {
+      return;
+    }
+    
+    hasAnimatedRef.current = true;
+    
+    let raf;
+    let start;
+    
+    const step = (t) => {
+      if (!start) start = t;
+      const p = Math.min((t - start) / ms, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      const newVal = Math.floor(eased * to);
+      
+      setVal(newVal);
+      
+      if (p < 1) {
+        raf = requestAnimationFrame(step);
+      }
     };
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
+    
+    raf = requestAnimationFrame(step);
+    
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [to, play, ms]);
+  
+  return <span className="block text-3xl md:text-4xl font-bold text-white">{val}</span>;
+}
+
+/* ============================================================================
+   ANIMATION VARIANTS
+============================================================================ */
+const page = {
+  hidden: { 
+    opacity: 0, 
+    y: 40, 
+    scale: 0.95,
+    rotateX: 5,
+    filter: 'blur(10px)'
+  },
+  enter: { 
+    opacity: 1, 
+    y: 0, 
+    scale: 1,
+    rotateX: 0,
+    filter: 'blur(0px)',
+    transition: { 
+      duration: 0.9,
+      ease: [0.22, 1, 0.36, 1],
+      staggerChildren: 0.12,
+      delay: 0.1,
+    }
+  },
+  exit: { 
+    opacity: 0, 
+    y: -30, 
+    scale: 0.95,
+    rotateX: -5,
+    filter: 'blur(8px)',
+    transition: { 
+      duration: 0.6, 
+      ease: [0.65, 0, 0.35, 1],
+    }
+  },
+};
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  enter: { 
+    opacity: 1,
+    transition: { 
+      staggerChildren: 0.08, 
+      delayChildren: 0.1,
+      duration: 0.5
+    }
+  },
+  exit: { 
+    opacity: 0,
+    transition: { 
+      staggerChildren: 0.05, 
+      staggerDirection: -1,
+      duration: 0.3
+    }
+  }
+};
+
+const itemFade = {
+  hidden: { opacity: 0, y: 15, scale: 0.98 },
+  enter: { 
+    opacity: 1, 
+    y: 0, 
+    scale: 1,
+    transition: { 
+      duration: 0.5, 
+      ease: [0.22, 1, 0.36, 1]
+    }
+  },
+  exit: {
+    opacity: 0,
+    y: -10,
+    scale: 0.98,
+    transition: {
+      duration: 0.3,
+      ease: [0.65, 0, 0.35, 1]
+    }
+  }
+};
+
+const cardFactory = (isMobile) => ({
+  hidden: (i) => ({ 
+    opacity: 0, 
+    y: isMobile ? 60 : 30, 
+    x: isMobile ? 0 : -20, 
+    scale: isMobile ? 0.8 : 0.95,
+    rotateX: isMobile ? 15 : 10,
+    rotateY: isMobile ? 0 : -15,
+    filter: 'blur(10px)',
+  }),
+  enter: (i) => ({ 
+    opacity: 1, 
+    y: 0, 
+    x: 0, 
+    scale: 1,
+    rotateX: 0,
+    rotateY: 0,
+    filter: 'blur(0px)',
+    transition: { 
+      duration: isMobile ? 0.8 : 0.6,
+      delay: isMobile ? i * 0.15 : i * 0.08,
+      ease: [0.22, 1, 0.36, 1],
+    } 
+  }),
+  exit: (i) => ({ 
+    opacity: 0, 
+    y: isMobile ? 40 : -20, 
+    scale: isMobile ? 0.85 : 0.95,
+    filter: 'blur(8px)',
+    transition: { 
+      duration: isMobile ? 0.5 : 0.4,
+      delay: isMobile ? (i * 0.1) : 0,
+      ease: [0.65, 0, 0.35, 1]
+    } 
+  }),
+  hover: {
+    scale: isMobile ? 1.02 : 1.05,
+    y: isMobile ? -4 : -8,
+    transition: {
+      duration: 0.3,
+      ease: "easeOut"
+    }
+  },
+  tap: {
+    scale: 0.98,
+    transition: {
+      duration: 0.2,
+      ease: "easeOut"
+    }
+  }
+});
+
+const imgFloat = (reduceMotion) => ({
+  idle: { 
+    y: 0, 
+    rotate: 0, 
+    scale: 1,
+    filter: 'brightness(1)'
+  },
+  float: reduceMotion 
+    ? { y: 0, rotate: 0, scale: 1, filter: 'brightness(1)' } 
+    : { 
+        y: [-8, 8, -8], 
+        rotate: [-1, 1, -1], 
+        scale: [1, 1.02, 1],
+        filter: ['brightness(1)', 'brightness(1.1)', 'brightness(1)']
+      },
+});
+
+/* ============================================================================
+   SHIMMER EFFECT
+============================================================================ */
+function Shimmer() {
+  return (
+    <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="g1" x1="0" x2="1" y1="0" y2="1">
+          <stop offset="0%" stopOpacity="0" />
+          <stop offset="45%" stopOpacity="0.06" />
+          <stop offset="100%" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#g1)" transform="skewX(-12)" />
+    </svg>
+  );
+}
+
+/* ============================================================================
+   INJECT STYLES
+============================================================================ */
+function InjectStyles() {
+  return (
+    <style>
+      {`
+      @keyframes gradientMove { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+      .fancy-border { position: relative; overflow: hidden; border-radius: 14px; }
+      .fancy-border::before {
+        content: '';
+        position: absolute; inset: -2px; z-index: 0; border-radius: 14px; padding: 2px;
+        background: linear-gradient(90deg, rgba(0,229,255,0.08), rgba(0,0,0,0) 30%, rgba(0,229,255,0.04));
+        mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor; mask-composite: exclude;
+        animation: gradientMove 8s linear infinite;
+      }
+      .inner-glass { position: relative; z-index: 1; background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); box-shadow: inset 0 2px 10px rgba(0,0,0,0.42), 0 6px 18px rgba(0,0,0,0.45); }
+      .pulse-hover:hover { box-shadow: 0 10px 30px rgba(0,229,255,0.08); transform: translateY(-4px) scale(1.01); }
+      @media (max-width: 640px) {
+        .inner-glass {
+          background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+          box-shadow: inset 0 2px 8px rgba(0,0,0,0.4), 0 8px 16px rgba(0,0,0,0.3);
+        }
+        .fancy-border::before {
+          background: linear-gradient(90deg, rgba(0,229,255,0.1), rgba(0,0,0,0) 30%, rgba(0,229,255,0.05));
+        }
+      }
+      `}
+    </style>
+  );
+}
+
+/* ============================================================================
+   TOGGLE SWITCH COMPONENT
+============================================================================ */
+function ToggleSwitch({ mode, onToggle }) {
+  return (
+    <motion.div 
+      className="relative flex items-center"
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+    >
+      <button
+        onClick={onToggle}
+        className={`
+          relative w-16 h-8 rounded-full transition-all duration-300 ease-in-out
+          ${mode === "holo" 
+            ? 'bg-gradient-to-r from-cyan-500 to-blue-500' 
+            : 'bg-gradient-to-r from-gray-600 to-gray-700'
+          }
+          shadow-lg hover:shadow-xl
+        `}
+        aria-label={`Switch to ${mode === "holo" ? "Mosaic" : "Holo"} mode`}
+      >
+        <motion.div
+          className={`
+            absolute top-1 w-6 h-6 rounded-full bg-white shadow-lg
+            flex items-center justify-center
+          `}
+          initial={false}
+          animate={{ 
+            x: mode === "holo" ? 34 : 4,
+          }}
+          transition={{
+            type: "spring",
+            stiffness: 400,
+            damping: 30
+          }}
+        >
+          <div className="text-xs font-bold">
+            {mode === "holo" ? "H" : "M"}
+          </div>
+        </motion.div>
+      </button>
+      
+      <motion.span 
+        className="ml-3 text-sm font-medium text-white/80"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+      >
+        {mode === "holo" ? "Holo" : "Mosaic"}
+      </motion.span>
+    </motion.div>
+  );
+}
+
+/* ============================================================================
+   MAIN COMPONENT - OPTIMIZED FOR MINIMAL DB CALLS
+============================================================================ */
+export default function AboutWithDriveImage({ overrideConfig }) {
+  const [firestoreData, setFirestoreData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    async function fetchFirestoreData() {
+      try {
+        const ref = doc(db, "aboutpage", "main");
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+          setFirestoreData(snap.data());
+        }
+      } catch (err) {
+        setError(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchFirestoreData();
   }, []);
 
-  const mouseGlow = {
-    background: `radial-gradient(circle at ${mousePos.x}px ${mousePos.y}px, rgba(0,229,255,0.06), transparent 50%)`,
+  const cfg = useMemo(() => {
+    const merged = firestoreData
+      ? mergeDeep(defaultConfig, firestoreData)
+      : defaultConfig;
+
+    if (overrideConfig && Object.keys(overrideConfig).length > 0) {
+      return mergeDeep(merged, overrideConfig);
+    }
+
+    return merged;
+  }, [firestoreData, overrideConfig]);
+
+  const [mode, setMode] = useState(cfg.initialMode);
+  const [hovered, setHovered] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [expandedCard, setExpandedCard] = useState(null);
+  const [contentExpanded, setContentExpanded] = useState(false);
+  const [rightExpanded, setRightExpanded] = useState(false);
+  const [imgSrc, setImgSrc] = useState(cfg.image?.url || "");
+  const [imgFailed, setImgFailed] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const [imgSize, setImgSize] = useState({ width: "14rem", height: "14rem" });
+  const [reduceMotion, setReduceMotion] = useState(false);
+  const [countersVisible, setCountersVisible] = useState(false);
+  const [introDone, setIntroDone] = useState(false);
+
+  const countersRef = useRef(null);
+  const sectionRef = useRef(null);
+  const sectionInView = useInView(sectionRef, { once: true, amount: 0.14 });
+
+  const toggleMode = () => {
+    setMode(prevMode => prevMode === "holo" ? "mosaic" : "holo");
   };
 
+  useEffect(() => {
+    if (firestoreData) {
+      setMode(firestoreData.initialMode || defaultConfig.initialMode);
+      setImgSrc(firestoreData.image?.url || defaultConfig.image.url);
+    }
+  }, [firestoreData]);
+
+  useEffect(() => {
+    setImgSrc(cfg.image?.url || "");
+    setImgFailed(false);
+    setImgLoaded(false);
+  }, [cfg.image?.url]);
+
+  useEffect(() => {
+    if (sectionInView) {
+      const t = setTimeout(() => {
+        setIntroDone(true);
+      }, 120);
+      return () => clearTimeout(t);
+    }
+  }, [sectionInView]);
+
+  useEffect(() => {
+    if (sectionInView && introDone && !countersVisible) {
+      const timer = setTimeout(() => {
+        setCountersVisible(true);
+      }, 400);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [sectionInView, introDone, countersVisible]);
+
+  useEffect(() => {
+    try {
+      const mq = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+      setReduceMotion(Boolean(mq?.matches));
+      const handler = (e) => setReduceMotion(e.matches);
+      if (mq?.addEventListener) mq.addEventListener("change", handler);
+      return () => mq?.removeEventListener?.("change", handler);
+    } catch (e) {
+    }
+  }, []);
+
+  useEffect(() => {
+    const computeSize = () => {
+      const w = window.innerWidth;
+      const mobile = w < 768;
+      setIsMobile(mobile);
+      
+      if (mobile) {
+        const size = Math.round(Math.min(w * 0.92, 300));
+        setImgSize({ width: `${size}px`, height: `${size}px`, maxWidth: '100%' });
+      } else if (w < 1024) {
+        const size = rightExpanded ? "22rem" : "16rem";
+        setImgSize({ width: size, height: size, maxWidth: '100%' });
+      } else {
+        const size = rightExpanded ? "20rem" : "16rem";
+        setImgSize({ width: size, height: size, maxWidth: '100%' });
+      }
+    };
+    computeSize();
+    
+    let resizeTimer;
+    const handleResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(computeSize, 100);
+    };
+    
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      clearTimeout(resizeTimer);
+    };
+  }, [rightExpanded]);
+
+  const onImgError = (e) => {
+    setImgFailed(true);
+    setImgLoaded(true);
+  };
+  
+  const onImgLoad = () => {
+    setImgLoaded(true);
+    setImgFailed(false);
+  };
+
+  const cards = cfg.cards;
+  const counterData = cfg.counters;
+  const iframeFallback = cfg.image?.iframeFallbackUrl || imgSrc;
+  const variantsForImg = imgFloat(reduceMotion);
+  const cardVariants = cardFactory(isMobile);
+
+  const orbsVariants = {
+    animate: {
+      scale: [1, 1.2, 1],
+      opacity: [0.3, 0.5, 0.3],
+      transition: {
+        duration: 8,
+        repeat: Infinity,
+        ease: "easeInOut"
+      }
+    }
+  };
+
+  if (loading) {
+    return (
+      <motion.section id="about" className="relative w-full py-8 px-4 sm:py-14 sm:px-6 md:py-20 md:px-8 lg:px-10 overflow-hidden">
+        <InjectStyles />
+        <div className="mx-auto max-w-6xl">
+          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white font-[Orbitron] mb-6">About Me</h2>
+          <LoadingSpinner />
+        </div>
+      </motion.section>
+    );
+  }
+
   return (
-    <section
+    <motion.section
       id="about"
-      className="relative w-full py-28 px-6 scroll-mt-32 flex items-center justify-center"
-      style={mouseGlow}
+      ref={sectionRef}
+      className="relative w-full py-8 px-4 sm:py-14 sm:px-6 md:py-20 md:px-8 lg:px-10 overflow-hidden"
+      variants={page}
+      initial="hidden"
+      whileInView="enter"
+      viewport={{ once: true, amount: 0.12 }}
+      exit="exit"
+      aria-busy={!imgLoaded}
     >
-      <motion.div
-        className="relative z-10 w-full max-w-7xl flex flex-col md:flex-row items-center gap-12 md:gap-16 p-8 md:p-16 border border-white/10 rounded-3xl shadow-2xl backdrop-blur-md bg-white/5"
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: false, amount: 0.3 }}
-        transition={{ staggerChildren: 0.2 }}
-      >
-        {/* 🖼️ Profile Image with Glow */}
-        <motion.div
-          className="relative flex-shrink-0 group"
-          variants={{
-            hidden: { opacity: 0, scale: 0.8 },
-            visible: { opacity: 1, scale: 1 },
-          }}
-          transition={{ duration: 0.8, type: "spring" }}
-        >
-          {/* Glow Ring */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <motion.div className="absolute top-0 left-1/4 w-96 h-96 rounded-full bg-gradient-to-r from-cyan-500/10 to-blue-500/10 blur-3xl" variants={orbsVariants} animate="animate" />
+        <motion.div className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full bg-gradient-to-r from-blue-500/10 to-purple-500/10 blur-3xl" variants={orbsVariants} animate="animate" style={{ animationDelay: "2s" }} />
+        <motion.div className="absolute top-1/2 left-1/3 w-72 h-72 rounded-full bg-gradient-to-r from-purple-500/10 to-cyan-500/10 blur-3xl" variants={orbsVariants} animate="animate" style={{ animationDelay: "4s" }} />
+      </div>
+      
+      <InjectStyles />
+
+      <AnimatePresence>
+        {!introDone && (
           <motion.div
-            className="absolute -inset-3 rounded-2xl bg-gradient-to-r from-cyansoft/50 to-cyan-300/30 blur-3xl"
-            animate={{ opacity: [0.3, 0.8, 0.3] }}
-            transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
-          ></motion.div>
-
-          {/* Square Image */}
-          <img
-            src="images/your-image.jpg"
-            alt="Deepak"
-            className="relative w-64 h-64 md:w-80 md:h-80 object-cover rounded-2xl border-4 border-cyansoft shadow-[0_0_50px_rgba(0,229,255,0.5)] transition-transform duration-700 group-hover:scale-105"
+            initial={{ x: 0 }}
+            animate={{ x: "110%" }}
+            exit={{ x: "110%" }}
+            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+            className="absolute inset-0 z-40 pointer-events-none"
+            style={{ background: 'linear-gradient(90deg, rgba(0,0,0,0.86) 0%, rgba(0,0,0,0.6) 30%, rgba(0,229,255,0.06) 100%)' }}
           />
-        </motion.div>
+        )}
+      </AnimatePresence>
 
-        {/* 📄 Text Content */}
-        <motion.div
-          className="text-center md:text-left space-y-6 md:space-y-8 max-w-3xl"
-          variants={{
-            hidden: { opacity: 0, x: 60 },
-            visible: { opacity: 1, x: 0 },
-          }}
-          transition={{ duration: 0.9, ease: "easeOut" }}
-        >
-          <motion.h2
-            className="text-4xl md:text-6xl font-black bg-gradient-to-r from-cyansoft to-cyan-300 bg-clip-text text-transparent font-[Orbitron]"
-            variants={{
-              hidden: { opacity: 0, y: -20 },
-              visible: { opacity: 1, y: 0 },
-            }}
-            transition={{ duration: 0.8 }}
+      <div className="mx-auto max-w-6xl relative z-10">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+          <motion.h2 
+            variants={itemFade} 
+            initial="hidden" 
+            animate={sectionInView ? "enter" : "hidden"} 
+            className="text-2xl md:text-3xl lg:text-4xl font-bold text-white font-[Orbitron] mb-3 sm:mb-0"
           >
             About Me
           </motion.h2>
+          
+          <div className="flex flex-col sm:flex-row items-center gap-4 self-center sm:self-auto w-full sm:w-auto">
+  {/* Manual Toggle Switch */}
+  <motion.div
+    variants={itemFade}
+    initial="hidden"
+    animate={sectionInView ? "enter" : "hidden"}
+    transition={{ delay: 0.06 }}
+  >
+    <ToggleSwitch mode={mode} onToggle={toggleMode} />
+  </motion.div>
 
-          <motion.p
-            className="text-lg md:text-2xl text-white/90 leading-relaxed font-[Poppins]"
-            variants={{
-              hidden: { opacity: 0, y: 20 },
-              visible: { opacity: 1, y: 0 },
-            }}
-            transition={{ duration: 0.8 }}
-          >
-            I’m currently a{" "}
-            <span className="text-cyansoft font-bold">
-              pre-final year student in Artificial Intelligence and Data Science
-            </span>{" "}
-            at{" "}
-            <span className="text-cyan-300 font-bold">
-              Velammal Engineering College
-            </span>
-            . My passion is solving real-world problems with{" "}
-            <span className="text-white font-semibold">
-              AI, machine learning, and data-driven innovation
-            </span>
-            .
-          </motion.p>
+  {/* Button Group */}
+  <motion.div
+    variants={itemFade}
+    initial="hidden"
+    animate={sectionInView ? "enter" : "hidden"}
+    transition={{ delay: 0.1 }}
+    className="flex gap-2 bg-gradient-to-r from-[#0f172a]/70 via-[#1e293b]/70 to-[#0f172a]/70 backdrop-blur-xl rounded-full p-1.5 w-full sm:w-auto shadow-[0_0_15px_rgba(0,255,255,0.15)]"
+  >
+    <motion.button
+      whileTap={{ scale: 0.94 }}
+      whileHover={{ scale: 1.05, boxShadow: "0 0 20px rgba(0,255,255,0.5)" }}
+      onClick={() => setMode("mosaic")}
+      className={`relative flex-1 sm:flex-none px-5 sm:px-6 py-2.5 rounded-full text-sm md:text-base font-semibold transition-all duration-300 ${
+        mode === "mosaic"
+          ? "bg-gradient-to-r from-cyan-400 via-blue-400 to-cyan-300 text-black shadow-[0_0_20px_rgba(0,255,255,0.4)]"
+          : "text-white/80 hover:text-white hover:bg-white/10"
+      }`}
+    >
+      {mode === "mosaic" && (
+        <motion.span
+          layoutId="activeGlow"
+          className="absolute inset-0 rounded-full bg-cyan-300/20 blur-md"
+          transition={{ type: "spring", stiffness: 300, damping: 25 }}
+        />
+      )}
+      Mosaic
+    </motion.button>
 
-          <motion.p
-            className="text-base md:text-xl text-white/70 leading-relaxed font-[Inter]"
-            variants={{
-              hidden: { opacity: 0, y: 20 },
-              visible: { opacity: 1, y: 0 },
-            }}
-            transition={{ duration: 0.8 }}
-          >
-            I love building{" "}
-            <span className="text-white font-semibold">scalable full-stack apps</span>{" "}
-            with <span className="text-cyan-200">React, Node.js, Flask, MongoDB</span>.{" "}
-            I’m also diving deep into{" "}
-            <span className="text-cyan-200">cloud computing</span> and{" "}
-            <span className="text-cyan-200">AI deployment pipelines</span> for production-ready systems.
-          </motion.p>
+    <motion.button
+      whileTap={{ scale: 0.94 }}
+      whileHover={{ scale: 1.05, boxShadow: "0 0 20px rgba(255,0,255,0.4)" }}
+      onClick={() => setMode("holo")}
+      className={`relative flex-1 sm:flex-none px-5 sm:px-6 py-2.5 rounded-full text-sm md:text-base font-semibold transition-all duration-300 ${
+        mode === "holo"
+          ? "bg-gradient-to-r from-pink-400 via-purple-400 to-fuchsia-400 text-black shadow-[0_0_20px_rgba(255,0,255,0.4)]"
+          : "text-white/80 hover:text-white hover:bg-white/10"
+      }`}
+    >
+      {mode === "holo" && (
+        <motion.span
+          layoutId="activeGlow"
+          className="absolute inset-0 rounded-full bg-pink-400/20 blur-md"
+          transition={{ type: "spring", stiffness: 300, damping: 25 }}
+        />
+      )}
+      Holo
+    </motion.button>
+  </motion.div>
+</div>
+        </div>
 
-          {/* 🔗 Buttons */}
-          <motion.div
-            className="flex justify-center md:justify-start gap-4 md:gap-6 pt-4 md:pt-6"
-            variants={{
-              hidden: { opacity: 0, y: 20 },
-              visible: { opacity: 1, y: 0 },
-            }}
-            transition={{ duration: 0.8 }}
-          >
-            <a
-              href="#projects"
-              onClick={(e) => {
-                e.preventDefault();
-                document.getElementById("projects")?.scrollIntoView({ behavior: "smooth" });
-              }}
-              className="px-6 md:px-8 py-3 md:py-4 bg-cyansoft text-black font-bold rounded-xl shadow-md hover:scale-105 transition-transform duration-300"
+        <AnimatePresence mode="wait" initial={false}>
+          {mode === "mosaic" ? (
+            <motion.div key="mosaic" variants={staggerContainer} initial="hidden" animate="enter" exit="exit" className={`${isMobile ? "grid grid-cols-1 gap-3" : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"}`}>
+              {isMobile ? (
+                <div className="col-span-3">
+                  <motion.div className="flex flex-col gap-4 px-4 py-3">
+                    {cards.map((c, i) => (
+                      <motion.article
+                        key={c.id}
+                        custom={i}
+                        variants={cardVariants}
+                        onPointerEnter={() => setHovered(c.id)}
+                        onPointerLeave={() => setHovered(null)}
+                        whileTap={{ scale: 0.98 }}
+                        className="fancy-border inner-glass pulse-hover w-full rounded-2xl p-5 backdrop-blur-xl transform-gpu"
+                        onClick={() => setExpandedCard((s) => (s === c.id ? null : c.id))}
+                        aria-expanded={expandedCard === c.id}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="p-2 rounded-lg bg-white/5 border border-white/6 text-cyan-200">{iconMap[c.icon]}</div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-base font-semibold text-white">{c.title}</h3>
+                            <p className="text-xs text-white/70 mt-1">{c.short}</p>
+                          </div>
+                          <div className="ml-2 self-start text-white/70">{expandedCard === c.id ? <FaChevronUp /> : <FaChevronDown />}</div>
+                        </div>
+                        <AnimatePresence>
+                          {expandedCard === c.id && (
+                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto", marginTop: 10 }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.28 }} className="text-sm text-white/80 overflow-hidden mt-2">
+                              <p>{c.long}</p>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </motion.article>
+                    ))}
+                  </motion.div>
+                  <div className="text-xs text-white/60 mt-2 px-3">Tap a card to expand.</div>
+                </div>
+              ) : (
+                <motion.div variants={staggerContainer} initial="hidden" animate="enter" className="col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+                  {cards.map((c, i) => (
+                    <motion.article
+                      key={c.id}
+                      custom={i}
+                      variants={cardVariants}
+                      onPointerEnter={() => setHovered(c.id)}
+                      onPointerLeave={() => setHovered(null)}
+                      whileHover={{ scale: 1.02, y: -4 }}
+                      whileTap={{ scale: 0.995 }}
+                      className="fancy-border inner-glass pulse-hover relative rounded-2xl p-5 min-h-[140px] transform transition-all duration-200 overflow-hidden"
+                    >
+                      <div className="flex items-start gap-3 relative z-10">
+                        <div className="p-2 rounded-lg bg-white/5 border border-white/6 text-cyan-200">{iconMap[c.icon]}</div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-base md:text-lg font-semibold text-white">{c.title}</h3>
+                          <p className="text-xs md:text-sm text-white/70 mt-1">{c.short}</p>
+                        </div>
+                      </div>
+                      <motion.div layout initial={{ opacity: 0, height: 0 }} animate={hovered === c.id ? { opacity: 1, height: "auto", marginTop: 10 } : { opacity: 0, height: 0, marginTop: 0 }} className="mt-3 text-sm text-white/80 overflow-hidden relative z-10">
+                        <p>{c.long}</p>
+                      </motion.div>
+                    </motion.article>
+                  ))}
+                </motion.div>
+              )}
+            </motion.div>
+          ) : (
+            <motion.div 
+              key="holo" 
+              variants={staggerContainer} 
+              initial="hidden" 
+              animate="enter" 
+              exit="exit" 
+              className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 items-stretch mx-auto max-w-[95%] sm:max-w-[90%] md:max-w-none"
             >
-              🚀 See Projects
-            </a>
-            <a
-              href="#contact"
-              onClick={(e) => {
-                e.preventDefault();
-                document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
-              }}
-              className="px-6 md:px-8 py-3 md:py-4 border border-white/20 text-white/80 font-medium rounded-xl hover:bg-white/10 hover:scale-105 transition-transform duration-300"
-            >
-              ✨ Get in Touch
-            </a>
-          </motion.div>
-        </motion.div>
+              <motion.div 
+                layout 
+                key="profile-card" 
+                custom={0}
+                variants={cardVariants}
+                whileHover="hover"
+                whileTap="tap"
+                className="md:col-span-1 flex items-stretch w-full transform-gpu perspective-1000"
+              >
+                <div className="relative rounded-2xl p-4 sm:p-5 md:p-6 border border-white/8 bg-gradient-to-br from-white/3 to-white/6 backdrop-blur-xl shadow-lg w-full flex flex-col h-full overflow-hidden fancy-border inner-glass">
+                  <motion.div
+                    aria-hidden
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.8 }}
+                    className="absolute -left-1/4 -top-1/4 w-[150%] h-[150%] rounded-full blur-3xl bg-gradient-to-r from-cyan-500/15 via-blue-500/10 to-indigo-600/5 pointer-events-none transform -rotate-12"
+                  />
+
+                  <div className="flex flex-col items-center flex-1 min-h-0">
+                    <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.48 }} className="relative rounded-2xl overflow-hidden border-2 border-cyansoft shadow-[0_0_28px_rgba(0,229,255,0.10)]">
+                      <motion.div
+                        variants={variantsForImg}
+                        initial="idle"
+                        animate={rightExpanded ? "float" : "idle"}
+                        transition={reduceMotion ? { duration: 0 } : { duration: 3.6, repeat: Infinity, repeatType: "loop", ease: "easeInOut" }}
+                        style={{ width: imgSize.width, height: imgSize.height }}
+                        className="rounded-2xl overflow-hidden bg-black relative"
+                      >
+                        {!imgLoaded && (
+                          <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/30">
+                            <svg className="w-10 h-10 animate-spin text-white/90" viewBox="0 0 50 50">
+                              <circle className="opacity-25" cx="25" cy="25" r="20" stroke="currentColor" strokeWidth="4" fill="none" />
+                              <path className="opacity-90" fill="currentColor" d="M43.94 25c0-10.41-8.43-18.85-18.85-18.85-10.41 0-18.85 8.44-18.85 18.85h4.07c0-8.16 6.62-14.78 14.78-14.78 8.16 0 14.78 6.62 14.78 14.78H43.94z" />
+                            </svg>
+                          </div>
+                        )}
+
+                        {!imgFailed && imgSrc ? (
+                          <img src={imgSrc} alt="Profile" loading="lazy" onError={onImgError} onLoad={onImgLoad} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                        ) : (
+                          iframeFallback ? (
+                            <iframe src={iframeFallback} className="w-full h-full border-0" title="OneDrive Profile" sandbox="allow-same-origin allow-scripts allow-popups allow-forms" style={{ display: "block", minHeight: "100%", minWidth: "100%" }} onLoad={() => setImgLoaded(true)} />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-black/60 text-white/80">No image</div>
+                          )
+                        )}
+
+                        <AnimatePresence>
+                          {rightExpanded && imgLoaded && !reduceMotion && (
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.28 }} className="absolute inset-0 pointer-events-none rounded-2xl" style={{ boxShadow: "inset 0 0 40px rgba(0,229,255,0.08), 0 18px 60px rgba(0,229,255,0.05)" }} />
+                          )}
+                        </AnimatePresence>
+
+                        <div className="absolute inset-0 pointer-events-none opacity-0 hover:opacity-60 transition-opacity duration-500">
+                          <Shimmer />
+                        </div>
+                      </motion.div>
+                    </motion.div>
+
+                    <h3 className="mt-5 text-xl md:text-2xl font-bold text-white tracking-wide">Deepak</h3>
+                    <p className="text-sm md:text-base text-white/80 mt-1.5">Pre-final year — AI & DS</p>
+<div ref={countersRef} className="mt-6 flex gap-8 justify-center w-full">
+  {counterData && counterData.length > 0 ? (
+    counterData.map((c, idx) => (
+      <motion.div
+        key={c.id}
+        initial={{ opacity: 0, y: 20, scale: 0.8 }}
+        whileInView={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{
+          duration: 0.6,
+          delay: idx * 0.15,
+          ease: [0.22, 1, 0.36, 1],
+        }}
+        viewport={{ once: true, amount: 0.3 }}
+        className="text-center min-w-0"
+      >
+        <motion.span
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{
+            delay: 0.2 + idx * 0.1,
+            type: "spring",
+            stiffness: 200,
+            damping: 12,
+          }}
+          className="block text-3xl md:text-4xl font-bold text-white"
+        >
+          {c.value}
+        </motion.span>
+        <motion.span
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            delay: 0.3 + idx * 0.1,
+            duration: 0.5,
+            ease: [0.22, 1, 0.36, 1],
+          }}
+          className="text-sm md:text-base text-white/70 mt-2 block"
+        >
+          {c.label}
+        </motion.span>
       </motion.div>
-    </section>
+    ))
+  ) : (
+    <div className="text-white/50 text-sm">Loading counters...</div>
+  )}
+</div>
+
+                    <AnimatePresence initial={false}>
+                      {rightExpanded && (
+                        <motion.div 
+                          initial={{ opacity: 0, height: 0, marginTop: 8 }} 
+                          animate={{ opacity: 1, height: "auto", marginTop: isMobile ? 12 : 16 }} 
+                          exit={{ opacity: 0, height: 0, marginTop: 8 }} 
+                          transition={{ duration: 0.32 }} 
+                          className="w-full mt-4"
+                        >
+                          <div className={`${isMobile ? 'p-3' : 'p-4'} rounded-xl bg-black/50 border border-white/8 backdrop-blur-md text-white/90`}>
+                            <div className="flex flex-col gap-3 min-w-0">
+                              <div className="flex items-start gap-3 text-sm md:text-base">
+                                <FaMapMarkerAlt className="text-cyan-200 shrink-0 mt-0.5" />
+                                <div className="min-w-0">
+                                  <div className="leading-tight">Chennai, India</div>
+                                </div>
+                              </div>
+
+                              <div className="flex items-start gap-3 text-sm md:text-base">
+                                <FaEnvelope className="text-cyan-200 shrink-0 mt-0.5" />
+                                <div className="min-w-0">
+                                  <a className="underline text-white/90 break-words" href="mailto:deepakofficial0103@gmail.com">deepakofficial0103@gmail.com</a>
+                                </div>
+                              </div>
+
+                              <div className="flex items-start gap-3 text-sm md:text-base">
+                                <FaCalendarAlt className="text-cyan-200 shrink-0 mt-0.5" />
+                                <div className="min-w-0">
+                                  <div className="whitespace-nowrap">4+ years experience</div>
+                                </div>
+                              </div>
+
+                              <motion.div 
+                                className={`text-sm md:text-base text-white/75 leading-relaxed ${isMobile ? 'overflow-hidden' : ''}`}
+                              >
+                                I focus on projects that deliver measurable public impact and scale reliably for actual users.
+                              </motion.div>
+
+                              <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                <div className="text-sm md:text-base text-white/80 flex items-center gap-2.5">
+                                  <FaBolt className="text-yellow-300 text-lg" />
+                                  <span>Open to freelance & internships</span>
+                                </div>
+
+                                <div className="flex gap-2">
+                                  <a href="#projects" className="px-3 py-1 rounded-md bg-cyansoft text-black text-sm font-medium">Projects</a>
+                                  <a href="#contact" className="px-3 py-1 rounded-md border border-white/10 text-sm">Contact</a>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
+              </motion.div>
+
+              <motion.div 
+                layout 
+                key="right-stack" 
+                variants={staggerContainer}
+                className="md:col-span-2 flex flex-col gap-6"
+              >
+                <motion.div
+                  custom={1}
+                  variants={cardVariants}
+                  whileHover="hover"
+                  whileTap="tap"
+                  className="transform-gpu perspective-1000"
+                >
+                  <CompactBio 
+                    data={cfg.bio} 
+                    onExpandedChange={(isOpen) => setRightExpanded(Boolean(isOpen))}
+                    isMobile={isMobile}
+                    isExpanded={isMobile ? contentExpanded : rightExpanded}
+                  />
+                </motion.div>
+                <motion.div
+                  custom={2}
+                  variants={cardVariants}
+                  whileHover="hover"
+                  whileTap="tap"
+                  className="transform-gpu perspective-1000"
+                >
+                  <RevealSegment title="Interests" content={cfg.holoSections?.find(s => s.type === "interests")?.content || "Computer Vision, NLP, Cloud AI, MLOps"} />
+                </motion.div>
+                <motion.div
+                  custom={3}
+                  variants={cardVariants}
+                  whileHover="hover"
+                  whileTap="tap"
+                  className="transform-gpu perspective-1000"
+                >
+                  <RevealSegment title="Currently Learning" content={cfg.holoSections?.find(s => s.type === "learning")?.content || "Kubernetes for ML, transformer optimization, distributed training"} />
+                </motion.div>
+
+                <div className="mt-2 md:mt-0 p-5 rounded-2xl border border-white/6 bg-gradient-to-br from-white/3 to-white/6 backdrop-blur-md">
+                  <div className="flex flex-col gap-4">
+                    {isMobile && (
+                      <motion.button
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => {
+                          setContentExpanded(!contentExpanded);
+                          setRightExpanded(!contentExpanded);
+                        }}
+                        className={`w-full px-4 py-3 rounded-xl text-sm font-medium
+                          bg-gradient-to-r from-cyan-500/20 via-blue-500/15 to-cyan-400/20 
+                          border border-cyan-500/20 backdrop-blur-sm
+                          transition-all duration-300 transform
+                          ${contentExpanded 
+                            ? 'text-cyan-300 shadow-lg shadow-cyan-500/20' 
+                            : 'text-white/90'
+                          }`}
+                      >
+                        <div className="flex items-center justify-center gap-2">
+                          <span>{contentExpanded ? 'Show Less' : 'Read More'}</span>
+                          <motion.div
+                            animate={{ 
+                              rotate: contentExpanded ? 180 : 0,
+                              y: contentExpanded ? -1 : 1 
+                            }}
+                            transition={{ duration: 0.3 }}
+                          >
+                            {contentExpanded ? <FaChevronUp /> : <FaChevronDown />}
+                          </motion.div>
+                        </div>
+                      </motion.button>
+                    )}
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <motion.a whileHover={{ y: -3 }} whileTap={{ scale: 0.98 }} href="#projects" className="px-5 py-2 rounded-md bg-cyansoft text-black text-sm md:text-base font-medium text-center">View Projects</motion.a>
+                      <motion.a whileHover={{ y: -3 }} whileTap={{ scale: 0.98 }} href="#contact" className="px-5 py-2 rounded-md border border-white/10 hover:bg-white/6 text-sm md:text-base text-center">Contact</motion.a>
+                      <motion.a whileHover={{ y: -3 }} whileTap={{ scale: 0.98 }} href="#resume" className="px-5 py-2 rounded-md border border-white/10 hover:bg-white/6 text-sm md:text-base text-center">Resume</motion.a>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </motion.section>
   );
 }
+
+/* ============================================================================
+   COMPACT BIO COMPONENT
+============================================================================ */
+const CompactBio = ({ data, onExpandedChange, isMobile, isExpanded }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const bioShort = data?.short || "";
+  const badges = Array.isArray(data?.badges) ? data.badges : [];
+  const expanded = data?.expanded || {};
+  
+  useEffect(() => {
+    if (typeof onExpandedChange === 'function') {
+      onExpandedChange(isExpanded);
+    }
+  }, [isExpanded, onExpandedChange]);
+
+  return (
+    <motion.div 
+      variants={page} 
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
+      className={`group relative ${
+        isMobile 
+          ? 'px-4 py-4 mx-auto rounded-xl' 
+          : 'p-5 sm:p-6 md:p-7 rounded-2xl'
+      } border-2 border-white/10 bg-gradient-to-br from-white/8 via-white/4 to-transparent 
+      backdrop-blur-xl overflow-hidden shadow-lg transform-gpu
+      ${isMobile ? 'shadow-cyan-500/10' : ''}`}
+    >
+      <motion.div
+        className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-blue-500/5 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+        animate={{
+          scale: isHovered ? [1, 1.2] : 1,
+          rotate: isHovered ? [0, 45] : 0,
+        }}
+        transition={{ duration: 10, repeat: Infinity, repeatType: "reverse", ease: "linear" }}
+      />
+
+      <div className="relative z-10">
+        <div className="flex items-start gap-3">
+          <div className="flex-1 min-w-0">
+            <motion.h5 
+              className={`${
+                isMobile 
+                  ? 'text-base font-bold mb-3'
+                  : 'text-lg md:text-xl font-bold mb-4'
+              } text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-cyan-200 to-cyan-100 
+              tracking-wide transform-gpu`}
+              animate={{ 
+                backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
+              }}
+              style={{ backgroundSize: "200% auto" }}
+              transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
+            >
+              Bio
+            </motion.h5>
+            <motion.p 
+              className={`${
+                isMobile
+                  ? 'text-sm leading-relaxed'
+                  : 'text-sm md:text-base lg:text-lg leading-relaxed'
+              } text-white/90 mb-5`}
+            >
+              {bioShort}
+            </motion.p>
+            <motion.div 
+              className={`flex gap-2 sm:gap-3 flex-wrap ${isMobile ? 'mt-3 justify-start' : 'mt-2'}`}
+            >
+              {badges.map((b, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ 
+                    delay: 0.3 + i * 0.15,
+                    duration: 0.5,
+                    ease: [0.22, 1, 0.36, 1]
+                  }}
+                >
+                  <Badge isMobile={isMobile}>{b}</Badge>
+                </motion.div>
+              ))}
+            </motion.div>
+            {!isMobile && (
+              <motion.button 
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => onExpandedChange(!isExpanded)} 
+                aria-expanded={isExpanded}
+                className="mt-6 flex items-center gap-2.5 px-5 py-2.5 rounded-xl
+                  bg-gradient-to-r from-cyan-500/20 via-blue-500/15 to-cyan-400/20 
+                  hover:from-cyan-500/30 hover:via-blue-500/25 hover:to-cyan-400/30 
+                  border-2 border-cyan-500/20 hover:border-cyan-400/30 
+                  transition-all duration-300 text-white shadow-lg hover:shadow-cyan-500/25
+                  transform-gpu"
+              >
+                <span className="text-sm font-medium tracking-wide">
+                  {isExpanded ? "Show Less" : "Read More"}
+                </span>
+                <motion.div
+                  animate={{ 
+                    rotate: isExpanded ? 180 : 0,
+                    y: isExpanded ? -1 : 1 
+                  }}
+                  transition={{ duration: 0.3 }}
+                  className="text-cyan-300"
+                >
+                  {isExpanded ? <FaChevronUp /> : <FaChevronDown />}
+                </motion.div>
+              </motion.button>
+            )}
+          </div>
+        </div>
+
+        <AnimatePresence mode="wait">
+          {isExpanded && (
+            <motion.div 
+              key="expanded" 
+              initial={{ opacity: 0, height: 0 }} 
+              animate={{ 
+                opacity: 1, 
+                height: "auto", 
+                transition: {
+                  height: { duration: isMobile ? 0.5 : 0.4 },
+                  opacity: { duration: 0.3, delay: 0.1 }
+                }
+              }} 
+              exit={{ 
+                opacity: 0, 
+                height: 0,
+                transition: {
+                  height: { duration: 0.3 },
+                  opacity: { duration: 0.2 }
+                }
+              }}
+              className="overflow-hidden text-sm md:text-base text-white/80 mt-6"
+            >
+              <div className="space-y-6">
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <div className="text-sm text-cyan-300/90 mb-2 font-medium">Key strengths</div>
+                  <ul className="list-disc list-inside space-y-1 ml-4">
+                    {expanded.strengths?.map((s, i) => (
+                      <motion.li 
+                        key={i}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.3 + i * 0.1 }}
+                      >
+                        {s}
+                      </motion.li>
+                    ))}
+                  </ul>
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                >
+                  <div className="text-sm text-cyan-300/90 mb-2 font-medium">Recent work</div>
+                  <p>{expanded.recent}</p>
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                >
+                  <div className="text-sm text-cyan-300/90 mb-2 font-medium">Why I build</div>
+                  <p>{expanded.values}</p>
+                </motion.div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      <motion.div
+        className="absolute inset-0 rounded-2xl pointer-events-none"
+        animate={{
+          boxShadow: isHovered 
+            ? "0 0 25px 3px rgba(0, 229, 255, 0.12), inset 0 0 25px 3px rgba(0, 229, 255, 0.08)"
+            : "0 0 0px 0px rgba(0, 229, 255, 0), inset 0 0 0px 0px rgba(0, 229, 255, 0)"
+        }}
+        transition={{ duration: 0.4 }}
+      />
+    </motion.div>
+  );
+};
+
+/* ============================================================================
+   BADGE COMPONENT
+============================================================================ */
+const Badge = ({ children, isMobile }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  
+  return (
+    <motion.span
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
+      initial={{ opacity: 0, scale: 0.8, y: 10 }}
+      animate={{ 
+        opacity: 1, 
+        scale: 1, 
+        y: 0,
+        transition: {
+          type: "spring",
+          stiffness: 400,
+          damping: 25
+        }
+      }}
+      whileHover={{ 
+        scale: isMobile ? 1.02 : 1.08,
+        y: isMobile ? -2 : -4,
+        transition: { 
+          type: "spring",
+          stiffness: 400,
+          damping: 10
+        }
+      }}
+      whileTap={{ 
+        scale: 0.95,
+        transition: {
+          type: "spring",
+          stiffness: 400,
+          damping: 10
+        }
+      }}
+      className={`
+        relative inline-block 
+        ${isMobile ? 'text-xs px-3 py-1' : 'text-xs md:text-sm px-4 py-1.5'} 
+        bg-gradient-to-r from-cyan-500/15 via-blue-500/10 to-cyan-400/15 
+        border ${isMobile ? 'border' : 'border-2'} border-cyan-500/20 
+        ${isMobile ? 'rounded-md' : 'rounded-lg'}
+        text-cyan-100 font-medium tracking-wide 
+        ${isMobile ? 'shadow-sm' : 'shadow-lg'} 
+        backdrop-blur-sm 
+        transition-all duration-300 
+        transform hover:shadow-cyan-500/25
+        overflow-hidden
+        ${isMobile ? 'active:scale-95' : ''}
+      `}
+    >
+      <motion.div
+        className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-cyan-400/20"
+        animate={{
+          x: isHovered ? ["0%", "100%", "0%"] : "0%",
+          opacity: isHovered ? [0.3, 0.5, 0.3] : 0
+        }}
+        transition={{
+          duration: 2,
+          repeat: Infinity,
+          ease: "linear"
+        }}
+      />
+      
+      <motion.div
+        className="absolute inset-0"
+        animate={{
+          boxShadow: isHovered 
+            ? [
+                "0 0 10px 2px rgba(0,229,255,0.3), inset 0 0 4px 1px rgba(0,229,255,0.3)",                "0 0 15px 3px rgba(0,229,255,0.4), inset 0 0 6px 2px rgba(0,229,255,0.4)",
+                "0 0 10px 2px rgba(0,229,255,0.3), inset 0 0 4px 1px rgba(0,229,255,0.3)"
+              ]
+            : "none"
+        }}
+        transition={{
+          duration: 2,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }}
+      />
+
+      <motion.span
+        className="relative z-10"
+        animate={isHovered ? {
+          y: [0, -2, 0],
+        } : {}}
+        transition={{
+          duration: 2,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }}
+      >
+        {children}
+      </motion.span>
+    </motion.span>
+  );
+};
+
+/* ============================================================================
+   REVEAL SEGMENT COMPONENT
+============================================================================ */
+const RevealSegment = ({ title, content }) => {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, amount: 0.25 });
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <motion.div 
+      ref={ref} 
+      initial={{ opacity: 0, y: 12, scale: 0.97 }} 
+      animate={inView ? { 
+        opacity: 1, 
+        y: 0, 
+        scale: 1,
+        transition: { 
+          duration: 0.6,
+          ease: [0.22, 1, 0.36, 1]
+        }
+      } : {}}
+      whileHover={{ 
+        scale: 1.02, 
+        y: -5,
+        transition: { duration: 0.2 }
+      }}
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
+      className="group p-5 rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-transparent backdrop-blur-xl shadow-lg relative overflow-hidden"
+    >
+      <motion.div
+        className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-transparent to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+        animate={{
+          scale: isHovered ? [1, 1.2] : 1,
+          rotate: isHovered ? [0, 45] : 0,
+        }}
+        transition={{ duration: 8, repeat: Infinity, repeatType: "reverse", ease: "linear" }}
+      />
+
+      <motion.div
+        className="absolute inset-0 opacity-0 group-hover:opacity-100"
+        animate={{
+          backgroundPosition: isHovered ? ["200% 0", "-200% 0"] : "0 0",
+        }}
+        transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+        style={{
+          background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.1) 50%, transparent 100%)",
+          backgroundSize: "200% 100%",
+        }}
+      />
+
+      <div className="relative z-10">
+        <motion.h5 
+          initial={{ opacity: 0.8 }}
+          animate={{ opacity: 1 }}
+          className="text-base md:text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-cyan-100 mb-2"
+        >
+          {title}
+        </motion.h5>
+        <motion.p 
+          initial={{ opacity: 0.6 }}
+          animate={{ opacity: 0.9 }}
+          className="text-sm md:text-base text-white/80"
+        >
+          {content}
+        </motion.p>
+      </div>
+
+      <motion.div
+        className="absolute inset-0 rounded-2xl"
+        animate={{
+          boxShadow: isHovered 
+            ? "0 0 20px 2px rgba(0, 229, 255, 0.1), inset 0 0 20px 2px rgba(0, 229, 255, 0.08)"
+            : "0 0 0px 0px rgba(0, 229, 255, 0), inset 0 0 0px 0px rgba(0, 229, 255, 0)"
+        }}
+        transition={{ duration: 0.3 }}
+      />
+    </motion.div>
+  );
+};
