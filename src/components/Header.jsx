@@ -12,6 +12,7 @@ import {
   FaInstagram,
   FaTwitter,
   FaGlobe,
+  FaChevronDown,
 } from "react-icons/fa";
 import { useRef, useState, useEffect, useMemo } from "react";
 import { db } from "@/firebase";
@@ -311,6 +312,28 @@ export default function Header() {
             );
           })}
         </motion.div>
+      </motion.div>
+
+      {/* ===== Explore More Button (Bottom) ===== */}
+      <motion.div
+        className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20"
+        animate={{ y: [0, 10, 0] }}
+        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            document
+              .getElementById("about")
+              ?.scrollIntoView({ behavior: "smooth" });
+          }}
+          className="flex flex-col items-center gap-2 text-cyansoft hover:text-cyan-300 transition-colors group"
+        >
+          <span className="text-sm font-medium opacity-75 group-hover:opacity-100">
+            Explore More
+          </span>
+          <FaChevronDown size={20} className="group-hover:scale-125 transition-transform" />
+        </button>
       </motion.div>
 
       {/* ===== Resume Modal ===== */}

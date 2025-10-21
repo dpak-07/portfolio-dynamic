@@ -14,7 +14,7 @@ const profileData = {
     "Building scalable full-stack apps with React & Node ⚙️",
   ],
   resumeDriveLink:
-    "https://drive.google.com/file/d/1BzHbJLKXz0xJFrsd9ZgJkAB0aR9d8nW_/view?usp=sharing",
+    "https://drive.google.com/file/d/1BazHbJLKXz0xJFrsd9ZgJkAB0aR9d8nW_/view?usp=sharing",
   socials: {
     github: "https://github.com/dpak-07",
     linkedin: "https://www.linkedin.com/in/deepak-saminathan/",
@@ -23,8 +23,8 @@ const profileData = {
     twitter: "",
     website: "https://deepak-portfolio.vercel.app",
   },
-};
-
+}
+a
 // ✅ Firebase setup
 const firebaseConfig = {
   apiKey: process.env.VITE_FIREBASE_API_KEY,
