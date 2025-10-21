@@ -1,76 +1,20 @@
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Github, Loader2 } from "lucide-react"
+import { useFirestoreData } from "@/hooks/useFirestoreData"
 
 export default function Projects() {
   const placeholder = "images/placeholder.jpg"
 
-  const categories = {
-    "Cloud / Backend": [
-      {
-        title: "College Website (Backend & Cloud)",
-        desc: "Worked as backend & cloud engineer",
-        long: "Developed APIs, deployed backend on AWS, managed cloud infra, and integrated Nginx for production hosting.",
-        img: "https://onedrive.live.com/embed?resid=XXXXXXXXXX",
-        tech: ["Flask", "MongoDB", "Nginx", "AWS"],
-        url: null,
-        live: "https://velammal.edu.in/webteam"
-      }
-    ],
-    "Full-Stack": [
-      {
-        title: "Hotel Management",
-        desc: "MongoDB + Flask project",
-        long: "Full-stack hotel & restaurant management system with CRUD, authentication, and admin dashboards.",
-        img: "https://onedrive.live.com/embed?resid=XXXXXXXXXX",
-        tech: ["Flask", "MongoDB", "HTML"],
-        url: "https://github.com/Deepak-S-github/hotel-management"
-      },
-      {
-        title: "Study Spark Platform",
-        desc: "Full-stack learning platform",
-        long: "Comprehensive platform designed to support interactive study modules with front & backend integration.",
-        img: "https://onedrive.live.com/embed?resid=XXXXXXXXXX",
-        tech: ["JavaScript", "HTML", "CSS"],
-        url: "https://github.com/dpak-07/STUDY_SPARK_01"
-      },
-      {
-        title: "Phushit",
-        desc: "Multi-platform app + dashboard",
-        long: "Includes an app, dashboard, API, and browser extension built using Flutter, Python, and C++.",
-        img: "https://onedrive.live.com/embed?resid=XXXXXXXXXX",
-        tech: ["Dart", "Python", "C++", "Flutter"],
-        url: "https://github.com/dpak-07/phushit"
-      },
-    ],
-    Frontend: [
-      {
-        title: "Calculator",
-        desc: "Simple calculator built with JS",
-        long: "A clean web calculator supporting basic arithmetic operations built with HTML, CSS, and JS.",
-        img: "https://onedrive.live.com/embed?resid=XXXXXXXXXX",
-        tech: ["HTML", "CSS", "JavaScript"],
-        url: "https://github.com/Deepak-S-github/CODSOFT-TASK-3-CALCULATOR-PPROJECT"
-      },
-      {
-        title: "Landing Page",
-        desc: "Static responsive landing page",
-        long: "Responsive and aesthetic landing page designed using pure HTML, CSS, and JS.",
-        img: "https://onedrive.live.com/embed?resid=XXXXXXXXXX",
-        tech: ["HTML", "CSS", "JavaScript"],
-        url: "https://github.com/dpak-07/CODSOFT-TASK-2-LANDING-PAGE"
-      }
-    ],
-    "Data / ML": [
-      {
-        title: "PySpark Learning",
-        desc: "PySpark exercises in notebooks",
-        long: "Hands-on PySpark learning workspace with DataFrame API examples for beginners in Big Data.",
-        img: "https://onedrive.live.com/embed?resid=XXXXXXXXXX",
-        tech: ["Python", "PySpark", "Jupyter"],
-        url: "https://github.com/dpak-07/py_spark_learing"
-      }
-    ],
+  // 🔥 Fetch projects from Firestore
+  const { data: projectsData, loading: firestoreLoading, error: firestoreError } = useFirestoreData('projects', 'data')
+
+  // Parse Firestore data or use empty categories
+  const categories = projectsData?.categories || {
+    "Cloud / Backend": [],
+    "Full-Stack": [],
+    "Frontend": [],
+    "Data / ML": [],
   }
 
   const [active, setActive] = useState("Cloud / Backend")
@@ -95,6 +39,23 @@ export default function Projects() {
     } else if (direction === "right") {
       setCurrentIndex((prev) => (prev - 1 + total) % total)
     }
+  }
+
+  // Show error state if Firestore fails
+  if (firestoreError) {
+    return (
+      <section id="projects" className="relative min-h-screen py-20 px-6 overflow-hidden bg-gradient-to-br from-[#050505] via-[#0a0a0a] to-[#101010]">
+        <motion.div
+          className="absolute inset-0 bg-[radial-gradient(circle_at_30%_40%,rgba(0,255,255,0.1),transparent_70%)]"
+          animate={{ scale: [1, 1.1, 1], opacity: [0.8, 1, 0.8] }}
+          transition={{ repeat: Infinity, duration: 10, ease: "easeInOut" }}
+        />
+        <div className="relative z-10 text-center">
+          <h2 className="text-3xl font-bold text-red-400 mb-4">Failed to Load Projects</h2>
+          <p className="text-white/70">{firestoreError}</p>
+        </div>
+      </section>
+    )
   }
 
   return (
@@ -144,7 +105,7 @@ export default function Projects() {
 
       {/* Loader */}
       <AnimatePresence>
-        {loading && (
+        {loading || firestoreLoading && (
           <motion.div
             key="loader"
             className="flex justify-center items-center h-40"
@@ -164,7 +125,7 @@ export default function Projects() {
 
       {/* 🟩 Desktop Grid + Mobile Carousel */}
       <AnimatePresence mode="wait">
-        {!loading && (
+        {!loading && !firestoreLoading && (
           <>
             {/* Desktop Grid */}
             <motion.div
@@ -175,7 +136,7 @@ export default function Projects() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.6 }}
             >
-              {categories[active].map((p, i) => (
+              {categories[active]?.map((p, i) => (
                 <ProjectCard key={p.title} p={p} i={i} setOpen={setOpen} handleImageError={handleImageError} />
               ))}
             </motion.div>
@@ -199,7 +160,7 @@ export default function Projects() {
                 animate={{ x: `-${currentIndex * 100}%` }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
               >
-                {categories[active].map((p, i) => (
+                {categories[active]?.map((p, i) => (
                   <div key={p.title} className="min-w-full px-4">
                     <ProjectCard p={p} i={i} setOpen={setOpen} handleImageError={handleImageError} />
                   </div>
@@ -208,7 +169,7 @@ export default function Projects() {
 
               {/* Progress Dots */}
               <div className="flex justify-center mt-6 gap-2">
-                {categories[active].map((_, i) => (
+                {categories[active]?.map((_, i) => (
                   <div
                     key={i}
                     className={`w-3 h-3 rounded-full transition-all duration-300 ${

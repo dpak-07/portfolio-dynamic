@@ -1,24 +1,46 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { FaBars, FaTimes } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
+import { useFirestoreData } from "@/hooks/useFirestoreData";
 
 export default function Navbar() {
-  // ✅ Section control via JSON
-  const [sectionsConfig] = useState({
-    home: true,
-    about: true,
-    "tech-stack": true,
-    projects: true,
-    resume: true,
-    contact: true,
-  });
+  // 🔥 Fetch sections visibility from Firestore
+  const { data: firestoreSectionsData } = useFirestoreData('sections', 'visibility');
 
-  const sections = Object.keys(sectionsConfig);
+  // Maintain original order: home, about, tech-stack, projects, resume, contact
+  const sectionOrder = ["home", "about", "tech-stack", "projects", "resume", "contact"];
+  
+  // Use Firestore data directly (memoized to prevent unnecessary recalculations)
+  const sectionsConfig = useMemo(() => {
+    return firestoreSectionsData || {
+      home: true,
+      about: true,
+      "tech-stack": true,
+      projects: true,
+      resume: true,
+      contact: true,
+    };
+  }, [firestoreSectionsData]);
+
+  const sections = useMemo(() => sectionOrder.filter(sec => sectionsConfig[sec]), [sectionsConfig]);
+
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState("home");
   const [isScrolled, setIsScrolled] = useState(false);
   const buttonsRef = useRef({});
+  const [underlinePos, setUnderlinePos] = useState({ x: 0, width: 0 });
+
+  // Update underline position
+  useEffect(() => {
+    if (buttonsRef.current[active]) {
+      const activeBtn = buttonsRef.current[active];
+      setUnderlinePos({
+        x: activeBtn.offsetLeft,
+        width: activeBtn.offsetWidth,
+      });
+    }
+  }, [active, sections]);
 
   // Smooth Scroll
   const scrollTo = (id) => {
@@ -35,6 +57,8 @@ export default function Navbar() {
 
   // Track Active Section
   useEffect(() => {
+    if (sections.length === 0) return;
+
     const navbar = document.querySelector("header");
     const navbarHeight = navbar ? navbar.offsetHeight : 80;
 
@@ -58,7 +82,7 @@ export default function Navbar() {
     });
 
     return () => observer.disconnect();
-  }, [sectionsConfig]);
+  }, [sectionsConfig, sections]);
 
   // Scroll effect for navbar style
   useEffect(() => {
@@ -110,7 +134,9 @@ export default function Navbar() {
             {sections.map((sec) => (
               <motion.button
                 key={sec}
-                ref={(el) => (buttonsRef.current[sec] = el)}
+                ref={(el) => {
+                  if (el) buttonsRef.current[sec] = el;
+                }}
                 onClick={() => scrollTo(sec)}
                 disabled={!sectionsConfig[sec]}
                 whileHover={{ scale: 1.08 }}
@@ -122,12 +148,11 @@ export default function Navbar() {
 
             {/* 🔥 Neon underline */}
             <motion.div
-              layoutId="underline"
               className="absolute bottom-0 h-[2px] bg-cyansoft/90 rounded-full shadow-[0_0_10px_#00ffff]"
               initial={false}
               animate={{
-                x: buttonsRef.current[active]?.offsetLeft || 0,
-                width: buttonsRef.current[active]?.offsetWidth || 0,
+                x: underlinePos.x,
+                width: underlinePos.width,
               }}
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
             />
@@ -214,7 +239,7 @@ export default function Navbar() {
       </motion.nav>
 
       {/* ✨ Global Glow Styles */}
-      <style jsx>{`
+      <style jsx="true">{`
         .glow-text {
           text-shadow: 0 0 10px rgba(0, 255, 255, 0.6),
             0 0 20px rgba(0, 255, 255, 0.4);

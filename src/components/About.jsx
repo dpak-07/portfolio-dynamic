@@ -39,6 +39,14 @@ function mergeDeep(defaultObj, overrideObj) {
   return out;
 }
 
+// Smooth scroll helper
+const smoothScroll = (id) => {
+  const element = document.getElementById(id);
+  if (element) {
+    element.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+};
+
 /* ============================================================================
    ICON MAPPING
 ============================================================================ */
@@ -81,11 +89,16 @@ const LoadingSpinner = memo(() => {
 LoadingSpinner.displayName = "LoadingSpinner";
 
 /* ============================================================================
-   COUNTER COMPONENT
+   COUNTER COMPONENT - FIXED WITH KEY RESET
 ============================================================================ */
-const Counter = memo(function Counter({ to = 0, ms = 1200, play = false }) {
+const Counter = memo(function Counter({ to = 0, ms = 1200, play = false, key: componentKey }) {
   const [val, setVal] = useState(0);
   const hasAnimatedRef = useRef(false);
+
+  useEffect(() => {
+    // Reset animation flag when key changes
+    hasAnimatedRef.current = false;
+  }, [componentKey]);
 
   useEffect(() => {
     if (!play || hasAnimatedRef.current) return;
@@ -224,6 +237,9 @@ Shimmer.displayName = "Shimmer";
 const InjectStyles = memo(() => {
   return (
     <style>{`
+      html {
+        scroll-behavior: smooth;
+      }
       @keyframes gradientMove { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
       .fancy-border { position: relative; overflow: hidden; border-radius: 14px; }
       .fancy-border::before {
@@ -534,6 +550,7 @@ export default function AboutWithDriveImage({ overrideConfig }) {
   const [reduceMotion, setReduceMotion] = useState(false);
   const [countersVisible, setCountersVisible] = useState(false);
   const [introDone, setIntroDone] = useState(false);
+  const [modeKey, setModeKey] = useState(0); // NEW: Track mode changes to reset counters
 
   const countersRef = useRef(null);
   const sectionRef = useRef(null);
@@ -615,10 +632,14 @@ export default function AboutWithDriveImage({ overrideConfig }) {
     setImgFailed(false);
   }, []);
 
-  const handleModeToggle = useCallback(() => {
+ const handleModeToggle = useCallback(() => {
     setMode((prev) => (prev === "holo" ? "mosaic" : "holo"));
+    setModeKey((prev) => prev + 1); // NEW: Force counter reset on mode change
+    // Scroll to top of About section
+    setTimeout(() => {
+      smoothScroll("about");
+    }, 100);
   }, []);
-
   const handleCardExpand = useCallback((id) => {
     setExpandedCard((prev) => (prev === id ? null : id));
   }, []);
@@ -636,7 +657,14 @@ export default function AboutWithDriveImage({ overrideConfig }) {
       <motion.section id="about" className="relative w-full py-8 px-4 sm:py-14 sm:px-6 md:py-20 md:px-8 lg:px-10 overflow-hidden">
         <InjectStyles />
         <div className="mx-auto max-w-6xl">
-          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white font-[Orbitron] mb-6">About Me</h2>
+          <motion.h2
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-2xl md:text-3xl lg:text-4xl font-bold text-white font-[Orbitron] mb-6"
+          >
+            About Me
+          </motion.h2>
           <LoadingSpinner />
         </div>
       </motion.section>
@@ -705,36 +733,41 @@ export default function AboutWithDriveImage({ overrideConfig }) {
           />
         )}
       </AnimatePresence>
-
       <div className="mx-auto max-w-6xl relative z-10">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
-          <motion.h2
-            variants={itemFade}
-            initial="hidden"
-            animate={sectionInView ? "enter" : "hidden"}
-            className="text-2xl md:text-3xl lg:text-4xl font-bold text-white font-[Orbitron]"
-            style={{ willChange: "transform, opacity" }}
-          >
+        {/* 🎯 TITLE SECTION - MATCHING PROJECTS STYLE */}
+        <motion.div
+          className="relative z-10 text-center mb-14"
+          initial={{ opacity: 0, y: -30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7 }}
+        >
+          <h2 className="text-5xl sm:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 animate-gradient">
             About Me
-          </motion.h2>
-          <AnimatePresence mode="wait">
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                transition={{ duration: 0.2 }}
-                className="text-xs sm:text-sm text-red-400 bg-red-500/10 px-3 py-2 rounded-lg border border-red-500/20"
-              >
-                ⚠️ Failed to load data.{" "}
-                <button onClick={refetch} className="underline hover:text-red-300">
-                  Retry
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+          </h2>
+          <p className="text-white/70 mt-3 text-sm sm:text-base">
+            Exploring my journey, skills, and passion for building impactful solutions
+          </p>
+        </motion.div>
 
+        {/* ERROR SECTION */}
+        <AnimatePresence mode="wait">
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="text-xs sm:text-sm text-red-400 bg-red-500/10 px-3 py-2 rounded-lg border border-red-500/20 max-w-md mx-auto mb-8"
+            >
+              ⚠️ Failed to load data.{" "}
+              <button onClick={refetch} className="underline hover:text-red-300">
+                Retry
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        
+        {/* CONTENT RENDERING */}
         <AnimatePresence mode="wait" initial={false}>
           {mode === "mosaic" ? (
             <motion.div
@@ -754,7 +787,7 @@ export default function AboutWithDriveImage({ overrideConfig }) {
                     className="mb-4 flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 text-cyan-300 text-sm font-medium hover:from-cyan-500/30 hover:to-blue-500/30 transition-all"
                     style={{ willChange: "transform" }}
                   >
-                    ← Back
+                    ← Back to Holo
                   </motion.button>
 
                   <motion.div className="flex flex-col gap-4 px-4 py-3" variants={staggerContainer} initial="hidden" animate="enter">
@@ -795,9 +828,6 @@ export default function AboutWithDriveImage({ overrideConfig }) {
                       </motion.article>
                     ))}
                   </motion.div>
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3, duration: 0.2 }} className="text-xs text-white/60 mt-2 px-3">
-                    Tap a card to expand.
-                  </motion.div>
                 </div>
               ) : (
                 <>
@@ -808,7 +838,7 @@ export default function AboutWithDriveImage({ overrideConfig }) {
                     className="col-span-3 mb-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 text-cyan-300 text-sm font-medium hover:from-cyan-500/30 hover:to-blue-500/30 transition-all w-fit"
                     style={{ willChange: "transform" }}
                   >
-                    ← Back
+                    ← Back to Holo
                   </motion.button>
 
                   <motion.div variants={staggerContainer} initial="hidden" animate="enter" className="col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
@@ -847,14 +877,16 @@ export default function AboutWithDriveImage({ overrideConfig }) {
               )}
             </motion.div>
           ) : (
+            /* HOLO LAYOUT */
             <motion.div
-              key="holo"
+              key={`holo-${modeKey}`}
               variants={staggerContainer}
               initial="hidden"
               animate="enter"
               exit="exit"
               className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 items-stretch mx-auto max-w-[95%] sm:max-w-[90%] md:max-w-none"
             >
+              {/* PROFILE CARD */}
               <motion.div
                 layout
                 key="profile-card"
@@ -946,7 +978,7 @@ export default function AboutWithDriveImage({ overrideConfig }) {
                       {counterData && counterData.length > 0
                         ? counterData.map((c, idx) => (
                             <motion.div
-                              key={c.id}
+                              key={`${c.id}-${modeKey}`}
                               initial={{ opacity: 0, y: 8 }}
                               whileInView={{ opacity: 1, y: 0 }}
                               viewport={{ once: true, amount: 0.6 }}
@@ -954,7 +986,7 @@ export default function AboutWithDriveImage({ overrideConfig }) {
                               className="text-center min-w-0"
                               style={{ willChange: "transform, opacity" }}
                             >
-                              <Counter to={Number(c.value) || 0} play={countersVisible} ms={1000} />
+                              <Counter key={`${c.id}-${modeKey}`} to={Number(c.value) || 0} play={countersVisible} ms={1000} />
                               <span className="text-sm md:text-base text-white/70">{c.label}</span>
                             </motion.div>
                           ))
@@ -1001,12 +1033,18 @@ export default function AboutWithDriveImage({ overrideConfig }) {
                                   <span>Open to freelance & internships</span>
                                 </div>
                                 <div className="flex gap-2">
-                                  <a href="#projects" className="px-3 py-1 rounded-md bg-cyan-400 text-black text-sm font-medium">
+                                  <motion.button
+                                    onClick={() => smoothScroll("projects")}
+                                    className="px-3 py-1 rounded-md bg-cyan-400 text-black text-sm font-medium hover:bg-cyan-300 transition-colors"
+                                  >
                                     Projects
-                                  </a>
-                                  <a href="#contact" className="px-3 py-1 rounded-md border border-white/10 text-sm">
+                                  </motion.button>
+                                  <motion.button
+                                    onClick={() => smoothScroll("contact")}
+                                    className="px-3 py-1 rounded-md border border-white/10 text-sm hover:bg-white/10 transition-colors"
+                                  >
                                     Contact
-                                  </a>
+                                  </motion.button>
                                 </div>
                               </div>
                             </div>
@@ -1018,6 +1056,7 @@ export default function AboutWithDriveImage({ overrideConfig }) {
                 </div>
               </motion.div>
 
+              {/* RIGHT STACK - BIO + INTERESTS + LEARNING */}
               <motion.div layout key="right-stack" variants={staggerContainer} className="md:col-span-2 flex flex-col gap-6">
                 <motion.div custom={1} variants={cardVariants} whileHover="hover" whileTap="tap" className="transform-gpu perspective-1000" style={{ willChange: "transform" }}>
                   <CompactBio
@@ -1074,33 +1113,33 @@ export default function AboutWithDriveImage({ overrideConfig }) {
                     )}
 
                     <div className="flex flex-col sm:flex-row gap-3">
-                      <motion.a
+                     <motion.button
                         whileHover={{ y: -3 }}
                         whileTap={{ scale: 0.98 }}
-                        href="#projects"
+                        onClick={() => smoothScroll("projects")}
                         className="px-5 py-2 rounded-md bg-cyan-400/20 border border-cyan-400/40 text-cyan-300 text-sm md:text-base font-medium text-center hover:bg-cyan-400/30 transition-all"
                         style={{ willChange: "transform" }}
                       >
                         View Projects
-                      </motion.a>
-                      <motion.a
+                      </motion.button>
+                      <motion.button
                         whileHover={{ y: -3 }}
                         whileTap={{ scale: 0.98 }}
-                        href="#contact"
+                        onClick={() => smoothScroll("contact")}
                         className="px-5 py-2 rounded-md border border-white/10 hover:bg-white/6 text-sm md:text-base text-center transition-all"
                         style={{ willChange: "transform" }}
                       >
                         Contact
-                      </motion.a>
-                      <motion.a
+                      </motion.button>
+                      <motion.button
                         whileHover={{ y: -3 }}
                         whileTap={{ scale: 0.98 }}
-                        href="#resume"
+                        onClick={() => smoothScroll("resume")}
                         className="px-5 py-2 rounded-md border border-white/10 hover:bg-white/6 text-sm md:text-base text-center transition-all"
                         style={{ willChange: "transform" }}
                       >
                         Resume
-                      </motion.a>
+                      </motion.button>
                     </div>
                   </div>
                 </div>

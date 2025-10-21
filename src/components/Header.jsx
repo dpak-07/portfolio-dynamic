@@ -15,8 +15,7 @@ import {
   FaChevronDown,
 } from "react-icons/fa";
 import { useRef, useState, useEffect, useMemo } from "react";
-import { db } from "@/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { useFirestoreData } from "@/hooks/useFirestoreData";
 
 // ✅ Helper — Converts Google Drive URL → Preview & Download URLs
 const getDriveLinks = (url) => {
@@ -31,6 +30,9 @@ const getDriveLinks = (url) => {
 };
 
 export default function Header() {
+  // 🔥 Fetch profile data from Firestore
+  const { data: firestoreProfileData, loading: firestoreLoading, error: firestoreError } = useFirestoreData('portfolio', 'profile');
+
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -38,26 +40,18 @@ export default function Header() {
   const [showResume, setShowResume] = useState(false);
   const sectionRef = useRef(null);
 
-  // ✅ Fetch Firestore Data Once (no live listener)
+  // ✅ Update profile data from Firestore
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const docRef = doc(db, "portfolio", "profile");
-        const snap = await getDoc(docRef);
-        if (snap.exists()) {
-          setProfileData(snap.data());
-        } else {
-          throw new Error("Profile not found in Firestore.");
-        }
-      } catch (err) {
-        console.error("❌ Firestore fetch error:", err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProfile();
-  }, []);
+    if (firestoreProfileData) {
+      setProfileData(firestoreProfileData);
+      setLoading(false);
+    } else if (firestoreError) {
+      setError(firestoreError);
+      setLoading(false);
+    } else if (firestoreLoading) {
+      setLoading(true);
+    }
+  }, [firestoreProfileData, firestoreError, firestoreLoading]);
 
   // ✅ Drive links (memoized)
   const { preview, download } = useMemo(() => {
@@ -146,7 +140,7 @@ export default function Header() {
         <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-blue-500/25 blur-[160px] rounded-full animate-blob2"></div>
         <div className="absolute top-1/2 left-1/2 w-[600px] h-[600px] bg-teal-400/15 blur-[200px] rounded-full animate-blob3"></div>
 
-        <style jsx>{`
+        <style jsx="true">{`
           @keyframes gradientShift {
             0% {
               background-position: 0% 50%;

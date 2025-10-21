@@ -1,6 +1,7 @@
 import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion"
 import { Code2 } from "lucide-react"
 import { useEffect, useState } from "react"
+import { useFirestoreData } from "@/hooks/useFirestoreData"
 
 const containerVariants = {
   hidden: { opacity: 0, y: 40 },
@@ -39,18 +40,35 @@ const mobileSlideVariants = {
   },
 }
 
-export default function AnimatedTechStack() {
-  const categories = [
-    { title: "Languages", color: "from-purple-400 to-pink-500", tech: ["C", "Python", "Java", "JavaScript", "Dart", "HTML", "CSS", "TypeScript"] },
-    { title: "Frontend", color: "from-blue-500 to-cyan-400", tech: ["React", "Next.js", "Tailwind CSS", "Flutter", "Bootstrap", "Vite"] },
-    { title: "Backend", color: "from-green-500 to-emerald-400", tech: ["Node.js", "Express", "Flask", "FastAPI", "Spring Boot"] },
-    { title: "Databases", color: "from-orange-400 to-amber-500", tech: ["MongoDB", "MySQL", "SQLite", "PostgreSQL", "Firebase"] },
-    { title: "Cloud & DevOps", color: "from-yellow-400 to-lime-400", tech: ["AWS", "Google Cloud", "Docker", "Kubernetes", "Vercel"] },
-    { title: "AI & ML", color: "from-red-400 to-pink-400", tech: ["TensorFlow", "PyTorch", "OpenCV", "Keras", "NumPy", "Pandas"] },
-    { title: "Mobile", color: "from-teal-400 to-green-400", tech: ["React Native", "Flutter", "Android", "iOS", "Expo"] },
-    { title: "Tools", color: "from-indigo-400 to-blue-400", tech: ["Git", "GitHub", "VS Code", "Postman", "Linux", "Figma"] },
-  ]
+// Fallback categories in case Firestore data is unavailable
+const FALLBACK_CATEGORIES = [
+  { title: "Languages", color: "from-purple-400 to-pink-500", tech: ["C", "Python", "Java", "JavaScript", "Dart", "HTML", "CSS", "TypeScript"] },
+  { title: "Frontend", color: "from-blue-500 to-cyan-400", tech: ["React", "Next.js", "Tailwind CSS", "Flutter", "Bootstrap", "Vite"] },
+  { title: "Backend", color: "from-green-500 to-emerald-400", tech: ["Node.js", "Express", "Flask", "FastAPI", "Spring Boot"] },
+  { title: "Databases", color: "from-orange-400 to-amber-500", tech: ["MongoDB", "MySQL", "SQLite", "PostgreSQL", "Firebase"] },
+  { title: "Cloud & DevOps", color: "from-yellow-400 to-lime-400", tech: ["AWS", "Google Cloud", "Docker", "Kubernetes", "Vercel"] },
+  { title: "AI & ML", color: "from-red-400 to-pink-400", tech: ["TensorFlow", "PyTorch", "OpenCV", "Keras", "NumPy", "Pandas"] },
+  { title: "Mobile", color: "from-teal-400 to-green-400", tech: ["React Native", "Flutter", "Android", "iOS", "Expo"] },
+  { title: "Tools", color: "from-indigo-400 to-blue-400", tech: ["Git", "GitHub", "VS Code", "Postman", "Linux", "Figma"] },
+]
 
+// Color mapping for categories
+const COLOR_MAP = {
+  Languages: "from-purple-400 to-pink-500",
+  Frontend: "from-blue-500 to-cyan-400",
+  Backend: "from-green-500 to-emerald-400",
+  Databases: "from-orange-400 to-amber-500",
+  "Cloud & DevOps": "from-yellow-400 to-lime-400",
+  "AI & ML": "from-red-400 to-pink-400",
+  Mobile: "from-teal-400 to-green-400",
+  Tools: "from-indigo-400 to-blue-400",
+}
+
+export default function AnimatedTechStack() {
+  // Fetch tech stack data from Firestore
+  const { data: firestoreData, loading, error } = useFirestoreData("techStack", "categories")
+
+  const [categories, setCategories] = useState(FALLBACK_CATEGORIES)
   const [index, setIndex] = useState(0)
   const [dragStart, setDragStart] = useState(0)
   const [autoPlay, setAutoPlay] = useState(true)
@@ -60,6 +78,19 @@ export default function AnimatedTechStack() {
   const y = useMotionValue(0)
   const rotateX = useTransform(y, [-100, 100], [8, -8])
   const rotateY = useTransform(x, [-100, 100], [-8, 8])
+
+  // Process Firestore data and merge with colors
+  useEffect(() => {
+    if (firestoreData && firestoreData.techStackData) {
+      const processedCategories = firestoreData.techStackData.map((cat) => ({
+        title: cat.title,
+        color: COLOR_MAP[cat.title] || "from-cyan-400 to-blue-500",
+        tech: Array.isArray(cat.tech) ? cat.tech : [],
+      }))
+      setCategories(processedCategories)
+      console.log("✅ Tech stack loaded from Firestore")
+    }
+  }, [firestoreData])
 
   useEffect(() => {
     if (!autoPlay) return
@@ -94,6 +125,29 @@ export default function AnimatedTechStack() {
   const handleLeave = () => {
     x.set(0)
     y.set(0)
+  }
+
+  if (loading) {
+    return (
+      <section id="tech-stack" className="relative py-20 bg-black overflow-hidden">
+        <div className="max-w-6xl mx-auto px-6 md:px-10 flex items-center justify-center h-96">
+          <div className="text-center">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+              className="inline-block"
+            >
+              <Code2 className="w-12 h-12 text-cyan-400" />
+            </motion.div>
+            <p className="text-white/70 mt-4">Loading tech stack...</p>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  if (error) {
+    console.warn("⚠️ Using fallback tech stack data due to error:", error)
   }
 
   return (
@@ -214,7 +268,7 @@ export default function AnimatedTechStack() {
         {/* Outro */}
         <div className="text-center mt-20">
           <p className="text-white/50 text-sm md:text-base italic">
-            ✨ “Code. Learn. Build. Repeat.” — constantly refining the craft.
+            ✨ "Code. Learn. Build. Repeat." — constantly refining the craft.
           </p>
         </div>
       </motion.div>

@@ -1,4 +1,3 @@
-// src/App.jsx
 import { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import "./index.css";
@@ -26,14 +25,28 @@ import ResumeEditor from "./components/admin/resumeadmin";
 // Blog page
 import MassiveAnimatedBlogPage from "./components/blogpage";
 
-/* ✅ Inline Section Configuration JSON (controls which sections show on home) */
-const sectionsConfig = {
-  about: true,
-  tech: true,
-  projects: true,
-  resume: true,
-  contact: true,
-};
+// Firestore hook
+import { useFirestoreData } from "./hooks/useFirestoreData";
+
+/* ✅ Fetch Sections Configuration from Firestore */
+function SectionsConfigLoader({ children }) {
+  const { data: sectionsData, loading: sectionsLoading } = useFirestoreData('sections', 'visibility');
+
+  const sectionsConfig = sectionsData || {
+    home: true,
+    about: true,
+    "tech-stack": true,
+    projects: true,
+    resume: true,
+    contact: true,
+  };
+
+  if (sectionsLoading) {
+    return <LoadingScreen />;
+  }
+
+  return children(sectionsConfig);
+}
 
 /* ✅ AdminRoute — Protect admin pages */
 function AdminRoute({ children }) {
@@ -85,14 +98,14 @@ function AdminNavbar() {
 }
 
 /* ✅ Public Home Page Shell */
-function HomeShell() {
+function HomeShell({ sectionsConfig }) {
   return (
     <div className="relative overflow-x-hidden text-white">
       <Navbar />
-      <Header />
+      {sectionsConfig.home && <Header />}
       <main>
         {sectionsConfig.about && <About />}
-        {sectionsConfig.tech && <TechStack />}
+        {sectionsConfig["tech-stack"] && <TechStack />}
         {sectionsConfig.projects && <Projects />}
         {sectionsConfig.resume && <Resume />}
         {sectionsConfig.contact && <Contact />}
@@ -123,101 +136,105 @@ function App() {
   if (loading) return <LoadingScreen />;
 
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* 🌍 Public Routes */}
-        <Route path="/" element={<HomeShell />} />
+    <SectionsConfigLoader>
+      {(sectionsConfig) => (
+        <BrowserRouter>
+          <Routes>
+            {/* 🌍 Public Routes */}
+            <Route path="/" element={<HomeShell sectionsConfig={sectionsConfig} />} />
 
-        {/* 📰 Blog */}
-        <Route
-          path="/blog"
-          element={
-            <div className="min-h-screen bg-slate-50 text-slate-900">
-              <Navbar />
-              <main className="pt-6">
-                <MassiveAnimatedBlogPage />
-              </main>
-              <Footer />
-            </div>
-          }
-        />
+            {/* 📰 Blog */}
+            <Route
+              path="/blog"
+              element={
+                <div className="min-h-screen bg-slate-50 text-slate-900">
+                  <Navbar />
+                  <main className="pt-6">
+                    <MassiveAnimatedBlogPage />
+                  </main>
+                  <Footer />
+                </div>
+              }
+            />
 
-        {/* 🔐 Admin Routes */}
-        <Route path="/admin/login" element={<AdminLogin />} />
-        <Route
-          path="/admindsh"
-          element={
-            <AdminRoute>
-              <AdminDashboard />
-            </AdminRoute>
-          }
-        />
+            {/* 🔐 Admin Routes */}
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route
+              path="/admindsh"
+              element={
+                <AdminRoute>
+                  <AdminDashboard />
+                </AdminRoute>
+              }
+            />
 
-        {/* 🧭 Admin Editor Routes */}
-        <Route
-          path="/admin/header"
-          element={
-            <AdminRoute>
-              <div className="min-h-screen bg-[#000] text-white">
-                <AdminNavbar />
-                <HeaderEditor />
-              </div>
-            </AdminRoute>
-          }
-        />
+            {/* 🧭 Admin Editor Routes */}
+            <Route
+              path="/admin/header"
+              element={
+                <AdminRoute>
+                  <div className="min-h-screen bg-[#000] text-white">
+                    <AdminNavbar />
+                    <HeaderEditor />
+                  </div>
+                </AdminRoute>
+              }
+            />
 
-        <Route
-          path="/admin/about"
-          element={
-            <AdminRoute>
-              <div className="min-h-screen bg-[#000] text-white">
-                <AdminNavbar />
-                <AboutEditor />
-              </div>
-            </AdminRoute>
-          }
-        />
+            <Route
+              path="/admin/about"
+              element={
+                <AdminRoute>
+                  <div className="min-h-screen bg-[#000] text-white">
+                    <AdminNavbar />
+                    <AboutEditor />
+                  </div>
+                </AdminRoute>
+              }
+            />
 
-        <Route
-          path="/admin/techadmin"
-          element={
-            <AdminRoute>
-              <div className="min-h-screen bg-[#000] text-white">
-                <AdminNavbar />
-                <TechStackEditor />
-              </div>
-            </AdminRoute>
-          }
-        />
+            <Route
+              path="/admin/techadmin"
+              element={
+                <AdminRoute>
+                  <div className="min-h-screen bg-[#000] text-white">
+                    <AdminNavbar />
+                    <TechStackEditor />
+                  </div>
+                </AdminRoute>
+              }
+            />
 
-        <Route
-          path="/admin/projects"
-          element={
-            <AdminRoute>
-              <div className="min-h-screen bg-[#000] text-white">
-                <AdminNavbar />
-                <ProjectsEditor />
-              </div>
-            </AdminRoute>
-          }
-        />
+            <Route
+              path="/admin/projects"
+              element={
+                <AdminRoute>
+                  <div className="min-h-screen bg-[#000] text-white">
+                    <AdminNavbar />
+                    <ProjectsEditor />
+                  </div>
+                </AdminRoute>
+              }
+            />
 
-        <Route
-          path="/admin/resume"
-          element={
-            <AdminRoute>
-              <div className="min-h-screen bg-[#000] text-white">
-                <AdminNavbar />
-                <ResumeEditor />
-              </div>
-            </AdminRoute>
-          }
-        />
+            <Route
+              path="/admin/resume"
+              element={
+                <AdminRoute>
+                  <div className="min-h-screen bg-[#000] text-white">
+                    <AdminNavbar />
+                    <ResumeEditor />
+                  </div>
+                </AdminRoute>
+              }
+            />
 
-        {/* 🧭 Catch-all redirect */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+            {/* 🧭 Catch-all redirect */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </BrowserRouter>
+      )}
+    </SectionsConfigLoader>
   );
 }
 
