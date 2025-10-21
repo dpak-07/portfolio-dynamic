@@ -14,51 +14,7 @@ import {
   FaCalendarAlt,
   FaBolt,
 } from "react-icons/fa";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../firebase";
-
-/* ============================================================================
-   DEFAULT CONFIG (Fallback if Firestore fails)
-============================================================================ */
-const defaultConfig = {
-  image: {
-    url: "https://1drv.ms/i/c/ac01abdcf0387f53/IQTDfhsFAQDOQ5Zeh9Df-4-vAbMANaw6yEm8EdW4q4NpN4w?width=1280&height=1280",
-    iframeFallbackUrl: null,
-  },
-  initialMode: "holo",
-  cards: [
-    { id: "edu", title: "Education", icon: "graduation", short: "B.Tech — AI & Data Science (pre-final)", long: "Velammal Engineering College — Coursework in ML, DL, Data Mining. GPA: (add yours)" },
-    { id: "ai", title: "AI & ML", icon: "brain", short: "Computer vision, NLP, model deployment", long: "Model experience: classification, object detection, transformers; deployed with Flask/Node and Docker." },
-    { id: "full", title: "Full Stack", icon: "laptop", short: "React, Node.js, Flask, MongoDB", long: "Built responsive apps, auth flows, REST/GraphQL APIs, real-time features and CI/CD pipelines." },
-    { id: "cloud", title: "Cloud", icon: "cloud", short: "AWS / GCP basics; containerization", long: "Experience with EC2, S3, Cloud Run, Docker, and simple infra-as-code for reproducible deployments." },
-    { id: "awards", title: "Achievements", icon: "trophy", short: "Hackathons, Certificates, Internships", long: "Won campus hackathon; completed specializations and internships focusing on ML engineering and MLOps." },
-    { id: "goals", title: "Goals", icon: "compass", short: "Build production-ready AI systems", long: "Aim to scale AI systems in cloud-native ways, mentor others, and open-source useful tools." },
-  ],
-  counters: [
-    { id: "models", label: "ML Models Built", value: 12 },
-    { id: "projects", label: "Projects Completed", value: 25 },
-    { id: "clouds", label: "Cloud Deployments", value: 8 },
-  ],
-  bio: {
-    short: "I'm a pre-final year AI & Data Science student at Velammal Engineering College. I build practical ML systems and full-stack apps that solve real problems.",
-    badges: ["Production ML", "Full-stack", "MLOps"],
-    expanded: {
-      strengths: [
-        "End-to-end model lifecycle: training → deployment → monitoring",
-        "Frontend + backend: modern React, REST/APIs, realtime features",
-        "Lightweight MLOps: Docker, simple CI/CD, reproducible infra",
-      ],
-      recent: "Built a civic issue reporting prototype: photo & voice capture, auto-routing to authorities, duplicate detection, and a dashboard for tracking resolutions.",
-      values: "I focus on projects that deliver measurable public impact and scale reliably for actual users.",
-    },
-  },
-  holoSections: [
-    { type: "bio" },
-    { type: "interests", content: "Computer Vision, NLP, MLOps, Cloud-native AI, Open-source" },
-    { type: "learning", content: "Kubernetes for ML, transformer optimization, distributed training" },
-  ],
-  resumeTarget: "resume",
-};
+import { useFirestoreData } from "@/hooks/useFirestoreData";
 
 /* ============================================================================
    UTILITY FUNCTIONS
@@ -102,35 +58,18 @@ function LoadingSpinner() {
       <div className="relative">
         <motion.div
           className="w-16 h-16 rounded-full border-4 border-cyan-500/20"
-          animate={{
-            scale: [1, 1.2, 1],
-            rotate: [0, 180, 360],
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
+          animate={{ scale: [1, 1.2, 1], rotate: [0, 180, 360] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
         />
         <motion.div
           className="absolute inset-0 w-16 h-16 rounded-full border-4 border-transparent border-t-cyan-500"
           animate={{ rotate: 360 }}
-          transition={{
-            duration: 1,
-            repeat: Infinity,
-            ease: "linear",
-          }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
         />
         <motion.div
           className="absolute inset-0 m-auto w-2 h-2 rounded-full bg-cyan-500"
-          animate={{
-            scale: [1, 1.5, 1],
-            opacity: [0.5, 1, 0.5],
-          }}
-          transition={{
-            duration: 1.5,
-            repeat: Infinity,
-          }}
+          animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
+          transition={{ duration: 1.5, repeat: Infinity }}
         />
       </div>
     </div>
@@ -138,19 +77,16 @@ function LoadingSpinner() {
 }
 
 /* ============================================================================
-   COUNTER COMPONENT - OPTIMIZED
+   COUNTER COMPONENT - FIXED
 ============================================================================ */
 function Counter({ to = 0, ms = 1200, play = false }) {
   const [val, setVal] = useState(0);
   const hasAnimatedRef = useRef(false);
   
   useEffect(() => {
-    if (!play || hasAnimatedRef.current) {
-      return;
-    }
+    if (!play || hasAnimatedRef.current) return;
     
     hasAnimatedRef.current = true;
-    
     let raf;
     let start;
     
@@ -158,9 +94,7 @@ function Counter({ to = 0, ms = 1200, play = false }) {
       if (!start) start = t;
       const p = Math.min((t - start) / ms, 1);
       const eased = 1 - Math.pow(1 - p, 3);
-      const newVal = Math.floor(eased * to);
-      
-      setVal(newVal);
+      setVal(Math.floor(eased * to));
       
       if (p < 1) {
         raf = requestAnimationFrame(step);
@@ -168,7 +102,6 @@ function Counter({ to = 0, ms = 1200, play = false }) {
     };
     
     raf = requestAnimationFrame(step);
-    
     return () => {
       if (raf) cancelAnimationFrame(raf);
     };
@@ -178,155 +111,58 @@ function Counter({ to = 0, ms = 1200, play = false }) {
 }
 
 /* ============================================================================
-   ANIMATION VARIANTS
+   ANIMATION VARIANTS - UNCHANGED
 ============================================================================ */
 const page = {
-  hidden: { 
-    opacity: 0, 
-    y: 40, 
-    scale: 0.95,
-    rotateX: 5,
-    filter: 'blur(10px)'
-  },
+  hidden: { opacity: 0, y: 40, scale: 0.95, rotateX: 5, filter: 'blur(10px)' },
   enter: { 
-    opacity: 1, 
-    y: 0, 
-    scale: 1,
-    rotateX: 0,
-    filter: 'blur(0px)',
-    transition: { 
-      duration: 0.9,
-      ease: [0.22, 1, 0.36, 1],
-      staggerChildren: 0.12,
-      delay: 0.1,
-    }
+    opacity: 1, y: 0, scale: 1, rotateX: 0, filter: 'blur(0px)',
+    transition: { duration: 0.9, ease: [0.22, 1, 0.36, 1], staggerChildren: 0.12, delay: 0.1 }
   },
   exit: { 
-    opacity: 0, 
-    y: -30, 
-    scale: 0.95,
-    rotateX: -5,
-    filter: 'blur(8px)',
-    transition: { 
-      duration: 0.6, 
-      ease: [0.65, 0, 0.35, 1],
-    }
+    opacity: 0, y: -30, scale: 0.95, rotateX: -5, filter: 'blur(8px)',
+    transition: { duration: 0.6, ease: [0.65, 0, 0.35, 1] }
   },
 };
 
 const staggerContainer = {
   hidden: { opacity: 0 },
-  enter: { 
-    opacity: 1,
-    transition: { 
-      staggerChildren: 0.08, 
-      delayChildren: 0.1,
-      duration: 0.5
-    }
-  },
-  exit: { 
-    opacity: 0,
-    transition: { 
-      staggerChildren: 0.05, 
-      staggerDirection: -1,
-      duration: 0.3
-    }
-  }
+  enter: { opacity: 1, transition: { staggerChildren: 0.08, delayChildren: 0.1, duration: 0.5 } },
+  exit: { opacity: 0, transition: { staggerChildren: 0.05, staggerDirection: -1, duration: 0.3 } }
 };
 
 const itemFade = {
   hidden: { opacity: 0, y: 15, scale: 0.98 },
-  enter: { 
-    opacity: 1, 
-    y: 0, 
-    scale: 1,
-    transition: { 
-      duration: 0.5, 
-      ease: [0.22, 1, 0.36, 1]
-    }
-  },
-  exit: {
-    opacity: 0,
-    y: -10,
-    scale: 0.98,
-    transition: {
-      duration: 0.3,
-      ease: [0.65, 0, 0.35, 1]
-    }
-  }
+  enter: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
+  exit: { opacity: 0, y: -10, scale: 0.98, transition: { duration: 0.3, ease: [0.65, 0, 0.35, 1] } }
 };
 
 const cardFactory = (isMobile) => ({
   hidden: (i) => ({ 
-    opacity: 0, 
-    y: isMobile ? 60 : 30, 
-    x: isMobile ? 0 : -20, 
-    scale: isMobile ? 0.8 : 0.95,
-    rotateX: isMobile ? 15 : 10,
-    rotateY: isMobile ? 0 : -15,
-    filter: 'blur(10px)',
+    opacity: 0, y: isMobile ? 60 : 30, x: isMobile ? 0 : -20, scale: isMobile ? 0.8 : 0.95,
+    rotateX: isMobile ? 15 : 10, rotateY: isMobile ? 0 : -15, filter: 'blur(10px)'
   }),
   enter: (i) => ({ 
-    opacity: 1, 
-    y: 0, 
-    x: 0, 
-    scale: 1,
-    rotateX: 0,
-    rotateY: 0,
-    filter: 'blur(0px)',
-    transition: { 
-      duration: isMobile ? 0.8 : 0.6,
-      delay: isMobile ? i * 0.15 : i * 0.08,
-      ease: [0.22, 1, 0.36, 1],
-    } 
+    opacity: 1, y: 0, x: 0, scale: 1, rotateX: 0, rotateY: 0, filter: 'blur(0px)',
+    transition: { duration: isMobile ? 0.8 : 0.6, delay: isMobile ? i * 0.15 : i * 0.08, ease: [0.22, 1, 0.36, 1] } 
   }),
   exit: (i) => ({ 
-    opacity: 0, 
-    y: isMobile ? 40 : -20, 
-    scale: isMobile ? 0.85 : 0.95,
-    filter: 'blur(8px)',
-    transition: { 
-      duration: isMobile ? 0.5 : 0.4,
-      delay: isMobile ? (i * 0.1) : 0,
-      ease: [0.65, 0, 0.35, 1]
-    } 
+    opacity: 0, y: isMobile ? 40 : -20, scale: isMobile ? 0.85 : 0.95, filter: 'blur(8px)',
+    transition: { duration: isMobile ? 0.5 : 0.4, delay: isMobile ? (i * 0.1) : 0, ease: [0.65, 0, 0.35, 1] } 
   }),
-  hover: {
-    scale: isMobile ? 1.02 : 1.05,
-    y: isMobile ? -4 : -8,
-    transition: {
-      duration: 0.3,
-      ease: "easeOut"
-    }
-  },
-  tap: {
-    scale: 0.98,
-    transition: {
-      duration: 0.2,
-      ease: "easeOut"
-    }
-  }
+  hover: { scale: isMobile ? 1.02 : 1.05, y: isMobile ? -4 : -8, transition: { duration: 0.3, ease: "easeOut" } },
+  tap: { scale: 0.98, transition: { duration: 0.2, ease: "easeOut" } }
 });
 
 const imgFloat = (reduceMotion) => ({
-  idle: { 
-    y: 0, 
-    rotate: 0, 
-    scale: 1,
-    filter: 'brightness(1)'
-  },
-  float: reduceMotion 
-    ? { y: 0, rotate: 0, scale: 1, filter: 'brightness(1)' } 
-    : { 
-        y: [-8, 8, -8], 
-        rotate: [-1, 1, -1], 
-        scale: [1, 1.02, 1],
-        filter: ['brightness(1)', 'brightness(1.1)', 'brightness(1)']
-      },
+  idle: { y: 0, rotate: 0, scale: 1, filter: 'brightness(1)' },
+  float: reduceMotion ? { y: 0, rotate: 0, scale: 1, filter: 'brightness(1)' } : { 
+    y: [-8, 8, -8], rotate: [-1, 1, -1], scale: [1, 1.02, 1], filter: ['brightness(1)', 'brightness(1.1)', 'brightness(1)']
+  }
 });
 
 /* ============================================================================
-   SHIMMER EFFECT
+   SHIMMER & STYLES
 ============================================================================ */
 function Shimmer() {
   return (
@@ -343,9 +179,6 @@ function Shimmer() {
   );
 }
 
-/* ============================================================================
-   INJECT STYLES
-============================================================================ */
 function InjectStyles() {
   return (
     <style>
@@ -363,13 +196,8 @@ function InjectStyles() {
       .inner-glass { position: relative; z-index: 1; background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); box-shadow: inset 0 2px 10px rgba(0,0,0,0.42), 0 6px 18px rgba(0,0,0,0.45); }
       .pulse-hover:hover { box-shadow: 0 10px 30px rgba(0,229,255,0.08); transform: translateY(-4px) scale(1.01); }
       @media (max-width: 640px) {
-        .inner-glass {
-          background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
-          box-shadow: inset 0 2px 8px rgba(0,0,0,0.4), 0 8px 16px rgba(0,0,0,0.3);
-        }
-        .fancy-border::before {
-          background: linear-gradient(90deg, rgba(0,229,255,0.1), rgba(0,0,0,0) 30%, rgba(0,229,255,0.05));
-        }
+        .inner-glass { background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)); box-shadow: inset 0 2px 8px rgba(0,0,0,0.4), 0 8px 16px rgba(0,0,0,0.3); }
+        .fancy-border::before { background: linear-gradient(90deg, rgba(0,229,255,0.1), rgba(0,0,0,0) 30%, rgba(0,229,255,0.05)); }
       }
       `}
     </style>
@@ -377,104 +205,26 @@ function InjectStyles() {
 }
 
 /* ============================================================================
-   TOGGLE SWITCH COMPONENT
-============================================================================ */
-function ToggleSwitch({ mode, onToggle }) {
-  return (
-    <motion.div 
-      className="relative flex items-center"
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-    >
-      <button
-        onClick={onToggle}
-        className={`
-          relative w-16 h-8 rounded-full transition-all duration-300 ease-in-out
-          ${mode === "holo" 
-            ? 'bg-gradient-to-r from-cyan-500 to-blue-500' 
-            : 'bg-gradient-to-r from-gray-600 to-gray-700'
-          }
-          shadow-lg hover:shadow-xl
-        `}
-        aria-label={`Switch to ${mode === "holo" ? "Mosaic" : "Holo"} mode`}
-      >
-        <motion.div
-          className={`
-            absolute top-1 w-6 h-6 rounded-full bg-white shadow-lg
-            flex items-center justify-center
-          `}
-          initial={false}
-          animate={{ 
-            x: mode === "holo" ? 34 : 4,
-          }}
-          transition={{
-            type: "spring",
-            stiffness: 400,
-            damping: 30
-          }}
-        >
-          <div className="text-xs font-bold">
-            {mode === "holo" ? "H" : "M"}
-          </div>
-        </motion.div>
-      </button>
-      
-      <motion.span 
-        className="ml-3 text-sm font-medium text-white/80"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-      >
-        {mode === "holo" ? "Holo" : "Mosaic"}
-      </motion.span>
-    </motion.div>
-  );
-}
-
-/* ============================================================================
-   MAIN COMPONENT - OPTIMIZED FOR MINIMAL DB CALLS
+   MAIN COMPONENT
 ============================================================================ */
 export default function AboutWithDriveImage({ overrideConfig }) {
-  const [firestoreData, setFirestoreData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    async function fetchFirestoreData() {
-      try {
-        const ref = doc(db, "aboutpage", "main");
-        const snap = await getDoc(ref);
-        if (snap.exists()) {
-          setFirestoreData(snap.data());
-        }
-      } catch (err) {
-        setError(err);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchFirestoreData();
-  }, []);
+  const { data: firestoreData, loading, error } = useFirestoreData("aboutpage", "main");
 
   const cfg = useMemo(() => {
-    const merged = firestoreData
-      ? mergeDeep(defaultConfig, firestoreData)
-      : defaultConfig;
+    if (!firestoreData && loading) return null;
+    if (!firestoreData && !loading) return null;
+    let baseConfig = firestoreData;
+    if (overrideConfig) baseConfig = mergeDeep(firestoreData, overrideConfig);
+    return baseConfig;
+  }, [firestoreData, overrideConfig, loading]);
 
-    if (overrideConfig && Object.keys(overrideConfig).length > 0) {
-      return mergeDeep(merged, overrideConfig);
-    }
-
-    return merged;
-  }, [firestoreData, overrideConfig]);
-
-  const [mode, setMode] = useState(cfg.initialMode);
+  const [mode, setMode] = useState("holo");
   const [hovered, setHovered] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
   const [expandedCard, setExpandedCard] = useState(null);
   const [contentExpanded, setContentExpanded] = useState(false);
   const [rightExpanded, setRightExpanded] = useState(false);
-  const [imgSrc, setImgSrc] = useState(cfg.image?.url || "");
+  const [imgSrc, setImgSrc] = useState("");
   const [imgFailed, setImgFailed] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgSize, setImgSize] = useState({ width: "14rem", height: "14rem" });
@@ -486,41 +236,30 @@ export default function AboutWithDriveImage({ overrideConfig }) {
   const sectionRef = useRef(null);
   const sectionInView = useInView(sectionRef, { once: true, amount: 0.14 });
 
-  const toggleMode = () => {
-    setMode(prevMode => prevMode === "holo" ? "mosaic" : "holo");
-  };
-
   useEffect(() => {
-    if (firestoreData) {
-      setMode(firestoreData.initialMode || defaultConfig.initialMode);
-      setImgSrc(firestoreData.image?.url || defaultConfig.image.url);
+    if (cfg?.image?.url) {
+      setImgSrc(cfg.image.url);
+      setImgFailed(false);
+      setImgLoaded(false);
     }
-  }, [firestoreData]);
-
-  useEffect(() => {
-    setImgSrc(cfg.image?.url || "");
-    setImgFailed(false);
-    setImgLoaded(false);
-  }, [cfg.image?.url]);
+  }, [cfg?.image?.url]);
 
   useEffect(() => {
     if (sectionInView) {
-      const t = setTimeout(() => {
-        setIntroDone(true);
-      }, 120);
+      const t = setTimeout(() => setIntroDone(true), 120);
       return () => clearTimeout(t);
     }
   }, [sectionInView]);
 
+  // ⚡ FIXED: Counter activation
   useEffect(() => {
-    if (sectionInView && introDone && !countersVisible) {
+    if (!loading && cfg && cfg.counters && cfg.counters.length > 0 && !countersVisible) {
       const timer = setTimeout(() => {
         setCountersVisible(true);
-      }, 400);
-      
+      }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [sectionInView, introDone, countersVisible]);
+  }, [loading, cfg, countersVisible]);
 
   useEffect(() => {
     try {
@@ -529,8 +268,7 @@ export default function AboutWithDriveImage({ overrideConfig }) {
       const handler = (e) => setReduceMotion(e.matches);
       if (mq?.addEventListener) mq.addEventListener("change", handler);
       return () => mq?.removeEventListener?.("change", handler);
-    } catch (e) {
-    }
+    } catch (e) {}
   }, []);
 
   useEffect(() => {
@@ -565,7 +303,7 @@ export default function AboutWithDriveImage({ overrideConfig }) {
     };
   }, [rightExpanded]);
 
-  const onImgError = (e) => {
+  const onImgError = () => {
     setImgFailed(true);
     setImgLoaded(true);
   };
@@ -575,25 +313,7 @@ export default function AboutWithDriveImage({ overrideConfig }) {
     setImgFailed(false);
   };
 
-  const cards = cfg.cards;
-  const counterData = cfg.counters;
-  const iframeFallback = cfg.image?.iframeFallbackUrl || imgSrc;
-  const variantsForImg = imgFloat(reduceMotion);
-  const cardVariants = cardFactory(isMobile);
-
-  const orbsVariants = {
-    animate: {
-      scale: [1, 1.2, 1],
-      opacity: [0.3, 0.5, 0.3],
-      transition: {
-        duration: 8,
-        repeat: Infinity,
-        ease: "easeInOut"
-      }
-    }
-  };
-
-  if (loading) {
+  if (!cfg || loading) {
     return (
       <motion.section id="about" className="relative w-full py-8 px-4 sm:py-14 sm:px-6 md:py-20 md:px-8 lg:px-10 overflow-hidden">
         <InjectStyles />
@@ -604,6 +324,16 @@ export default function AboutWithDriveImage({ overrideConfig }) {
       </motion.section>
     );
   }
+
+  const cards = cfg.cards || [];
+  const counterData = cfg.counters || [];
+  const iframeFallback = cfg.image?.iframeFallbackUrl || imgSrc;
+  const variantsForImg = imgFloat(reduceMotion);
+  const cardVariants = cardFactory(isMobile);
+
+  const orbsVariants = {
+    animate: { scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3], transition: { duration: 8, repeat: Infinity, ease: "easeInOut" } }
+  };
 
   return (
     <motion.section
@@ -639,76 +369,41 @@ export default function AboutWithDriveImage({ overrideConfig }) {
       </AnimatePresence>
 
       <div className="mx-auto max-w-6xl relative z-10">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
           <motion.h2 
             variants={itemFade} 
             initial="hidden" 
             animate={sectionInView ? "enter" : "hidden"} 
-            className="text-2xl md:text-3xl lg:text-4xl font-bold text-white font-[Orbitron] mb-3 sm:mb-0"
+            className="text-2xl md:text-3xl lg:text-4xl font-bold text-white font-[Orbitron]"
           >
             About Me
           </motion.h2>
-          
-          <div className="flex flex-col sm:flex-row items-center gap-4 self-center sm:self-auto w-full sm:w-auto">
-  {/* Manual Toggle Switch */}
-  <motion.div
-    variants={itemFade}
-    initial="hidden"
-    animate={sectionInView ? "enter" : "hidden"}
-    transition={{ delay: 0.06 }}
-  >
-    <ToggleSwitch mode={mode} onToggle={toggleMode} />
-  </motion.div>
-
-  {/* Button Group */}
-  <motion.div
-    variants={itemFade}
-    initial="hidden"
-    animate={sectionInView ? "enter" : "hidden"}
-    transition={{ delay: 0.1 }}
-    className="flex gap-2 bg-gradient-to-r from-[#0f172a]/70 via-[#1e293b]/70 to-[#0f172a]/70 backdrop-blur-xl rounded-full p-1.5 w-full sm:w-auto shadow-[0_0_15px_rgba(0,255,255,0.15)]"
-  >
-    <motion.button
-      whileTap={{ scale: 0.94 }}
-      whileHover={{ scale: 1.05, boxShadow: "0 0 20px rgba(0,255,255,0.5)" }}
-      onClick={() => setMode("mosaic")}
-      className={`relative flex-1 sm:flex-none px-5 sm:px-6 py-2.5 rounded-full text-sm md:text-base font-semibold transition-all duration-300 ${
-        mode === "mosaic"
-          ? "bg-gradient-to-r from-cyan-400 via-blue-400 to-cyan-300 text-black shadow-[0_0_20px_rgba(0,255,255,0.4)]"
-          : "text-white/80 hover:text-white hover:bg-white/10"
-      }`}
-    >
-      {mode === "mosaic" && (
-        <motion.span
-          layoutId="activeGlow"
-          className="absolute inset-0 rounded-full bg-cyan-300/20 blur-md"
-          transition={{ type: "spring", stiffness: 300, damping: 25 }}
-        />
-      )}
-      Mosaic
-    </motion.button>
-
-    <motion.button
-      whileTap={{ scale: 0.94 }}
-      whileHover={{ scale: 1.05, boxShadow: "0 0 20px rgba(255,0,255,0.4)" }}
-      onClick={() => setMode("holo")}
-      className={`relative flex-1 sm:flex-none px-5 sm:px-6 py-2.5 rounded-full text-sm md:text-base font-semibold transition-all duration-300 ${
-        mode === "holo"
-          ? "bg-gradient-to-r from-pink-400 via-purple-400 to-fuchsia-400 text-black shadow-[0_0_20px_rgba(255,0,255,0.4)]"
-          : "text-white/80 hover:text-white hover:bg-white/10"
-      }`}
-    >
-      {mode === "holo" && (
-        <motion.span
-          layoutId="activeGlow"
-          className="absolute inset-0 rounded-full bg-pink-400/20 blur-md"
-          transition={{ type: "spring", stiffness: 300, damping: 25 }}
-        />
-      )}
-      Holo
-    </motion.button>
-  </motion.div>
-</div>
+          <motion.div 
+            variants={itemFade} 
+            initial="hidden" 
+            animate={sectionInView ? "enter" : "hidden"} 
+            transition={{ delay: 0.08 }} 
+            className="flex gap-2 bg-white/8 backdrop-blur-md rounded-full p-1.5 border border-white/10 w-full sm:w-auto"
+          >
+            <motion.button 
+              whileTap={{ scale: 0.96 }} 
+              onClick={() => setMode("mosaic")} 
+              className={`flex-1 sm:flex-none px-4 sm:px-6 py-2.5 rounded-full text-sm md:text-base font-medium transition-all duration-300 ${
+                mode === "mosaic" ? "bg-cyansoft text-black shadow-lg shadow-cyan-500/20" : "text-white/80 hover:text-white hover:bg-white/10"
+              }`}
+            >
+              Mosaic
+            </motion.button>
+            <motion.button 
+              whileTap={{ scale: 0.96 }} 
+              onClick={() => setMode("holo")} 
+              className={`flex-1 sm:flex-none px-4 sm:px-6 py-2.5 rounded-full text-sm md:text-base font-medium transition-all duration-300 ${
+                mode === "holo" ? "bg-cyan-300 text-black shadow-lg shadow-cyan-500/20" : "text-white/80 hover:text-white hover:bg-white/10"
+              }`}
+            >
+              Holo
+            </motion.button>
+          </motion.div>
         </div>
 
         <AnimatePresence mode="wait" initial={false}>
@@ -816,18 +511,32 @@ export default function AboutWithDriveImage({ overrideConfig }) {
                       >
                         {!imgLoaded && (
                           <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/30">
-                            <svg className="w-10 h-10 animate-spin text-white/90" viewBox="0 0 50 50">
-                              <circle className="opacity-25" cx="25" cy="25" r="20" stroke="currentColor" strokeWidth="4" fill="none" />
-                              <path className="opacity-90" fill="currentColor" d="M43.94 25c0-10.41-8.43-18.85-18.85-18.85-10.41 0-18.85 8.44-18.85 18.85h4.07c0-8.16 6.62-14.78 14.78-14.78 8.16 0 14.78 6.62 14.78 14.78H43.94z" />
+                            <svg className="w-10 h-10 animate-spin text-white/90" viewBox="0 0 50 50" aria-hidden>
+                              <circle className="opacity-25" cx="25" cy="25" r="20" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                              <path className="opacity-90" fill="currentColor" d="M43.94 25c0-10.41-8.43-18.85-18.85-18.85-10.41 0-18.85 8.44-18.85 18.85h4.07c0-8.16 6.62-14.78 14.78-14.78 8.16 0 14.78 6.62 14.78 14.78H43.94z"></path>
                             </svg>
                           </div>
                         )}
 
                         {!imgFailed && imgSrc ? (
-                          <img src={imgSrc} alt="Profile" loading="lazy" onError={onImgError} onLoad={onImgLoad} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                          <img
+                            src={imgSrc}
+                            alt="Profile"
+                            loading="lazy"
+                            onError={onImgError}
+                            onLoad={onImgLoad}
+                            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                          />
                         ) : (
                           iframeFallback ? (
-                            <iframe src={iframeFallback} className="w-full h-full border-0" title="OneDrive Profile" sandbox="allow-same-origin allow-scripts allow-popups allow-forms" style={{ display: "block", minHeight: "100%", minWidth: "100%" }} onLoad={() => setImgLoaded(true)} />
+                            <iframe
+                              src={iframeFallback}
+                              className="w-full h-full border-0"
+                              title="OneDrive Profile"
+                              sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+                              style={{ display: "block", minHeight: "100%", minWidth: "100%" }}
+                              onLoad={() => setImgLoaded(true)}
+                            />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center bg-black/60 text-white/80">No image</div>
                           )
@@ -847,52 +556,24 @@ export default function AboutWithDriveImage({ overrideConfig }) {
 
                     <h3 className="mt-5 text-xl md:text-2xl font-bold text-white tracking-wide">Deepak</h3>
                     <p className="text-sm md:text-base text-white/80 mt-1.5">Pre-final year — AI & DS</p>
-<div ref={countersRef} className="mt-6 flex gap-8 justify-center w-full">
-  {counterData && counterData.length > 0 ? (
-    counterData.map((c, idx) => (
-      <motion.div
-        key={c.id}
-        initial={{ opacity: 0, y: 20, scale: 0.8 }}
-        whileInView={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{
-          duration: 0.6,
-          delay: idx * 0.15,
-          ease: [0.22, 1, 0.36, 1],
-        }}
-        viewport={{ once: true, amount: 0.3 }}
-        className="text-center min-w-0"
-      >
-        <motion.span
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{
-            delay: 0.2 + idx * 0.1,
-            type: "spring",
-            stiffness: 200,
-            damping: 12,
-          }}
-          className="block text-3xl md:text-4xl font-bold text-white"
-        >
-          {c.value}
-        </motion.span>
-        <motion.span
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{
-            delay: 0.3 + idx * 0.1,
-            duration: 0.5,
-            ease: [0.22, 1, 0.36, 1],
-          }}
-          className="text-sm md:text-base text-white/70 mt-2 block"
-        >
-          {c.label}
-        </motion.span>
-      </motion.div>
-    ))
-  ) : (
-    <div className="text-white/50 text-sm">Loading counters...</div>
-  )}
-</div>
+
+                    {/* ⚡ COUNTERS */}
+                    <div ref={countersRef} className="mt-6 flex gap-8 justify-center w-full">
+                      {counterData && counterData.length > 0 ? (
+                        counterData.map((c, idx) => (
+                          <motion.div 
+                            key={c.id} 
+                            initial={{ opacity: 0, y: 8 }} 
+                            whileInView={{ opacity: 1, y: 0 }} 
+                            viewport={{ once: true, amount: 0.6 }} 
+                            className="text-center min-w-0"
+                          >
+                            <Counter to={Number(c.value) || 0} play={countersVisible} />
+                            <span className="text-sm md:text-base text-white/70">{c.label}</span>
+                          </motion.div>
+                        ))
+                      ) : null}
+                    </div>
 
                     <AnimatePresence initial={false}>
                       {rightExpanded && (
@@ -907,37 +588,24 @@ export default function AboutWithDriveImage({ overrideConfig }) {
                             <div className="flex flex-col gap-3 min-w-0">
                               <div className="flex items-start gap-3 text-sm md:text-base">
                                 <FaMapMarkerAlt className="text-cyan-200 shrink-0 mt-0.5" />
-                                <div className="min-w-0">
-                                  <div className="leading-tight">Chennai, India</div>
-                                </div>
+                                <div className="min-w-0"><div className="leading-tight">Chennai, India</div></div>
                               </div>
-
                               <div className="flex items-start gap-3 text-sm md:text-base">
                                 <FaEnvelope className="text-cyan-200 shrink-0 mt-0.5" />
-                                <div className="min-w-0">
-                                  <a className="underline text-white/90 break-words" href="mailto:deepakofficial0103@gmail.com">deepakofficial0103@gmail.com</a>
-                                </div>
+                                <div className="min-w-0"><a className="underline text-white/90 break-words" href="mailto:deepakofficial0103@gmail.com">deepakofficial0103@gmail.com</a></div>
                               </div>
-
                               <div className="flex items-start gap-3 text-sm md:text-base">
                                 <FaCalendarAlt className="text-cyan-200 shrink-0 mt-0.5" />
-                                <div className="min-w-0">
-                                  <div className="whitespace-nowrap">4+ years experience</div>
-                                </div>
+                                <div className="min-w-0"><div className="whitespace-nowrap">4+ years experience</div></div>
                               </div>
-
-                              <motion.div 
-                                className={`text-sm md:text-base text-white/75 leading-relaxed ${isMobile ? 'overflow-hidden' : ''}`}
-                              >
+                              <motion.div className={`text-sm md:text-base text-white/75 leading-relaxed ${isMobile ? 'overflow-hidden' : ''}`}>
                                 I focus on projects that deliver measurable public impact and scale reliably for actual users.
                               </motion.div>
-
                               <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                 <div className="text-sm md:text-base text-white/80 flex items-center gap-2.5">
                                   <FaBolt className="text-yellow-300 text-lg" />
                                   <span>Open to freelance & internships</span>
                                 </div>
-
                                 <div className="flex gap-2">
                                   <a href="#projects" className="px-3 py-1 rounded-md bg-cyansoft text-black text-sm font-medium">Projects</a>
                                   <a href="#contact" className="px-3 py-1 rounded-md border border-white/10 text-sm">Contact</a>
@@ -958,13 +626,7 @@ export default function AboutWithDriveImage({ overrideConfig }) {
                 variants={staggerContainer}
                 className="md:col-span-2 flex flex-col gap-6"
               >
-                <motion.div
-                  custom={1}
-                  variants={cardVariants}
-                  whileHover="hover"
-                  whileTap="tap"
-                  className="transform-gpu perspective-1000"
-                >
+                <motion.div custom={1} variants={cardVariants} whileHover="hover" whileTap="tap" className="transform-gpu perspective-1000">
                   <CompactBio 
                     data={cfg.bio} 
                     onExpandedChange={(isOpen) => setRightExpanded(Boolean(isOpen))}
@@ -972,22 +634,10 @@ export default function AboutWithDriveImage({ overrideConfig }) {
                     isExpanded={isMobile ? contentExpanded : rightExpanded}
                   />
                 </motion.div>
-                <motion.div
-                  custom={2}
-                  variants={cardVariants}
-                  whileHover="hover"
-                  whileTap="tap"
-                  className="transform-gpu perspective-1000"
-                >
+                <motion.div custom={2} variants={cardVariants} whileHover="hover" whileTap="tap" className="transform-gpu perspective-1000">
                   <RevealSegment title="Interests" content={cfg.holoSections?.find(s => s.type === "interests")?.content || "Computer Vision, NLP, Cloud AI, MLOps"} />
                 </motion.div>
-                <motion.div
-                  custom={3}
-                  variants={cardVariants}
-                  whileHover="hover"
-                  whileTap="tap"
-                  className="transform-gpu perspective-1000"
-                >
+                <motion.div custom={3} variants={cardVariants} whileHover="hover" whileTap="tap" className="transform-gpu perspective-1000">
                   <RevealSegment title="Currently Learning" content={cfg.holoSections?.find(s => s.type === "learning")?.content || "Kubernetes for ML, transformer optimization, distributed training"} />
                 </motion.div>
 
@@ -1000,24 +650,13 @@ export default function AboutWithDriveImage({ overrideConfig }) {
                           setContentExpanded(!contentExpanded);
                           setRightExpanded(!contentExpanded);
                         }}
-                        className={`w-full px-4 py-3 rounded-xl text-sm font-medium
-                          bg-gradient-to-r from-cyan-500/20 via-blue-500/15 to-cyan-400/20 
-                          border border-cyan-500/20 backdrop-blur-sm
-                          transition-all duration-300 transform
-                          ${contentExpanded 
-                            ? 'text-cyan-300 shadow-lg shadow-cyan-500/20' 
-                            : 'text-white/90'
-                          }`}
+                        className={`w-full px-4 py-3 rounded-xl text-sm font-medium bg-gradient-to-r from-cyan-500/20 via-blue-500/15 to-cyan-400/20 border border-cyan-500/20 backdrop-blur-sm transition-all duration-300 transform ${
+                          contentExpanded ? 'text-cyan-300 shadow-lg shadow-cyan-500/20' : 'text-white/90'
+                        }`}
                       >
                         <div className="flex items-center justify-center gap-2">
                           <span>{contentExpanded ? 'Show Less' : 'Read More'}</span>
-                          <motion.div
-                            animate={{ 
-                              rotate: contentExpanded ? 180 : 0,
-                              y: contentExpanded ? -1 : 1 
-                            }}
-                            transition={{ duration: 0.3 }}
-                          >
+                          <motion.div animate={{ rotate: contentExpanded ? 180 : 0, y: contentExpanded ? -1 : 1 }} transition={{ duration: 0.3 }}>
                             {contentExpanded ? <FaChevronUp /> : <FaChevronDown />}
                           </motion.div>
                         </div>
@@ -1040,7 +679,7 @@ export default function AboutWithDriveImage({ overrideConfig }) {
 }
 
 /* ============================================================================
-   COMPACT BIO COMPONENT
+   SUB-COMPONENTS
 ============================================================================ */
 const CompactBio = ({ data, onExpandedChange, isMobile, isExpanded }) => {
   const [isHovered, setIsHovered] = useState(false);
@@ -1049,9 +688,7 @@ const CompactBio = ({ data, onExpandedChange, isMobile, isExpanded }) => {
   const expanded = data?.expanded || {};
   
   useEffect(() => {
-    if (typeof onExpandedChange === 'function') {
-      onExpandedChange(isExpanded);
-    }
+    if (typeof onExpandedChange === 'function') onExpandedChange(isExpanded);
   }, [isExpanded, onExpandedChange]);
 
   return (
@@ -1060,19 +697,12 @@ const CompactBio = ({ data, onExpandedChange, isMobile, isExpanded }) => {
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
       className={`group relative ${
-        isMobile 
-          ? 'px-4 py-4 mx-auto rounded-xl' 
-          : 'p-5 sm:p-6 md:p-7 rounded-2xl'
-      } border-2 border-white/10 bg-gradient-to-br from-white/8 via-white/4 to-transparent 
-      backdrop-blur-xl overflow-hidden shadow-lg transform-gpu
-      ${isMobile ? 'shadow-cyan-500/10' : ''}`}
+        isMobile ? 'px-4 py-4 mx-auto rounded-xl' : 'p-5 sm:p-6 md:p-7 rounded-2xl'
+      } border-2 border-white/10 bg-gradient-to-br from-white/8 via-white/4 to-transparent backdrop-blur-xl overflow-hidden shadow-lg transform-gpu ${isMobile ? 'shadow-cyan-500/10' : ''}`}
     >
       <motion.div
         className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-blue-500/5 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-        animate={{
-          scale: isHovered ? [1, 1.2] : 1,
-          rotate: isHovered ? [0, 45] : 0,
-        }}
+        animate={{ scale: isHovered ? [1, 1.2] : 1, rotate: isHovered ? [0, 45] : 0 }}
         transition={{ duration: 10, repeat: Infinity, repeatType: "reverse", ease: "linear" }}
       />
 
@@ -1080,42 +710,23 @@ const CompactBio = ({ data, onExpandedChange, isMobile, isExpanded }) => {
         <div className="flex items-start gap-3">
           <div className="flex-1 min-w-0">
             <motion.h5 
-              className={`${
-                isMobile 
-                  ? 'text-base font-bold mb-3'
-                  : 'text-lg md:text-xl font-bold mb-4'
-              } text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-cyan-200 to-cyan-100 
-              tracking-wide transform-gpu`}
-              animate={{ 
-                backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
-              }}
+              className={`${isMobile ? 'text-base font-bold mb-3' : 'text-lg md:text-xl font-bold mb-4'} text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-cyan-200 to-cyan-100 tracking-wide transform-gpu`}
+              animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
               style={{ backgroundSize: "200% auto" }}
               transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
             >
               Bio
             </motion.h5>
-            <motion.p 
-              className={`${
-                isMobile
-                  ? 'text-sm leading-relaxed'
-                  : 'text-sm md:text-base lg:text-lg leading-relaxed'
-              } text-white/90 mb-5`}
-            >
+            <motion.p className={`${isMobile ? 'text-sm leading-relaxed' : 'text-sm md:text-base lg:text-lg leading-relaxed'} text-white/90 mb-5`}>
               {bioShort}
             </motion.p>
-            <motion.div 
-              className={`flex gap-2 sm:gap-3 flex-wrap ${isMobile ? 'mt-3 justify-start' : 'mt-2'}`}
-            >
+            <motion.div className={`flex gap-2 sm:gap-3 flex-wrap ${isMobile ? 'mt-3 justify-start' : 'mt-2'}`}>
               {badges.map((b, i) => (
                 <motion.div
                   key={i}
                   initial={{ opacity: 0, scale: 0.9, y: 10 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
-                  transition={{ 
-                    delay: 0.3 + i * 0.15,
-                    duration: 0.5,
-                    ease: [0.22, 1, 0.36, 1]
-                  }}
+                  transition={{ delay: 0.3 + i * 0.15, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                 >
                   <Badge isMobile={isMobile}>{b}</Badge>
                 </motion.div>
@@ -1127,24 +738,10 @@ const CompactBio = ({ data, onExpandedChange, isMobile, isExpanded }) => {
                 whileTap={{ scale: 0.95 }}
                 onClick={() => onExpandedChange(!isExpanded)} 
                 aria-expanded={isExpanded}
-                className="mt-6 flex items-center gap-2.5 px-5 py-2.5 rounded-xl
-                  bg-gradient-to-r from-cyan-500/20 via-blue-500/15 to-cyan-400/20 
-                  hover:from-cyan-500/30 hover:via-blue-500/25 hover:to-cyan-400/30 
-                  border-2 border-cyan-500/20 hover:border-cyan-400/30 
-                  transition-all duration-300 text-white shadow-lg hover:shadow-cyan-500/25
-                  transform-gpu"
+                className="mt-6 flex items-center gap-2.5 px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500/20 via-blue-500/15 to-cyan-400/20 hover:from-cyan-500/30 hover:via-blue-500/25 hover:to-cyan-400/30 border-2 border-cyan-500/20 hover:border-cyan-400/30 transition-all duration-300 text-white shadow-lg hover:shadow-cyan-500/25 transform-gpu"
               >
-                <span className="text-sm font-medium tracking-wide">
-                  {isExpanded ? "Show Less" : "Read More"}
-                </span>
-                <motion.div
-                  animate={{ 
-                    rotate: isExpanded ? 180 : 0,
-                    y: isExpanded ? -1 : 1 
-                  }}
-                  transition={{ duration: 0.3 }}
-                  className="text-cyan-300"
-                >
+                <span className="text-sm font-medium tracking-wide">{isExpanded ? "Show Less" : "Read More"}</span>
+                <motion.div animate={{ rotate: isExpanded ? 180 : 0, y: isExpanded ? -1 : 1 }} transition={{ duration: 0.3 }} className="text-cyan-300">
                   {isExpanded ? <FaChevronUp /> : <FaChevronDown />}
                 </motion.div>
               </motion.button>
@@ -1157,59 +754,24 @@ const CompactBio = ({ data, onExpandedChange, isMobile, isExpanded }) => {
             <motion.div 
               key="expanded" 
               initial={{ opacity: 0, height: 0 }} 
-              animate={{ 
-                opacity: 1, 
-                height: "auto", 
-                transition: {
-                  height: { duration: isMobile ? 0.5 : 0.4 },
-                  opacity: { duration: 0.3, delay: 0.1 }
-                }
-              }} 
-              exit={{ 
-                opacity: 0, 
-                height: 0,
-                transition: {
-                  height: { duration: 0.3 },
-                  opacity: { duration: 0.2 }
-                }
-              }}
+              animate={{ opacity: 1, height: "auto", transition: { height: { duration: isMobile ? 0.5 : 0.4 }, opacity: { duration: 0.3, delay: 0.1 } } }} 
+              exit={{ opacity: 0, height: 0, transition: { height: { duration: 0.3 }, opacity: { duration: 0.2 } } }}
               className="overflow-hidden text-sm md:text-base text-white/80 mt-6"
             >
               <div className="space-y-6">
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                >
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
                   <div className="text-sm text-cyan-300/90 mb-2 font-medium">Key strengths</div>
                   <ul className="list-disc list-inside space-y-1 ml-4">
                     {expanded.strengths?.map((s, i) => (
-                      <motion.li 
-                        key={i}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.3 + i * 0.1 }}
-                      >
-                        {s}
-                      </motion.li>
+                      <motion.li key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 + i * 0.1 }}>{s}</motion.li>
                     ))}
                   </ul>
                 </motion.div>
-
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
-                >
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
                   <div className="text-sm text-cyan-300/90 mb-2 font-medium">Recent work</div>
                   <p>{expanded.recent}</p>
                 </motion.div>
-
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 }}
-                >
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
                   <div className="text-sm text-cyan-300/90 mb-2 font-medium">Why I build</div>
                   <p>{expanded.values}</p>
                 </motion.div>
@@ -1221,20 +783,13 @@ const CompactBio = ({ data, onExpandedChange, isMobile, isExpanded }) => {
 
       <motion.div
         className="absolute inset-0 rounded-2xl pointer-events-none"
-        animate={{
-          boxShadow: isHovered 
-            ? "0 0 25px 3px rgba(0, 229, 255, 0.12), inset 0 0 25px 3px rgba(0, 229, 255, 0.08)"
-            : "0 0 0px 0px rgba(0, 229, 255, 0), inset 0 0 0px 0px rgba(0, 229, 255, 0)"
-        }}
+        animate={{ boxShadow: isHovered ? "0 0 25px 3px rgba(0, 229, 255, 0.12), inset 0 0 25px 3px rgba(0, 229, 255, 0.08)" : "0 0 0px 0px rgba(0, 229, 255, 0), inset 0 0 0px 0px rgba(0, 229, 255, 0)" }}
         transition={{ duration: 0.4 }}
       />
     </motion.div>
   );
 };
 
-/* ============================================================================
-   BADGE COMPONENT
-============================================================================ */
 const Badge = ({ children, isMobile }) => {
   const [isHovered, setIsHovered] = useState(false);
   
@@ -1243,98 +798,28 @@ const Badge = ({ children, isMobile }) => {
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
       initial={{ opacity: 0, scale: 0.8, y: 10 }}
-      animate={{ 
-        opacity: 1, 
-        scale: 1, 
-        y: 0,
-        transition: {
-          type: "spring",
-          stiffness: 400,
-          damping: 25
-        }
-      }}
-      whileHover={{ 
-        scale: isMobile ? 1.02 : 1.08,
-        y: isMobile ? -2 : -4,
-        transition: { 
-          type: "spring",
-          stiffness: 400,
-          damping: 10
-        }
-      }}
-      whileTap={{ 
-        scale: 0.95,
-        transition: {
-          type: "spring",
-          stiffness: 400,
-          damping: 10
-        }
-      }}
-      className={`
-        relative inline-block 
-        ${isMobile ? 'text-xs px-3 py-1' : 'text-xs md:text-sm px-4 py-1.5'} 
-        bg-gradient-to-r from-cyan-500/15 via-blue-500/10 to-cyan-400/15 
-        border ${isMobile ? 'border' : 'border-2'} border-cyan-500/20 
-        ${isMobile ? 'rounded-md' : 'rounded-lg'}
-        text-cyan-100 font-medium tracking-wide 
-        ${isMobile ? 'shadow-sm' : 'shadow-lg'} 
-        backdrop-blur-sm 
-        transition-all duration-300 
-        transform hover:shadow-cyan-500/25
-        overflow-hidden
-        ${isMobile ? 'active:scale-95' : ''}
-      `}
+      animate={{ opacity: 1, scale: 1, y: 0, transition: { type: "spring", stiffness: 400, damping: 25 } }}
+      whileHover={{ scale: isMobile ? 1.02 : 1.08, y: isMobile ? -2 : -4, transition: { type: "spring", stiffness: 400, damping: 10 } }}
+      whileTap={{ scale: 0.95, transition: { type: "spring", stiffness: 400, damping: 10 } }}
+      className={`relative inline-block ${isMobile ? 'text-xs px-3 py-1' : 'text-xs md:text-sm px-4 py-1.5'} bg-gradient-to-r from-cyan-500/15 via-blue-500/10 to-cyan-400/15 border ${isMobile ? 'border' : 'border-2'} border-cyan-500/20 ${isMobile ? 'rounded-md' : 'rounded-lg'} text-cyan-100 font-medium tracking-wide ${isMobile ? 'shadow-sm' : 'shadow-lg'} backdrop-blur-sm transition-all duration-300 transform hover:shadow-cyan-500/25 overflow-hidden ${isMobile ? 'active:scale-95' : ''}`}
     >
       <motion.div
         className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-cyan-400/20"
-        animate={{
-          x: isHovered ? ["0%", "100%", "0%"] : "0%",
-          opacity: isHovered ? [0.3, 0.5, 0.3] : 0
-        }}
-        transition={{
-          duration: 2,
-          repeat: Infinity,
-          ease: "linear"
-        }}
+        animate={{ x: isHovered ? ["0%", "100%", "0%"] : "0%", opacity: isHovered ? [0.3, 0.5, 0.3] : 0 }}
+        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
       />
-      
       <motion.div
         className="absolute inset-0"
-        animate={{
-          boxShadow: isHovered 
-            ? [
-                "0 0 10px 2px rgba(0,229,255,0.3), inset 0 0 4px 1px rgba(0,229,255,0.3)",                "0 0 15px 3px rgba(0,229,255,0.4), inset 0 0 6px 2px rgba(0,229,255,0.4)",
-                "0 0 10px 2px rgba(0,229,255,0.3), inset 0 0 4px 1px rgba(0,229,255,0.3)"
-              ]
-            : "none"
-        }}
-        transition={{
-          duration: 2,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
+        animate={{ boxShadow: isHovered ? ["0 0 10px 2px rgba(0,229,255,0.3), inset 0 0 4px 1px rgba(0,229,255,0.3)", "0 0 15px 3px rgba(0,229,255,0.4), inset 0 0 6px 2px rgba(0,229,255,0.4)", "0 0 10px 2px rgba(0,229,255,0.3), inset 0 0 4px 1px rgba(0,229,255,0.3)"] : "none" }}
+        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
       />
-
-      <motion.span
-        className="relative z-10"
-        animate={isHovered ? {
-          y: [0, -2, 0],
-        } : {}}
-        transition={{
-          duration: 2,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
-      >
+      <motion.span className="relative z-10" animate={isHovered ? { y: [0, -2, 0] } : {}} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}>
         {children}
       </motion.span>
     </motion.span>
   );
 };
 
-/* ============================================================================
-   REVEAL SEGMENT COMPONENT
-============================================================================ */
 const RevealSegment = ({ title, content }) => {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, amount: 0.25 });
@@ -1344,69 +829,30 @@ const RevealSegment = ({ title, content }) => {
     <motion.div 
       ref={ref} 
       initial={{ opacity: 0, y: 12, scale: 0.97 }} 
-      animate={inView ? { 
-        opacity: 1, 
-        y: 0, 
-        scale: 1,
-        transition: { 
-          duration: 0.6,
-          ease: [0.22, 1, 0.36, 1]
-        }
-      } : {}}
-      whileHover={{ 
-        scale: 1.02, 
-        y: -5,
-        transition: { duration: 0.2 }
-      }}
+      animate={inView ? { opacity: 1, y: 0, scale: 1, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } } : {}}
+      whileHover={{ scale: 1.02, y: -5, transition: { duration: 0.2 } }}
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
       className="group p-5 rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-transparent backdrop-blur-xl shadow-lg relative overflow-hidden"
     >
       <motion.div
         className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-transparent to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-        animate={{
-          scale: isHovered ? [1, 1.2] : 1,
-          rotate: isHovered ? [0, 45] : 0,
-        }}
+        animate={{ scale: isHovered ? [1, 1.2] : 1, rotate: isHovered ? [0, 45] : 0 }}
         transition={{ duration: 8, repeat: Infinity, repeatType: "reverse", ease: "linear" }}
       />
-
       <motion.div
         className="absolute inset-0 opacity-0 group-hover:opacity-100"
-        animate={{
-          backgroundPosition: isHovered ? ["200% 0", "-200% 0"] : "0 0",
-        }}
+        animate={{ backgroundPosition: isHovered ? ["200% 0", "-200% 0"] : "0 0" }}
         transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-        style={{
-          background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.1) 50%, transparent 100%)",
-          backgroundSize: "200% 100%",
-        }}
+        style={{ background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.1) 50%, transparent 100%)", backgroundSize: "200% 100%" }}
       />
-
       <div className="relative z-10">
-        <motion.h5 
-          initial={{ opacity: 0.8 }}
-          animate={{ opacity: 1 }}
-          className="text-base md:text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-cyan-100 mb-2"
-        >
-          {title}
-        </motion.h5>
-        <motion.p 
-          initial={{ opacity: 0.6 }}
-          animate={{ opacity: 0.9 }}
-          className="text-sm md:text-base text-white/80"
-        >
-          {content}
-        </motion.p>
+        <motion.h5 initial={{ opacity: 0.8 }} animate={{ opacity: 1 }} className="text-base md:text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-cyan-100 mb-2">{title}</motion.h5>
+        <motion.p initial={{ opacity: 0.6 }} animate={{ opacity: 0.9 }} className="text-sm md:text-base text-white/80">{content}</motion.p>
       </div>
-
       <motion.div
         className="absolute inset-0 rounded-2xl"
-        animate={{
-          boxShadow: isHovered 
-            ? "0 0 20px 2px rgba(0, 229, 255, 0.1), inset 0 0 20px 2px rgba(0, 229, 255, 0.08)"
-            : "0 0 0px 0px rgba(0, 229, 255, 0), inset 0 0 0px 0px rgba(0, 229, 255, 0)"
-        }}
+        animate={{ boxShadow: isHovered ? "0 0 20px 2px rgba(0, 229, 255, 0.1), inset 0 0 20px 2px rgba(0, 229, 255, 0.08)" : "0 0 0px 0px rgba(0, 229, 255, 0), inset 0 0 0px 0px rgba(0, 229, 255, 0)" }}
         transition={{ duration: 0.3 }}
       />
     </motion.div>
