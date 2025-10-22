@@ -32,11 +32,14 @@ const adminData = {
 ------------------------------------------------------- */
 const sectionsData = {
   home: true,
-  about: true,
-  "tech-stack": true,
-  projects: true,
-  resume: true,
-  contact: true,
+    about: true,
+    "tech-stack": true,
+    projects: true,
+    resume: true,
+    certifications: true, // ✅ Added
+    timeline: true, // ✅ Added
+    contact: true,
+    blog: true,
 };
 
 /* -------------------------------------------------------
@@ -251,25 +254,25 @@ const projectsData = {
 async function seed() {
   try {
     // Admin & Sections
-    await setDoc(doc(db, "admin", "credentials"), adminData);
+    // await setDoc(doc(db, "admin", "credentials"), adminData);
     await setDoc(doc(db, "sections", "visibility"), sectionsData);
     
-    // Profile data
-    await setDoc(doc(db, "portfolio", "profile"), profileData);
+    // // Profile data
+    // await setDoc(doc(db, "portfolio", "profile"), profileData);
     
-    // Resume data
-    await setDoc(doc(db, "resume", "data"), resumeData);
+    // // Resume data
+    // await setDoc(doc(db, "resume", "data"), resumeData);
     
-    // Other pages
-    await setDoc(doc(db, "aboutpage", "main"), aboutpageconfig);
-    await setDoc(doc(db, "techStack", "categories"), { techStackData });
-    await setDoc(doc(db, "footer", "details"), { footerData });
+    // // Other pages
+    // await setDoc(doc(db, "aboutpage", "main"), aboutpageconfig);
+    // await setDoc(doc(db, "techStack", "categories"), { techStackData });
+    // await setDoc(doc(db, "footer", "details"), { footerData });
     
-    // Projects data
-    await setDoc(doc(db, "projects", "data"), projectsData);
+    // // Projects data
+    // await setDoc(doc(db, "projects", "data"), projectsData);
     
-    // Config
-    //await setDoc(doc(db, "config", "portfolio"), { theme: "holo" });
+    // // Config
+    // //await setDoc(doc(db, "config", "portfolio"), { theme: "holo" });
 
     console.log("✅ All collections seeded successfully!");
     console.log("📦 Collections created:");
