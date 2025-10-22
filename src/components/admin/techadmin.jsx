@@ -1,17 +1,16 @@
-import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
+"use client"
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Eye, Save, RotateCcw, Download, Upload, Plus, X,
   ArrowUp, ArrowDown, Palette, AlertCircle, CheckCircle, Loader, Wifi, WifiOff
 } from "lucide-react";
-import { doc, setDoc, getDoc, onSnapshot, Timestamp } from "firebase/firestore";
+import { doc, setDoc, getDoc, Timestamp } from "firebase/firestore";
 import { db } from "@/firebase";
 
 const STORAGE_DRAFT_KEY = "techstack_config_draft";
-const STORAGE_SAVED_KEY = "techstack_config_saved";
 const FIRESTORE_ADMIN_DOC = "admin/credentials";
 const FIRESTORE_TECHSTACK_DOC = "techStack/categories";
-const SYNC_DEBOUNCE = 500; // ms
 
 const CRTStyles = () => (
   <style>{`
@@ -44,8 +43,9 @@ const CRTStyles = () => (
   `}</style>
 );
 
+// Default configuration matching your seed.js structure
 const defaultConfig = {
-  categories: [
+  techStackData: [
     { title: "Languages", color: "from-purple-400 to-pink-500", tech: ["C", "Python", "Java", "JavaScript", "Dart", "HTML", "CSS", "TypeScript"] },
     { title: "Frontend", color: "from-blue-500 to-cyan-400", tech: ["React", "Next.js", "Tailwind CSS", "Flutter", "Bootstrap", "Vite"] },
     { title: "Backend", color: "from-green-500 to-emerald-400", tech: ["Node.js", "Express", "Flask", "FastAPI", "Spring Boot"] },
@@ -55,7 +55,38 @@ const defaultConfig = {
     { title: "Mobile", color: "from-teal-400 to-green-400", tech: ["React Native", "Flutter", "Android", "iOS", "Expo"] },
     { title: "Tools", color: "from-indigo-400 to-blue-400", tech: ["Git", "GitHub", "VS Code", "Postman", "Linux", "Figma"] },
   ],
+  lastUpdated: new Date().toISOString(),
+  updatedBy: "deepak",
 };
+
+// Updated normalization function to work with techStackData
+function normalizeTechStackData(data) {
+  if (!data) return defaultConfig;
+  
+  console.log("Normalizing data:", data);
+  
+  // Handle the actual structure from your seed.js
+  if (data.techStackData && Array.isArray(data.techStackData)) {
+    // This is your actual structure - techStackData array
+    return {
+      ...data,
+      techStackData: data.techStackData.map(cat => ({
+        title: cat.title || "Untitled Category",
+        color: cat.color || "from-cyan-400 to-blue-400",
+        tech: Array.isArray(cat.tech) ? cat.tech : []
+      }))
+    };
+  } else if (Array.isArray(data)) {
+    // If data is directly an array (fallback)
+    return { techStackData: data };
+  } else if (data.categories && Array.isArray(data.categories)) {
+    // If someone accidentally uses categories instead of techStackData
+    return { techStackData: data.categories };
+  } else {
+    // Fallback to default config
+    return defaultConfig;
+  }
+}
 
 export default function TechStackAdmin() {
   const [draft, setDraft] = useState(null);
@@ -71,178 +102,94 @@ export default function TechStackAdmin() {
   const [hasChanges, setHasChanges] = useState(false);
   
   // Refs for debouncing and cleanup
-  const unsubscribeRef = useRef(null);
-  const syncTimeoutRef = useRef(null);
+  const committedRef = useRef(null);
   const draftChangeTimeoutRef = useRef(null);
   const prevDraftRef = useRef(null);
 
-  // Block Google auto-save
-  useEffect(() => {
-    const preventAutoSave = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault();
-        setStatus("⚠ Use SAVE button instead of Ctrl+S");
-        setStatusType("info");
-        setTimeout(() => {
-          if (draft) {
-            setStatus("✓ Ready to save");
-            setStatusType("success");
-          }
-        }, 2000);
-        return false;
+  // Load data from Firebase
+  const loadFromFirebase = useCallback(async () => {
+    try {
+      setStatus("🔄 Loading admin credentials...");
+      setStatusType("info");
+
+      // Fetch admin code
+      const adminDocRef = doc(db, FIRESTORE_ADMIN_DOC);
+      const adminSnap = await getDoc(adminDocRef);
+      
+      if (adminSnap.exists()) {
+        const adminData = adminSnap.data();
+        setAdminCode(String(adminData.secretCode));
+        setStatus("✓ Admin credentials loaded");
+        setStatusType("success");
+      } else {
+        throw new Error("Admin credentials not found");
       }
-    };
 
-    window.addEventListener('keydown', preventAutoSave);
-    
-    // Disable browser autofill
-    const disableAutofill = () => {
-      const inputs = document.querySelectorAll('input');
-      inputs.forEach(input => {
-        input.setAttribute('autocomplete', 'off');
-        input.setAttribute('autocorrect', 'off');
-        input.setAttribute('autocapitalize', 'off');
-        input.setAttribute('spellcheck', 'false');
-      });
-    };
-    
-    disableAutofill();
-    const interval = setInterval(disableAutofill, 1000);
-
-    return () => {
-      window.removeEventListener('keydown', preventAutoSave);
-      clearInterval(interval);
-    };
-  }, [draft]);
-
-  // Initialize data from Firebase
-  useEffect(() => {
-    const initializeData = async () => {
-      try {
-        const adminDocRef = doc(db, FIRESTORE_ADMIN_DOC);
-        const adminSnap = await getDoc(adminDocRef);
-        
-        if (adminSnap.exists()) {
-          const adminData = adminSnap.data();
-          setAdminCode(String(adminData.secretCode));
-          setStatus("✓ Admin credentials loaded");
-          setStatusType("success");
-        } else {
-          throw new Error("Admin credentials not found");
-        }
-
-        const saved = localStorage.getItem(STORAGE_SAVED_KEY);
+      // Load tech stack data from Firestore
+      setStatus("🔄 Loading tech stack data...");
+      const techStackDocRef = doc(db, FIRESTORE_TECHSTACK_DOC);
+      const techStackSnap = await getDoc(techStackDocRef);
+      
+      let initialDraft = null;
+      
+      if (techStackSnap.exists()) {
+        // Use data from Firestore with normalization
+        const firestoreData = techStackSnap.data();
+        console.log("Raw Firestore data:", firestoreData);
+        initialDraft = normalizeTechStackData(firestoreData);
+        setStatus("✓ Config loaded from Firestore");
+      } else {
+        // Fallback to session storage or default
         const session = sessionStorage.getItem(STORAGE_DRAFT_KEY);
         
-        let initialDraft = null;
         if (session) {
-          initialDraft = JSON.parse(session);
-          setStatus("✓ Draft loaded from session");
-        } else if (saved) {
-          initialDraft = JSON.parse(saved);
-          setStatus("✓ Config loaded from cache");
+          try {
+            const sessionData = JSON.parse(session);
+            initialDraft = normalizeTechStackData(sessionData);
+            setStatus("✓ Draft loaded from session");
+          } catch (e) {
+            console.error("Error parsing session data:", e);
+            initialDraft = defaultConfig;
+            setStatus("✓ Using default config (session parse error)");
+          }
         } else {
           initialDraft = defaultConfig;
           setStatus("✓ Using default config");
         }
-        
-        setDraft(initialDraft);
-        prevDraftRef.current = JSON.stringify(initialDraft);
-
-        const techStackDocRef = doc(db, FIRESTORE_TECHSTACK_DOC);
-        unsubscribeRef.current = onSnapshot(
-          techStackDocRef,
-          (snapshot) => {
-            if (snapshot.exists()) {
-              console.log("📡 Real-time update received from Firestore");
-            }
-          },
-          (error) => {
-            console.error("Firebase listener error:", error);
-          }
-        );
-
-        setStatusType("success");
-      } catch (error) {
-        console.error("Init error:", error);
-        setStatus("⚠ Using offline mode");
-        setStatusType("error");
-        setDraft(defaultConfig);
-        prevDraftRef.current = JSON.stringify(defaultConfig);
-        setAdminCode("69");
       }
-    };
+      
+      console.log("Normalized draft:", initialDraft);
+      setDraft(initialDraft);
+      committedRef.current = JSON.parse(JSON.stringify(initialDraft));
+      prevDraftRef.current = JSON.stringify(initialDraft);
+      setStatusType("success");
 
-    initializeData();
-
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-
-    return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
-      unsubscribeRef.current?.();
-      clearTimeout(syncTimeoutRef.current);
-      clearTimeout(draftChangeTimeoutRef.current);
-    };
-  }, []);
-
-  // Debounced draft save to session storage (no lag)
-  useEffect(() => {
-    if (!draft) return;
-
-    // Clear previous timeout
-    if (draftChangeTimeoutRef.current) {
-      clearTimeout(draftChangeTimeoutRef.current);
+    } catch (error) {
+      console.error("Init error:", error);
+      setStatus("⚠ Using offline mode");
+      setStatusType("error");
+      
+      // Fallback to session storage or default
+      const session = sessionStorage.getItem(STORAGE_DRAFT_KEY);
+      let fallbackDraft = defaultConfig;
+      
+      if (session) {
+        try {
+          const sessionData = JSON.parse(session);
+          fallbackDraft = normalizeTechStackData(sessionData);
+        } catch (e) {
+          console.error("Error parsing session fallback:", e);
+        }
+      }
+      
+      setDraft(fallbackDraft);
+      committedRef.current = JSON.parse(JSON.stringify(fallbackDraft));
+      prevDraftRef.current = JSON.stringify(fallbackDraft);
+      setAdminCode("69");
     }
-
-    // Check if draft actually changed
-    const draftString = JSON.stringify(draft);
-    if (draftString === prevDraftRef.current) {
-      return;
-    }
-
-    prevDraftRef.current = draftString;
-    setHasChanges(true);
-
-    // Debounce session storage write
-    draftChangeTimeoutRef.current = setTimeout(() => {
-      sessionStorage.setItem(STORAGE_DRAFT_KEY, draftString);
-    }, SYNC_DEBOUNCE);
-  }, [draft]);
-
-  const sidebarTabs = useMemo(() => {
-    if (!draft) return ["CATEGORIES"];
-    return ["CATEGORIES", ...draft.categories.map((c, i) => `CAT:${i}`)];
-  }, [draft?.categories?.length]);
-
-  const moveCategory = useCallback((idx, dir) => {
-    setDraft(prevDraft => {
-      if (!prevDraft) return prevDraft;
-      const copy = structuredClone(prevDraft);
-      const arr = copy.categories;
-      const newIndex = idx + dir;
-      if (newIndex < 0 || newIndex >= arr.length) return prevDraft;
-      [arr[idx], arr[newIndex]] = [arr[newIndex], arr[idx]];
-      return copy;
-    });
   }, []);
 
-  const moveTech = useCallback((catIdx, tIdx, dir) => {
-    setDraft(prevDraft => {
-      if (!prevDraft) return prevDraft;
-      const copy = structuredClone(prevDraft);
-      const arr = copy.categories[catIdx].tech;
-      const newIndex = tIdx + dir;
-      if (newIndex < 0 || newIndex >= arr.length) return prevDraft;
-      [arr[tIdx], arr[newIndex]] = [arr[newIndex], arr[tIdx]];
-      return copy;
-    });
-  }, []);
-
+  // Save to Firebase - UPDATED to use techStackData structure
   const saveToFirebase = useCallback(async (config) => {
     if (!isOnline) {
       setStatus("✗ No internet connection");
@@ -252,11 +199,11 @@ export default function TechStackAdmin() {
 
     setIsSyncing(true);
     try {
+      // Ensure we save in the correct structure with techStackData
       const enrichedConfig = {
-        ...config,
-        techStackData: config.categories,
+        techStackData: config.techStackData || [],
         lastUpdated: new Date().toISOString(),
-        updatedBy: "kavshick",
+        updatedBy: "deepak",
         updatedAt: Timestamp.now(),
       };
 
@@ -280,148 +227,293 @@ export default function TechStackAdmin() {
     }
   }, [isOnline]);
 
-  const confirmSave = useCallback(async () => {
-    if (!draft) return;
-    
-    if (String(secretInput).trim() !== String(adminCode)) {
-      setStatus("✗ ACCESS DENIED - Wrong code");
+  // Initialize from Firebase
+  useEffect(() => {
+    loadFromFirebase();
+
+    const handleOnline = () => {
+      setIsOnline(true);
+      setStatus("✓ Back online");
+      setStatusType("success");
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+      setStatus("⚠ Offline mode");
       setStatusType("error");
-      setTimeout(() => setSecretInput(""), 2000);
+    };
+    
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+      clearTimeout(draftChangeTimeoutRef.current);
+    };
+  }, [loadFromFirebase]);
+
+  // Debounced draft tracking
+  useEffect(() => {
+    if (!draft) return;
+
+    if (draftChangeTimeoutRef.current) {
+      clearTimeout(draftChangeTimeoutRef.current);
+    }
+
+    const draftString = JSON.stringify(draft);
+    if (draftString === prevDraftRef.current) {
       return;
     }
 
-    localStorage.setItem(STORAGE_SAVED_KEY, JSON.stringify(draft));
-    sessionStorage.removeItem(STORAGE_DRAFT_KEY);
+    prevDraftRef.current = draftString;
+    setHasChanges(true);
+    sessionStorage.setItem(STORAGE_DRAFT_KEY, draftString);
+  }, [draft]);
 
-    const success = await saveToFirebase(draft);
-    
-    if (success) {
-      setChangesPopupOpen(false);
-      setSecretInput("");
+  // Block Google auto-save
+  useEffect(() => {
+    const preventAutoSave = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        setStatus("⚠ Use SAVE button instead of Ctrl+S");
+        setStatusType("info");
+        setTimeout(() => {
+          setStatus("✓ Ready to save");
+          setStatusType("success");
+        }, 2000);
+        initiateSaveConfirmation();
+        return false;
+      }
     }
-  }, [draft, adminCode, saveToFirebase]);
 
-  const quickSave = useCallback(async () => {
+    window.addEventListener('keydown', preventAutoSave);
+    
+    const disableAutofill = () => {
+      const inputs = document.querySelectorAll('input');
+      inputs.forEach(input => {
+        input.setAttribute('autocomplete', 'off');
+        input.setAttribute('autocorrect', 'off');
+        input.setAttribute('autocapitalize', 'off');
+        input.setAttribute('spellcheck', 'false');
+      });
+    };
+    
+    disableAutofill();
+    const interval = setInterval(disableAutofill, 1000);
+
+    return () => {
+      window.removeEventListener('keydown', preventAutoSave);
+      clearInterval(interval);
+    };
+  }, [draft]);
+
+  // Save confirmation flow
+  const initiateSaveConfirmation = () => {
+    if (!draft || !draft.techStackData) {
+      setStatus("No valid data to save");
+      setStatusType("error");
+      return;
+    }
+
+    const prev = committedRef.current || defaultConfig;
+    const changed = computeChanges(prev, draft);
+    if (changed.length === 0) {
+      setStatus("No changes detected");
+      setStatusType("info");
+      return;
+    }
+    setChangesPopupOpen(true);
+    setSecretInput("");
+  };
+
+  const confirmSaveWithCode = async () => {
     if (!draft) return;
     
-    localStorage.setItem(STORAGE_SAVED_KEY, JSON.stringify(draft));
-    sessionStorage.removeItem(STORAGE_DRAFT_KEY);
-
-    if (isOnline) {
-      await saveToFirebase(draft);
-    } else {
-      setStatus("✓ Saved locally (offline)");
-      setStatusType("info");
+    if (secretInput.trim() !== String(adminCode)) {
+      setStatus("✗ ACCESS DENIED");
+      setStatusType("error");
+      return;
     }
-  }, [draft, isOnline, saveToFirebase]);
+    
+    try {
+      // Save to Firebase
+      const success = await saveToFirebase(draft);
+      
+      if (success) {
+        sessionStorage.removeItem(STORAGE_DRAFT_KEY);
+        committedRef.current = JSON.parse(JSON.stringify(draft));
+        setChangesPopupOpen(false);
+        setStatus("✓ SAVED SUCCESSFULLY");
+        setStatusType("success");
+      }
+    } catch {
+      setStatus("Save failed");
+      setStatusType("error");
+    }
+  };
 
-  const resetDefault = useCallback(() => {
-    if (window.confirm("Reset to default config?")) {
+  // Diff helper function - UPDATED for techStackData
+  function computeChanges(oldConfig = {}, newConfig = {}) {
+    const changes = [];
+    function same(a, b) { return JSON.stringify(a) === JSON.stringify(b); }
+    
+    if (!same(oldConfig.techStackData || [], newConfig.techStackData || [])) changes.push("techStackData");
+    
+    return [...new Set(changes)];
+  }
+
+  const refreshFromFirebase = async () => {
+    setStatus("🔄 Refreshing from Firebase...");
+    setStatusType("info");
+    await loadFromFirebase();
+  };
+
+  const resetToDefault = () => {
+    if (window.confirm("Reset all changes to default?")) {
       setDraft(defaultConfig);
-      prevDraftRef.current = JSON.stringify(defaultConfig);
-      setActiveTab("CATEGORIES");
-      setStatus("Reset done");
+      setStatus("Reset to default");
       setStatusType("info");
       setHasChanges(false);
     }
-  }, []);
+  };
 
-  const exportJson = useCallback(() => {
+  const exportJson = () => {
     if (!draft) return;
     const blob = new Blob([JSON.stringify(draft, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `techstack_config_${new Date().toISOString().split("T")[0]}.json`;
+    a.download = "techstack_config.json";
     a.click();
     URL.revokeObjectURL(url);
-    setStatus("✓ Exported config");
+    setStatus("Exported configuration");
     setStatusType("success");
-  }, [draft]);
+  };
 
-  const importJson = useCallback((e) => {
-    const file = e.target.files?.[0];
+  const importJson = (e) => {
+    const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = (evt) => {
       try {
-        const parsed = JSON.parse(ev.target.result);
-        if (parsed.categories && Array.isArray(parsed.categories)) {
-          setDraft(parsed);
-          prevDraftRef.current = JSON.stringify(parsed);
-          setActiveTab("CATEGORIES");
-          setStatus("✓ Imported successfully");
-          setStatusType("success");
-        } else {
-          throw new Error("Invalid format");
-        }
-      } catch {
-        setStatus("✗ Invalid JSON format");
+        const imported = JSON.parse(evt.target.result);
+        const normalized = normalizeTechStackData(imported);
+        setDraft(normalized);
+        setStatus("Imported successfully");
+        setStatusType("success");
+        setHasChanges(true);
+      } catch (err) {
+        setStatus("Import failed: Invalid JSON");
         setStatusType("error");
       }
     };
     reader.readAsText(file);
+  };
+
+  // Safe sidebar tabs generation - UPDATED for techStackData
+  const sidebarTabs = React.useMemo(() => {
+    if (!draft || !draft.techStackData || !Array.isArray(draft.techStackData)) {
+      return ["CATEGORIES"];
+    }
+    return ["CATEGORIES", ...draft.techStackData.map((c, i) => `CAT:${i}`)];
+  }, [draft?.techStackData]);
+
+  // All category operations - UPDATED for techStackData
+  const moveCategory = useCallback((idx, dir) => {
+    setDraft(prevDraft => {
+      if (!prevDraft || !prevDraft.techStackData) return prevDraft;
+      const copy = JSON.parse(JSON.stringify(prevDraft));
+      const arr = copy.techStackData;
+      const newIndex = idx + dir;
+      if (newIndex < 0 || newIndex >= arr.length) return prevDraft;
+      [arr[idx], arr[newIndex]] = [arr[newIndex], arr[idx]];
+      return copy;
+    });
+  }, []);
+
+  const moveTech = useCallback((catIdx, tIdx, dir) => {
+    setDraft(prevDraft => {
+      if (!prevDraft || !prevDraft.techStackData || !prevDraft.techStackData[catIdx]) return prevDraft;
+      const copy = JSON.parse(JSON.stringify(prevDraft));
+      const arr = copy.techStackData[catIdx].tech;
+      if (!Array.isArray(arr)) return prevDraft;
+      const newIndex = tIdx + dir;
+      if (newIndex < 0 || newIndex >= arr.length) return prevDraft;
+      [arr[tIdx], arr[newIndex]] = [arr[newIndex], arr[tIdx]];
+      return copy;
+    });
   }, []);
 
   const addCategory = useCallback(() => {
     setDraft(prevDraft => {
       if (!prevDraft) return prevDraft;
-      const copy = structuredClone(prevDraft);
-      copy.categories.push({ title: "New Category", color: "from-cyan-400 to-blue-400", tech: [] });
+      const copy = JSON.parse(JSON.stringify(prevDraft));
+      if (!copy.techStackData) {
+        copy.techStackData = [];
+      }
+      copy.techStackData.push({ title: "New Category", color: "from-cyan-400 to-blue-400", tech: [] });
       return copy;
     });
   }, []);
 
   const removeCategory = useCallback((idx) => {
     setDraft(prevDraft => {
-      if (!prevDraft) return prevDraft;
-      const copy = structuredClone(prevDraft);
-      copy.categories.splice(idx, 1);
+      if (!prevDraft || !prevDraft.techStackData) return prevDraft;
+      const copy = JSON.parse(JSON.stringify(prevDraft));
+      copy.techStackData.splice(idx, 1);
       return copy;
     });
   }, []);
 
   const updateCategoryTitle = useCallback((idx, title) => {
     setDraft(prevDraft => {
-      if (!prevDraft) return prevDraft;
-      const copy = structuredClone(prevDraft);
-      copy.categories[idx].title = title;
+      if (!prevDraft || !prevDraft.techStackData || !prevDraft.techStackData[idx]) return prevDraft;
+      const copy = JSON.parse(JSON.stringify(prevDraft));
+      copy.techStackData[idx].title = title;
       return copy;
     });
   }, []);
 
   const updateCategoryColor = useCallback((idx, color) => {
     setDraft(prevDraft => {
-      if (!prevDraft) return prevDraft;
-      const copy = structuredClone(prevDraft);
-      copy.categories[idx].color = color;
+      if (!prevDraft || !prevDraft.techStackData || !prevDraft.techStackData[idx]) return prevDraft;
+      const copy = JSON.parse(JSON.stringify(prevDraft));
+      copy.techStackData[idx].color = color;
       return copy;
     });
   }, []);
 
   const updateTech = useCallback((catIdx, tIdx, value) => {
     setDraft(prevDraft => {
-      if (!prevDraft) return prevDraft;
-      const copy = structuredClone(prevDraft);
-      copy.categories[catIdx].tech[tIdx] = value;
+      if (!prevDraft || !prevDraft.techStackData || !prevDraft.techStackData[catIdx]) return prevDraft;
+      const copy = JSON.parse(JSON.stringify(prevDraft));
+      if (!copy.techStackData[catIdx].tech) {
+        copy.techStackData[catIdx].tech = [];
+      }
+      copy.techStackData[catIdx].tech[tIdx] = value;
       return copy;
     });
   }, []);
 
   const removeTech = useCallback((catIdx, tIdx) => {
     setDraft(prevDraft => {
-      if (!prevDraft) return prevDraft;
-      const copy = structuredClone(prevDraft);
-      copy.categories[catIdx].tech.splice(tIdx, 1);
+      if (!prevDraft || !prevDraft.techStackData || !prevDraft.techStackData[catIdx]) return prevDraft;
+      const copy = JSON.parse(JSON.stringify(prevDraft));
+      if (Array.isArray(copy.techStackData[catIdx].tech)) {
+        copy.techStackData[catIdx].tech.splice(tIdx, 1);
+      }
       return copy;
     });
   }, []);
 
   const addTech = useCallback((catIdx, tech) => {
     setDraft(prevDraft => {
-      if (!prevDraft) return prevDraft;
-      const copy = structuredClone(prevDraft);
-      copy.categories[catIdx].tech.push(tech.trim());
+      if (!prevDraft || !prevDraft.techStackData || !prevDraft.techStackData[catIdx]) return prevDraft;
+      const copy = JSON.parse(JSON.stringify(prevDraft));
+      if (!copy.techStackData[catIdx].tech) {
+        copy.techStackData[catIdx].tech = [];
+      }
+      copy.techStackData[catIdx].tech.push(tech.trim());
       return copy;
     });
   }, []);
@@ -439,316 +531,444 @@ export default function TechStackAdmin() {
     );
   }
 
+  // Safe access to categories - UPDATED for techStackData
+  const categories = draft.techStackData || [];
   const activeCatIndex = activeTab.startsWith("CAT:") ? parseInt(activeTab.split(":")[1]) : null;
-  const activeCat = Number.isInteger(activeCatIndex) ? draft.categories[activeCatIndex] : null;
+  const activeCat = Number.isInteger(activeCatIndex) && categories[activeCatIndex] ? categories[activeCatIndex] : null;
 
   return (
-    <div className="w-screen h-screen crt-screen crt-glow flex flex-col">
+    <div className="w-screen h-screen overflow-hidden crt-screen crt-glow">
       <CRTStyles />
-
-      {/* HEADER */}
-      <motion.div className="crt-panel p-4 m-4 rounded-lg flex justify-between items-center shrink-0">
-        <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold crt-text">TECH STACK ADMIN TERMINAL</h1>
-          <div className="flex items-center gap-2">
-            {isOnline ? (
-              <>
-                <Wifi size={16} className="text-green-400" />
-                <span className="text-xs text-green-400">ONLINE</span>
-              </>
-            ) : (
-              <>
-                <WifiOff size={16} className="text-red-400" />
-                <span className="text-xs text-red-400">OFFLINE</span>
-              </>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className={`text-sm crt-text status-${statusType} flex items-center gap-2`}>
-            {isSyncing ? (
-              <>
-                <Loader size={14} className="animate-spin" />
-                Syncing...
-              </>
-            ) : statusType === "success" ? (
-              <>
-                <CheckCircle size={14} />
-                {status}
-              </>
-            ) : statusType === "error" ? (
-              <>
-                <AlertCircle size={14} />
-                {status}
-              </>
-            ) : (
-              <>
-                <Loader size={14} />
-                {status}
-              </>
-            )}
-          </div>
-          <button
-            onClick={() => setPreviewMode(!previewMode)}
-            className="crt-button px-4 py-2 rounded crt-text flex items-center gap-2"
-          >
-            <Eye size={16} /> {previewMode ? "EDIT" : "PREVIEW"}
-          </button>
-        </div>
-      </motion.div>
-
-      {/* BODY */}
-      <div className="flex flex-1 gap-4 p-4 overflow-hidden">
-        {/* SIDEBAR */}
-        <motion.div className="w-72 crt-panel rounded-lg p-4 flex flex-col justify-between h-full overflow-hidden">
-          <div className="flex flex-col overflow-hidden flex-1">
-            <h3 className="text-sm crt-text opacity-60 mb-3">NAVIGATION</h3>
-            <div className="flex-1 overflow-y-auto hide-scrollbar pr-1 mb-4">
-              {sidebarTabs.map((tabKey, i) => {
-                const isActive = activeTab === tabKey;
-                const label =
-                  tabKey === "CATEGORIES"
-                    ? "CATEGORIES"
-                    : draft.categories[parseInt(tabKey.split(":")[1], 10)]?.title || tabKey;
-                return (
-                  <motion.button
-                    key={i}
-                    whileHover={{ x: 5 }}
-                    onClick={() => setActiveTab(tabKey)}
-                    className={`w-full text-left px-3 py-2 rounded transition-all ${
-                      isActive ? "crt-button crt-text" : "text-cyan-400/60 hover:text-cyan-400"
-                    }`}
-                  >
-                    {label.toUpperCase()}
-                  </motion.button>
-                );
-              })}
+      
+      <div className="w-full h-full flex flex-col p-4 gap-4">
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="crt-panel rounded-lg p-4"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <h1 className="text-2xl font-bold crt-text">
+                TECH STACK ADMIN TERMINAL
+              </h1>
+              <div className="text-xs crt-text opacity-60">v2.0.1</div>
+              <div className="flex items-center gap-2">
+                {isOnline ? (
+                  <>
+                    <Wifi size={16} className="text-green-400" />
+                    <span className="text-xs text-green-400">ONLINE</span>
+                  </>
+                ) : (
+                  <>
+                    <WifiOff size={16} className="text-red-400" />
+                    <span className="text-xs text-red-400">OFFLINE</span>
+                  </>
+                )}
+              </div>
             </div>
-          </div>
-
-          <div className="border-t border-cyan-700/40 pt-4 shrink-0">
-            <h3 className="text-sm crt-text opacity-60 mb-3">ACTIONS</h3>
-            <div className="space-y-2">
-              <button
-                onClick={() => setChangesPopupOpen(true)}
-                disabled={!hasChanges}
-                className="w-full crt-button px-3 py-2 rounded crt-text flex items-center gap-2"
+            <div className="flex items-center gap-3">
+              <div className={`text-sm crt-text status-${statusType} flex items-center gap-2`}>
+                {isSyncing ? (
+                  <>
+                    <Loader size={14} className="animate-spin" />
+                    Syncing...
+                  </>
+                ) : statusType === "success" ? (
+                  <>
+                    <CheckCircle size={14} />
+                    {status}
+                  </>
+                ) : statusType === "error" ? (
+                  <>
+                    <AlertCircle size={14} />
+                    {status}
+                  </>
+                ) : (
+                  <>
+                    <Loader size={14} />
+                    {status}
+                  </>
+                )}
+              </div>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setPreviewMode(!previewMode)}
+                className="crt-button px-4 py-2 rounded flex items-center gap-2 crt-text"
               >
-                <Save size={16} /> SAVE
-              </button>
-              <button
-                onClick={quickSave}
-                disabled={!hasChanges}
-                className="w-full crt-button px-3 py-2 rounded crt-text flex items-center gap-2"
+                <Eye size={16} />
+                {previewMode ? "EDIT" : "PREVIEW"}
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={refreshFromFirebase}
+                className="crt-button px-4 py-2 rounded flex items-center gap-2 crt-text"
+                title="Refresh from Firebase"
               >
-                <Save size={16} /> QUICK SAVE
-              </button>
-              <button
-                onClick={resetDefault}
-                className="w-full crt-button px-3 py-2 rounded crt-text flex items-center gap-2"
-              >
-                <RotateCcw size={16} /> RESET
-              </button>
-              <button
-                onClick={exportJson}
-                className="w-full crt-button px-3 py-2 rounded crt-text flex items-center gap-2"
-              >
-                <Download size={16} /> EXPORT
-              </button>
-              <label className="w-full crt-button px-3 py-2 rounded crt-text flex items-center gap-2 cursor-pointer">
-                <Upload size={16} /> IMPORT
-                <input type="file" accept=".json" onChange={importJson} className="hidden" />
-              </label>
+                <RotateCcw size={16} />
+                REFRESH
+              </motion.button>
             </div>
           </div>
         </motion.div>
 
-        {/* MAIN PANEL */}
-        <div className="flex-1 crt-panel rounded-lg p-6 overflow-y-auto hide-scrollbar">
+        <div className="flex-1 flex gap-4 overflow-hidden">
           {!previewMode ? (
-            activeTab === "CATEGORIES" ? (
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl crt-text">CATEGORIES</h2>
-                  <button
-                    onClick={addCategory}
-                    className="crt-button px-4 py-2 rounded crt-text flex items-center gap-2"
-                  >
-                    <Plus size={16} /> ADD CATEGORY
-                  </button>
-                </div>
-                <div className="space-y-4">
-                  {draft.categories.map((cat, idx) => (
-                    <div key={`cat-${idx}`} className="crt-panel p-4 rounded">
-                      <div className="flex items-center gap-3 mb-3">
-                        <Palette className="text-cyan-400 flex-shrink-0" size={18} />
-                        <input
-                          type="text"
-                          value={cat.title}
-                          onChange={(e) => updateCategoryTitle(idx, e.target.value)}
-                          className="crt-input px-3 py-1 rounded text-sm flex-1"
-                          autoComplete="off"
-                        />
-                        <input
-                          type="text"
-                          value={cat.color}
-                          onChange={(e) => updateCategoryColor(idx, e.target.value)}
-                          className="crt-input px-3 py-1 rounded text-sm w-56"
-                          autoComplete="off"
-                        />
-                        <button
-                          onClick={() => moveCategory(idx, -1)}
-                          disabled={idx === 0}
-                          className="crt-button p-2 rounded flex-shrink-0"
+            <>
+              <motion.div 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="w-64 crt-panel rounded-lg p-4 flex flex-col gap-4"
+              >
+                <div>
+                  <h3 className="text-sm crt-text mb-3 opacity-60">NAVIGATION</h3>
+                  <div className="space-y-2">
+                    {sidebarTabs.map((tabKey, i) => {
+                      const isActive = activeTab === tabKey;
+                      const label =
+                        tabKey === "CATEGORIES"
+                          ? "CATEGORIES"
+                          : categories[parseInt(tabKey.split(":")[1], 10)]?.title || tabKey;
+                      return (
+                        <motion.button
+                          key={i}
+                          whileHover={{ x: 5 }}
+                          onClick={() => setActiveTab(tabKey)}
+                          className={`w-full text-left px-3 py-2 rounded transition-all ${
+                            isActive ? "crt-button crt-text" : "text-cyan-400/60 hover:text-cyan-400"
+                          }`}
                         >
-                          <ArrowUp size={14} />
-                        </button>
-                        <button
-                          onClick={() => moveCategory(idx, 1)}
-                          disabled={idx === draft.categories.length - 1}
-                          className="crt-button p-2 rounded flex-shrink-0"
-                        >
-                          <ArrowDown size={14} />
-                        </button>
-                        <button onClick={() => removeCategory(idx)} className="crt-button p-2 rounded text-red-400 flex-shrink-0">
-                          <X size={14} />
-                        </button>
-                      </div>
-                      <button onClick={() => setActiveTab(`CAT:${idx}`)} className="crt-button px-3 py-1 rounded crt-text text-xs">
-                        EDIT TECH →
-                      </button>
-                    </div>
-                  ))}
+                          {label.toUpperCase()}
+                        </motion.button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            ) : activeCat ? (
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl crt-text">EDIT: {activeCat.title}</h2>
-                  <button onClick={() => setActiveTab("CATEGORIES")} className="crt-button px-3 py-2 rounded crt-text">
-                    ← BACK
-                  </button>
-                </div>
-                <div className="space-y-2">
-                  {activeCat.tech.map((tech, tIdx) => (
-                    <div key={`tech-${tIdx}`} className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={tech}
-                        onChange={(e) => updateTech(activeCatIndex, tIdx, e.target.value)}
-                        className="crt-input px-3 py-1 rounded text-sm flex-1"
-                        autoComplete="off"
-                      />
-                      <button
-                        onClick={() => moveTech(activeCatIndex, tIdx, -1)}
-                        disabled={tIdx === 0}
-                        className="crt-button p-2 rounded flex-shrink-0"
-                      >
-                        <ArrowUp size={12} />
-                      </button>
-                      <button
-                        onClick={() => moveTech(activeCatIndex, tIdx, 1)}
-                        disabled={tIdx === activeCat.tech.length - 1}
-                        className="crt-button p-2 rounded flex-shrink-0"
-                      >
-                        <ArrowDown size={12} />
-                      </button>
-                      <button
-                        onClick={() => removeTech(activeCatIndex, tIdx)}
-                        className="crt-button p-2 rounded text-red-400 flex-shrink-0"
-                      >
-                        <X size={12} />
-                      </button>
-                    </div>
-                  ))}
-                  <div className="flex gap-2 mt-3">
-                    <input
-                      id={`new-tech-${activeCatIndex}`}
-                      type="text"
-                      className="crt-input flex-1 px-3 py-2 rounded text-sm"
-                      placeholder="Add new tech"
-                      autoComplete="off"
-                    />
-                    <button
-                      onClick={() => {
-                        const input = document.getElementById(`new-tech-${activeCatIndex}`);
-                        if (input && input.value.trim()) {
-                          addTech(activeCatIndex, input.value);
-                          input.value = "";
-                        }
-                      }}
-                      className="crt-button px-4 py-2 rounded crt-text flex items-center gap-2 flex-shrink-0"
+
+                <div className="flex-1" />
+
+                <div>
+                  <h3 className="text-sm crt-text mb-3 opacity-60">ACTIONS</h3>
+                  <div className="space-y-2">
+                    <button 
+                      onClick={initiateSaveConfirmation} 
+                      disabled={!hasChanges}
+                      className="w-full crt-button px-3 py-2 rounded crt-text flex items-center gap-2"
                     >
-                      <Plus size={14} /> ADD
+                      <Save size={16} /> SAVE (CONFIRM)
                     </button>
+                    <button onClick={exportJson} className="w-full crt-button px-3 py-2 rounded crt-text flex items-center gap-2">
+                      <Download size={16} /> EXPORT
+                    </button>
+                    <button onClick={resetToDefault} className="w-full crt-button px-3 py-2 rounded crt-text flex items-center gap-2">
+                      <RotateCcw size={16} /> RESET
+                    </button>
+                    <label className="w-full crt-button px-3 py-2 rounded crt-text flex items-center gap-2 cursor-pointer">
+                      <Upload size={16} /> IMPORT
+                      <input type="file" accept=".json" onChange={importJson} className="hidden" />
+                    </label>
                   </div>
                 </div>
-              </div>
-            ) : null
+              </motion.div>
+
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex-1 crt-panel rounded-lg p-6 overflow-hidden"
+              >
+                <div className="h-full overflow-y-auto hide-scrollbar">
+                  <AnimatePresence mode="wait">
+                    {activeTab === "CATEGORIES" && (
+                      <motion.div
+                        key="categories"
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        className="space-y-4"
+                      >
+                        <div className="flex items-center justify-between mb-4">
+                          <h2 className="text-xl crt-text">CATEGORIES</h2>
+                          <button
+                            onClick={addCategory}
+                            className="crt-button px-4 py-2 rounded crt-text flex items-center gap-2"
+                          >
+                            <Plus size={16} /> ADD CATEGORY
+                          </button>
+                        </div>
+
+                        <div className="space-y-4">
+                          {categories.length === 0 ? (
+                            <div className="crt-panel p-4 rounded text-center">
+                              <p className="crt-text opacity-60">No categories found. Add your first category!</p>
+                            </div>
+                          ) : (
+                            categories.map((cat, idx) => (
+                              <div key={`cat-${idx}`} className="crt-panel p-4 rounded">
+                                <div className="flex items-center gap-3 mb-3">
+                                  <Palette className="text-cyan-400 flex-shrink-0" size={18} />
+                                  <input
+                                    type="text"
+                                    value={cat.title || ""}
+                                    onChange={(e) => updateCategoryTitle(idx, e.target.value)}
+                                    className="crt-input px-3 py-1 rounded text-sm flex-1"
+                                    placeholder="Category Title"
+                                    autoComplete="off"
+                                  />
+                                  <input
+                                    type="text"
+                                    value={cat.color || ""}
+                                    onChange={(e) => updateCategoryColor(idx, e.target.value)}
+                                    className="crt-input px-3 py-1 rounded text-sm w-56"
+                                    placeholder="Tailwind Gradient"
+                                    autoComplete="off"
+                                  />
+                                  <div className="flex gap-1">
+                                    <button
+                                      onClick={() => moveCategory(idx, -1)}
+                                      disabled={idx === 0}
+                                      className="crt-button p-2 rounded"
+                                    >
+                                      <ArrowUp size={14} />
+                                    </button>
+                                    <button
+                                      onClick={() => moveCategory(idx, 1)}
+                                      disabled={idx === categories.length - 1}
+                                      className="crt-button p-2 rounded"
+                                    >
+                                      <ArrowDown size={14} />
+                                    </button>
+                                    <button
+                                      onClick={() => removeCategory(idx)}
+                                      className="crt-button p-2 rounded text-red-400"
+                                    >
+                                      <X size={14} />
+                                    </button>
+                                  </div>
+                                </div>
+                                <button 
+                                  onClick={() => setActiveTab(`CAT:${idx}`)} 
+                                  className="crt-button px-3 py-1 rounded crt-text text-xs"
+                                >
+                                  EDIT TECH →
+                                </button>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {activeCat && (
+                      <motion.div
+                        key={`category-${activeCatIndex}`}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        className="space-y-4"
+                      >
+                        <div className="flex items-center justify-between mb-4">
+                          <h2 className="text-xl crt-text">EDIT: {activeCat.title}</h2>
+                          <button 
+                            onClick={() => setActiveTab("CATEGORIES")} 
+                            className="crt-button px-3 py-2 rounded crt-text"
+                          >
+                            ← BACK TO CATEGORIES
+                          </button>
+                        </div>
+
+                        <div className="space-y-2">
+                          {(!activeCat.tech || activeCat.tech.length === 0) ? (
+                            <div className="crt-panel p-3 rounded text-center">
+                              <p className="crt-text opacity-60">No technologies in this category. Add some below!</p>
+                            </div>
+                          ) : (
+                            activeCat.tech.map((tech, tIdx) => (
+                              <div key={`tech-${tIdx}`} className="flex items-center gap-2">
+                                <input
+                                  type="text"
+                                  value={tech || ""}
+                                  onChange={(e) => updateTech(activeCatIndex, tIdx, e.target.value)}
+                                  className="crt-input px-3 py-1 rounded text-sm flex-1"
+                                  placeholder="Technology name"
+                                  autoComplete="off"
+                                />
+                                <div className="flex gap-1">
+                                  <button
+                                    onClick={() => moveTech(activeCatIndex, tIdx, -1)}
+                                    disabled={tIdx === 0}
+                                    className="crt-button p-2 rounded"
+                                  >
+                                    <ArrowUp size={12} />
+                                  </button>
+                                  <button
+                                    onClick={() => moveTech(activeCatIndex, tIdx, 1)}
+                                    disabled={tIdx === (activeCat.tech?.length || 0) - 1}
+                                    className="crt-button p-2 rounded"
+                                  >
+                                    <ArrowDown size={12} />
+                                  </button>
+                                  <button
+                                    onClick={() => removeTech(activeCatIndex, tIdx)}
+                                    className="crt-button p-2 rounded text-red-400"
+                                  >
+                                    <X size={12} />
+                                  </button>
+                                </div>
+                              </div>
+                            ))
+                          )}
+                          <div className="flex gap-2 mt-3">
+                            <input
+                              id={`new-tech-${activeCatIndex}`}
+                              type="text"
+                              className="crt-input flex-1 px-3 py-2 rounded text-sm"
+                              placeholder="Add new technology"
+                              autoComplete="off"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && e.target.value.trim()) {
+                                  addTech(activeCatIndex, e.target.value);
+                                  e.target.value = '';
+                                }
+                              }}
+                            />
+                            <button
+                              onClick={() => {
+                                const input = document.getElementById(`new-tech-${activeCatIndex}`);
+                                if (input && input.value.trim()) {
+                                  addTech(activeCatIndex, input.value);
+                                  input.value = '';
+                                }
+                              }}
+                              className="crt-button px-4 py-2 rounded crt-text flex items-center gap-2 flex-shrink-0"
+                            >
+                              <Plus size={14} /> ADD
+                            </button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </motion.div>
+            </>
           ) : (
-            <div>
-              <h2 className="text-2xl crt-text mb-4">PREVIEW MODE — FULL STACK</h2>
-              <div className="space-y-6">
-                {draft.categories.map((cat, idx) => (
-                  <div key={`preview-${idx}`} className="crt-panel p-4 rounded">
-                    <h3 className="crt-text text-lg mb-2">{cat.title}</h3>
-                    <p className="text-xs text-cyan-300 mb-2">{cat.color}</p>
-                    <div className="flex flex-wrap gap-2">
-                      {cat.tech.map((t, i) => (
-                        <span key={`${idx}-${i}`} className="px-3 py-1 bg-cyan-500/20 rounded text-xs">
-                          {t}
-                        </span>
-                      ))}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex-1 crt-panel rounded-lg p-6 overflow-auto hide-scrollbar"
+            >
+              <div className="crt-text">
+                <h2 className="text-2xl mb-4">PREVIEW MODE — TECH STACK</h2>
+                <div className="space-y-6">
+                  {categories.length === 0 ? (
+                    <div className="crt-panel p-4 rounded text-center">
+                      <p className="crt-text opacity-60">No categories configured</p>
                     </div>
-                  </div>
-                ))}
+                  ) : (
+                    categories.map((cat, idx) => (
+                      <div key={`preview-${idx}`} className="crt-panel p-4 rounded">
+                        <h3 className="text-lg mb-2">{cat.title || "Untitled Category"}</h3>
+                        <p className="text-xs text-cyan-300 mb-2">Gradient: {cat.color || "Not set"}</p>
+                        <div className="flex flex-wrap gap-2">
+                          {(!cat.tech || cat.tech.length === 0) ? (
+                            <span className="px-3 py-1 bg-cyan-500/20 rounded text-xs opacity-60">No technologies</span>
+                          ) : (
+                            cat.tech.map((t, i) => (
+                              <span key={`${idx}-${i}`} className="px-3 py-1 bg-cyan-500/20 rounded text-xs">
+                                {t}
+                              </span>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
-            </div>
+            </motion.div>
           )}
         </div>
       </div>
 
-      {/* SAVE CONFIRM MODAL */}
+      {/* Changes confirmation modal */}
       <AnimatePresence>
         {changesPopupOpen && (
-          <motion.div className="fixed inset-0 bg-black/80 z-50 flex justify-center items-center p-4">
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }} 
+            className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/80"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
-              className="crt-panel p-6 rounded-lg max-w-md w-full space-y-4"
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="crt-panel rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto"
             >
-              <h3 className="text-xl crt-text">CONFIRM SAVE</h3>
-              <p className="text-sm crt-text opacity-60">
-                {isOnline
-                  ? "Enter admin code to save to Firestore & local storage."
-                  : "🔌 Offline: Will save locally only. Firestore sync when online."}
-              </p>
-              <input
-                type="password"
-                value={secretInput}
-                onChange={(e) => setSecretInput(e.target.value)}
-                className="crt-input w-full px-4 py-2 rounded"
-                placeholder="Enter admin code..."
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") confirmSave();
-                }}
-                autoComplete="off"
-                spellCheck="false"
-              />
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h3 className="text-xl crt-text mb-2">CONFIRM SAVE TO FIREBASE</h3>
+                  <p className="text-sm crt-text opacity-60">
+                    {isOnline
+                      ? "Enter admin code to save your tech stack changes to Firebase."
+                      : "🔌 Offline: Cannot save to Firebase without internet connection."}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <p className="text-sm crt-text opacity-80 mb-2">
+                  You're about to save changes to the tech stack configuration.
+                </p>
+                <div className="crt-panel p-3 rounded">
+                  <div className="text-xs crt-text opacity-60 mb-1">Changes include:</div>
+                  <div className="text-sm crt-text">
+                    • {categories.length} categories with {categories.reduce((acc, cat) => acc + (cat.tech?.length || 0), 0)} total technologies
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex-1">
+                  <input
+                    type="password"
+                    value={secretInput}
+                    onChange={(e) => setSecretInput(e.target.value)}
+                    placeholder="Enter admin code..."
+                    className="w-full crt-input px-4 py-2 rounded"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') confirmSaveWithCode();
+                    }}
+                    autoComplete="off"
+                    disabled={!isOnline}
+                  />
+                </div>
+              </div>
+
               <div className="flex justify-end gap-3">
                 <button
-                  onClick={() => setChangesPopupOpen(false)}
+                  onClick={() => {
+                    setChangesPopupOpen(false);
+                    setSecretInput("");
+                  }}
                   className="crt-button px-4 py-2 rounded crt-text"
                 >
                   CANCEL
                 </button>
                 <button
-                  onClick={confirmSave}
-                  disabled={isSyncing}
-                  className="crt-button px-4 py-2 rounded crt-text bg-cyan-500/20 border-cyan-400"
+                  onClick={confirmSaveWithCode}
+                  disabled={isSyncing || !isOnline}
+                  className="crt-button px-4 py-2 rounded crt-text bg-cyan-500/20 border-cyan-400 flex items-center gap-2"
                 >
-                  {isSyncing ? "SAVING..." : "CONFIRM & SAVE"}
+                  {isSyncing ? (
+                    <>
+                      <Loader size={16} className="animate-spin" />
+                      SAVING...
+                    </>
+                  ) : (
+                    "CONFIRM & SAVE"
+                  )}
                 </button>
               </div>
             </motion.div>

@@ -2,9 +2,9 @@
 import React, { useState, useEffect, useRef, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
-  Eye, Save, RotateCcw, Download, Upload, Plus, X, Palette, Calendar, FileDown, FileUp, Loader, AlertCircle, CheckCircle, Wifi, WifiOff
+  Eye, Save, RotateCcw, Download, Upload, Plus, X, Palette, Calendar, FileDown, FileUp, Loader, AlertCircle, CheckCircle, Wifi, WifiOff, User, Clock
 } from "lucide-react"
-import { doc, setDoc, getDoc, onSnapshot, Timestamp } from "firebase/firestore"
+import { doc, setDoc, getDoc, Timestamp } from "firebase/firestore"
 import { db } from "@/firebase"
 
 const STORAGE_DRAFT_KEY = "resume_config_draft"
@@ -100,53 +100,25 @@ const CRTStyles = () => (
 
 // Default Resume Config
 const defaultConfig = {
-  section: {
-    id: "resume",
-    background: "#030712",
-    card: {
-      bg: "bg-white/5",
-      border: "border border-white/10",
-      shadow: "shadow-[0_0_50px_-10px_rgba(0,255,255,0.25)]",
-      glow: "bg-[linear-gradient(45deg,rgba(0,255,255,0.15),rgba(255,0,255,0.15))]",
-    },
-  },
   header: {
     title: "My Interactive Resume",
-    subtitle: "Updated on October 21, 2025",
     gradient: "from-cyan-400 via-blue-400 to-purple-400",
-    icon: "Calendar",
   },
-  description:
-    "Driven software engineer passionate about designing intelligent, scalable systems blending AI and design.",
+  description: "Driven software engineer passionate about designing intelligent, scalable, and visually refined digital systems. Focused on merging AI, full-stack architecture, and human-centered design to craft seamless experiences that empower users and transform industries.",
   skills: [
     "Full-Stack Development",
-    "AI & Machine Learning",
+    "AI & Machine Learning", 
     "Cloud Infrastructure",
+    "DevOps & CI/CD",
+    "Data Engineering",
+    "Product Design",
   ],
-  links: {
-    googleDrive: "https://drive.google.com/file/d/1abcdef1234567890/view?usp=sharing",
-  },
-  buttons: [
-    {
-      id: "view",
-      label: "View Resume",
-      icon: "Eye",
-      gradient: "from-cyan-400 to-blue-500",
-      textColor: "text-black",
-      action: "modal",
-    },
-    {
-      id: "download",
-      label: "Download Resume",
-      icon: "Download",
-      gradient: "from-pink-500 to-purple-500",
-      textColor: "text-white",
-      action: "download",
-    },
-  ],
+  resumeDriveLink: "https://drive.google.com/file/d/1BazHbJLKXz0xJFrsd9ZgJkAB0aR9d8nW_/view?usp=sharing",
+  lastUpdated: "2025-10-21 19:09:56",
+  updatedBy: "deepak",
 }
 
-const iconMap = { Eye, Download, Calendar, FileUp, FileDown, Palette }
+const iconMap = { Eye, Download, Calendar, FileUp, FileDown, Palette, User, Clock }
 
 export default function ResumeAdmin() {
   const [draft, setDraft] = useState(defaultConfig)
@@ -161,10 +133,103 @@ export default function ResumeAdmin() {
   const [hasChanges, setHasChanges] = useState(false)
   
   const committedRef = useRef(defaultConfig)
-  const unsubscribeRef = useRef(null)
-  const syncTimeoutRef = useRef(null)
   const draftChangeTimeoutRef = useRef(null)
   const prevDraftRef = useRef(null)
+
+  // Format timestamp for display
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp) return "Not set"
+    
+    try {
+      // Handle Firestore Timestamp
+      if (timestamp.toDate) {
+        return timestamp.toDate().toLocaleString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit"
+        })
+      }
+      
+      // Handle ISO string
+      if (typeof timestamp === "string") {
+        const date = new Date(timestamp.replace(" ", "T"))
+        return date.toLocaleString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit"
+        })
+      }
+      
+      return "Invalid date"
+    } catch (err) {
+      return String(timestamp)
+    }
+  }
+
+  // Load data from Firebase using getDoc
+  const loadFromFirebase = useCallback(async () => {
+    try {
+      // Fetch admin code
+      const adminDocRef = doc(db, FIRESTORE_ADMIN_DOC)
+      const adminSnap = await getDoc(adminDocRef)
+      
+      if (adminSnap.exists()) {
+        const adminData = adminSnap.data()
+        setAdminCode(String(adminData.secretCode))
+        setStatus("✓ Admin credentials loaded")
+        setStatusType("success")
+      } else {
+        throw new Error("Admin credentials not found")
+      }
+
+      // Load resume data from Firestore
+      const resumeDocRef = doc(db, FIRESTORE_RESUME_DOC)
+      const resumeSnap = await getDoc(resumeDocRef)
+      
+      let initialDraft = null
+      
+      if (resumeSnap.exists()) {
+        // Use data from Firestore
+        initialDraft = resumeSnap.data()
+        setStatus("✓ Config loaded from Firestore")
+      } else {
+        // Fallback to localStorage or default
+        const saved = localStorage.getItem(STORAGE_SAVED_KEY)
+        const session = sessionStorage.getItem(STORAGE_DRAFT_KEY)
+        
+        if (session) {
+          initialDraft = JSON.parse(session)
+          setStatus("✓ Draft loaded from session")
+        } else if (saved) {
+          initialDraft = JSON.parse(saved)
+          setStatus("✓ Config loaded from cache")
+        } else {
+          initialDraft = defaultConfig
+          setStatus("✓ Using default config")
+        }
+      }
+      
+      setDraft(initialDraft)
+      committedRef.current = initialDraft
+      prevDraftRef.current = JSON.stringify(initialDraft)
+      setStatusType("success")
+
+    } catch (error) {
+      console.error("Init error:", error)
+      setStatus("⚠ Using offline mode")
+      setStatusType("error")
+      setDraft(defaultConfig)
+      committedRef.current = defaultConfig
+      prevDraftRef.current = JSON.stringify(defaultConfig)
+      setAdminCode("69")
+    }
+  }, [])
 
   // Block Google auto-save
   useEffect(() => {
@@ -202,72 +267,17 @@ export default function ResumeAdmin() {
     }
   }, [])
 
-  // Initialize from Firebase
+  // Initialize from Firebase (one-time load)
   useEffect(() => {
-    const initializeData = async () => {
-      try {
-        // Fetch admin code
-        const adminDocRef = doc(db, FIRESTORE_ADMIN_DOC)
-        const adminSnap = await getDoc(adminDocRef)
-        
-        if (adminSnap.exists()) {
-          const adminData = adminSnap.data()
-          setAdminCode(String(adminData.secretCode))
-          setStatus("✓ Admin credentials loaded")
-          setStatusType("success")
-        } else {
-          throw new Error("Admin credentials not found")
-        }
+    loadFromFirebase()
 
-        // Load resume from localStorage or Firestore
-        const saved = localStorage.getItem(STORAGE_SAVED_KEY)
-        const session = sessionStorage.getItem(STORAGE_DRAFT_KEY)
-        
-        let initialDraft = null
-        if (session) {
-          initialDraft = JSON.parse(session)
-          setStatus("✓ Draft loaded from session")
-        } else if (saved) {
-          initialDraft = JSON.parse(saved)
-          setStatus("✓ Config loaded from cache")
-        } else {
-          initialDraft = defaultConfig
-          setStatus("✓ Using default config")
-        }
-        
-        setDraft(initialDraft)
-        committedRef.current = initialDraft
-        prevDraftRef.current = JSON.stringify(initialDraft)
-
-        // Real-time listener
-        const resumeDocRef = doc(db, FIRESTORE_RESUME_DOC)
-        unsubscribeRef.current = onSnapshot(
-          resumeDocRef,
-          (snapshot) => {
-            if (snapshot.exists()) {
-              console.log("📡 Real-time update received from Firestore")
-            }
-          },
-          (error) => {
-            console.error("Firebase listener error:", error)
-          }
-        )
-
-        setStatusType("success")
-      } catch (error) {
-        console.error("Init error:", error)
-        setStatus("⚠ Using offline mode")
-        setStatusType("error")
-        setDraft(defaultConfig)
-        committedRef.current = defaultConfig
-        prevDraftRef.current = JSON.stringify(defaultConfig)
-        setAdminCode("69")
+    const handleOnline = () => {
+      setIsOnline(true)
+      // Optionally reload data when coming back online
+      if (!draft) {
+        loadFromFirebase()
       }
     }
-
-    initializeData()
-
-    const handleOnline = () => setIsOnline(true)
     const handleOffline = () => setIsOnline(false)
     
     window.addEventListener("online", handleOnline)
@@ -276,11 +286,9 @@ export default function ResumeAdmin() {
     return () => {
       window.removeEventListener("online", handleOnline)
       window.removeEventListener("offline", handleOffline)
-      unsubscribeRef.current?.()
-      clearTimeout(syncTimeoutRef.current)
       clearTimeout(draftChangeTimeoutRef.current)
     }
-  }, [])
+  }, [loadFromFirebase])
 
   // Debounced draft save
   useEffect(() => {
@@ -335,6 +343,13 @@ export default function ResumeAdmin() {
       setIsSyncing(false)
     }
   }, [isOnline])
+
+  // Refresh data from Firebase
+  const refreshFromFirebase = async () => {
+    setStatus("🔄 Refreshing from Firebase...")
+    setStatusType("info")
+    await loadFromFirebase()
+  }
 
   const update = useCallback((path, val) => {
     setDraft(prev => {
@@ -484,6 +499,13 @@ export default function ResumeAdmin() {
             >
               <Eye size={16} /> {preview ? "EDIT" : "PREVIEW"}
             </button>
+            <button
+              onClick={refreshFromFirebase}
+              className="crt-button px-4 py-2 flex items-center gap-2"
+              title="Refresh from Firebase"
+            >
+              <RotateCcw size={16} /> REFRESH
+            </button>
           </div>
         </motion.div>
 
@@ -535,15 +557,17 @@ export default function ResumeAdmin() {
                 <div>
                   <h2 className="crt-text text-lg mb-2">Header</h2>
                   <input
-                    value={draft.header.title}
+                    value={draft.header?.title || ""}
                     onChange={(e) => update("header.title", e.target.value)}
                     className="crt-input mb-2"
+                    placeholder="Resume Title"
                     autoComplete="off"
                   />
                   <input
-                    value={draft.header.subtitle}
-                    onChange={(e) => update("header.subtitle", e.target.value)}
+                    value={draft.header?.gradient || ""}
+                    onChange={(e) => update("header.gradient", e.target.value)}
                     className="crt-input"
+                    placeholder="Gradient classes (e.g., from-cyan-400 via-blue-400 to-purple-400)"
                     autoComplete="off"
                   />
                 </div>
@@ -551,9 +575,10 @@ export default function ResumeAdmin() {
                 <div>
                   <h2 className="crt-text text-lg mb-2">Description</h2>
                   <textarea
-                    value={draft.description}
+                    value={draft.description || ""}
                     onChange={(e) => update("description", e.target.value)}
                     className="crt-input h-24 resize-none"
+                    placeholder="Resume description"
                     autoComplete="off"
                   />
                 </div>
@@ -587,7 +612,7 @@ export default function ResumeAdmin() {
                     </button>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {draft.skills.map((s, i) => (
+                    {draft.skills?.map((s, i) => (
                       <div key={`skill-${i}`} className="crt-panel flex items-center gap-2 px-3 py-1">
                         <span>{s}</span>
                         <button
@@ -604,55 +629,68 @@ export default function ResumeAdmin() {
                 <div>
                   <h2 className="crt-text text-lg mb-2">Google Drive Link</h2>
                   <input
-                    value={draft.links.googleDrive}
-                    onChange={(e) => update("links.googleDrive", e.target.value)}
+                    value={draft.resumeDriveLink || ""}
+                    onChange={(e) => update("resumeDriveLink", e.target.value)}
                     className="crt-input"
+                    placeholder="Google Drive resume link"
                     autoComplete="off"
                   />
                 </div>
 
                 <div>
-                  <h2 className="crt-text text-lg mb-2">Buttons</h2>
-                  {draft.buttons.map((btn, i) => (
-                    <div key={`btn-${i}`} className="crt-panel mb-2">
+                  <h2 className="crt-text text-lg mb-2">Metadata</h2>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-sm text-cyan-400 mb-1 flex items-center gap-2">
+                        <User size={14} />
+                        Updated By
+                      </label>
                       <input
-                        value={btn.label}
-                        onChange={(e) => {
-                          const copy = JSON.parse(JSON.stringify(draft))
-                          copy.buttons[i].label = e.target.value
-                          setDraft(copy)
-                        }}
-                        className="crt-input mb-2"
-                        placeholder="Label"
+                        value={draft.updatedBy || ""}
+                        onChange={(e) => update("updatedBy", e.target.value)}
+                        className="crt-input"
+                        placeholder="Updated by"
                         autoComplete="off"
                       />
-                      <select
-                        value={btn.icon}
-                        onChange={(e) => {
-                          const copy = JSON.parse(JSON.stringify(draft))
-                          copy.buttons[i].icon = e.target.value
-                          setDraft(copy)
-                        }}
-                        className="crt-input mb-2"
-                      >
-                        {Object.keys(iconMap).map((key) => (
-                          <option key={key} value={key}>{key}</option>
-                        ))}
-                      </select>
-                      <select
-                        value={btn.action}
-                        onChange={(e) => {
-                          const copy = JSON.parse(JSON.stringify(draft))
-                          copy.buttons[i].action = e.target.value
-                          setDraft(copy)
-                        }}
-                        className="crt-input"
-                      >
-                        <option value="modal">Modal</option>
-                        <option value="download">Download</option>
-                      </select>
                     </div>
-                  ))}
+                    <div>
+                      <label className="text-sm text-cyan-400 mb-1 flex items-center gap-2">
+                        <Calendar size={14} />
+                        Last Updated
+                      </label>
+                      <input
+                        value={draft.lastUpdated || ""}
+                        onChange={(e) => update("lastUpdated", e.target.value)}
+                        className="crt-input"
+                        placeholder="Last updated date"
+                        autoComplete="off"
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Read-only timestamp fields */}
+                  <div className="grid grid-cols-2 gap-3 mt-3">
+                    <div>
+                      <label className="text-sm text-cyan-400 mb-1 flex items-center gap-2">
+                        <Clock size={14} />
+                        Updated At (Auto)
+                      </label>
+                      <div className="crt-input bg-gray-800/50 cursor-not-allowed opacity-70">
+                        {draft.updatedAt ? formatTimestamp(draft.updatedAt) : "Not set"}
+                      </div>
+                      <p className="text-xs text-cyan-400/70 mt-1">Automatically set on save</p>
+                    </div>
+                    <div>
+                      <label className="text-sm text-cyan-400 mb-1 flex items-center gap-2">
+                        <User size={14} />
+                        Last Updated By (Auto)
+                      </label>
+                      <div className="crt-input bg-gray-800/50 cursor-not-allowed opacity-70">
+                        {draft.updatedBy || "Not set"}
+                      </div>
+                      <p className="text-xs text-cyan-400/70 mt-1">Set to 'kavshick' on save</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -664,21 +702,21 @@ export default function ResumeAdmin() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
           >
-            <h2 className="crt-text text-2xl mb-4">PREVIEW</h2>
+            <h2 className="crt-text text-2xl mb-4">RESUME PREVIEW</h2>
             <div className="space-y-4 pr-4">
               <div className="crt-panel">
                 <h3 className="text-lg crt-text mb-2">Header</h3>
-                <p className="text-lg font-bold">{draft.header.title}</p>
-                <p className="text-cyan-400">{draft.header.subtitle}</p>
+                <p className="text-lg font-bold">{draft.header?.title}</p>
+                <p className="text-cyan-400 text-sm">Gradient: {draft.header?.gradient}</p>
               </div>
               <div className="crt-panel">
                 <h3 className="text-lg crt-text mb-2">Description</h3>
                 <p className="text-sm">{draft.description}</p>
               </div>
               <div className="crt-panel">
-                <h3 className="text-lg crt-text mb-2">Skills ({draft.skills.length})</h3>
+                <h3 className="text-lg crt-text mb-2">Skills ({draft.skills?.length || 0})</h3>
                 <div className="flex flex-wrap gap-2">
-                  {draft.skills.map((s, i) => (
+                  {draft.skills?.map((s, i) => (
                     <span key={`preview-skill-${i}`} className="px-3 py-1 bg-cyan-500/20 rounded text-sm">
                       {s}
                     </span>
@@ -686,21 +724,41 @@ export default function ResumeAdmin() {
                 </div>
               </div>
               <div className="crt-panel">
-                <h3 className="text-lg crt-text mb-2">Buttons</h3>
-                <div className="flex flex-wrap gap-2">
-                  {draft.buttons.map((b, i) => (
-                    <span
-                      key={`preview-btn-${i}`}
-                      className="px-4 py-2 bg-cyan-500/20 rounded inline-flex items-center gap-2 text-sm"
-                    >
-                      {b.label} ({b.action})
-                    </span>
-                  ))}
-                </div>
+                <h3 className="text-lg crt-text mb-2">Resume Link</h3>
+                <p className="text-xs break-all text-cyan-300">{draft.resumeDriveLink}</p>
               </div>
               <div className="crt-panel">
-                <h3 className="text-lg crt-text mb-2">Links</h3>
-                <p className="text-xs break-all text-cyan-300">{draft.links.googleDrive}</p>
+                <h3 className="text-lg crt-text mb-2">Metadata</h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-cyan-400 flex items-center gap-2">
+                      <User size={14} />
+                      Updated By:
+                    </span>
+                    <p>{draft.updatedBy}</p>
+                  </div>
+                  <div>
+                    <span className="text-cyan-400 flex items-center gap-2">
+                      <Calendar size={14} />
+                      Last Updated:
+                    </span>
+                    <p>{draft.lastUpdated}</p>
+                  </div>
+                  <div>
+                    <span className="text-cyan-400 flex items-center gap-2">
+                      <Clock size={14} />
+                      Updated At:
+                    </span>
+                    <p>{draft.updatedAt ? formatTimestamp(draft.updatedAt) : "Not set"}</p>
+                  </div>
+                  <div>
+                    <span className="text-cyan-400 flex items-center gap-2">
+                      <User size={14} />
+                      Last Updated By:
+                    </span>
+                    <p>{draft.updatedBy || "Not set"}</p>
+                  </div>
+                </div>
               </div>
             </div>
           </motion.div>

@@ -91,14 +91,15 @@ LoadingSpinner.displayName = "LoadingSpinner";
 /* ============================================================================
    COUNTER COMPONENT - FIXED WITH KEY RESET
 ============================================================================ */
-const Counter = memo(function Counter({ to = 0, ms = 1200, play = false, key: componentKey }) {
+const Counter = memo(function Counter({ to = 0, ms = 1200, play = false, itemKey }) {
+
   const [val, setVal] = useState(0);
   const hasAnimatedRef = useRef(false);
 
   useEffect(() => {
     // Reset animation flag when key changes
     hasAnimatedRef.current = false;
-  }, [componentKey]);
+  },[itemKey]);
 
   useEffect(() => {
     if (!play || hasAnimatedRef.current) return;
@@ -986,7 +987,7 @@ export default function AboutWithDriveImage({ overrideConfig }) {
                               className="text-center min-w-0"
                               style={{ willChange: "transform, opacity" }}
                             >
-                              <Counter key={`${c.id}-${modeKey}`} to={Number(c.value) || 0} play={countersVisible} ms={1000} />
+                             <Counter itemKey={`${c.id}-${modeKey}`} to={Number(c.value) || 0} play={countersVisible} ms={1000} />
                               <span className="text-sm md:text-base text-white/70">{c.label}</span>
                             </motion.div>
                           ))

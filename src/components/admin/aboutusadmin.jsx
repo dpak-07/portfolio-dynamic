@@ -1,13 +1,20 @@
-import React, { useEffect, useState, useRef } from "react";
+"use client"
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Eye, Save, RotateCcw, Download, Upload,
   ChevronDown, ChevronUp, Plus, X, ArrowUp, ArrowDown,
-  GraduationCap, Brain, Laptop, Cloud, Trophy, Compass
+  GraduationCap, Brain, Laptop, Cloud, Trophy, Compass,
+  Wifi, WifiOff, Loader, AlertCircle, CheckCircle
 } from "lucide-react";
+import { doc, setDoc, getDoc, Timestamp } from "firebase/firestore";
+import { db } from "@/firebase";
+import { useFirestoreData } from "@/hooks/useFirestoreData";
 
 const STORAGE_DRAFT_KEY = "about_config_draft";
 const STORAGE_SAVED_KEY = "about_config_saved";
+const FIRESTORE_ABOUT_DOC = "aboutpage/main";
+const FIRESTORE_ADMIN_DOC = "admin/credentials";
 const ADMIN_CODE = "69";
 
 // CRT Screen effect styles
@@ -119,6 +126,9 @@ const CRTStyles = () => (
       border-radius: 4px;
     }
     .hide-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(0,229,255,0.5); }
+    .status-success { color: #4ade80; text-shadow: 0 0 10px rgba(74,222,128,0.6); }
+    .status-error { color: #f87171; text-shadow: 0 0 10px rgba(248,113,113,0.6); }
+    .status-info { color: #60a5fa; text-shadow: 0 0 10px rgba(96,165,250,0.6); }
   `}</style>
 );
 
@@ -176,16 +186,23 @@ function prettyValue(v) {
 export default function CRTAdminPanel() {
   const [draft, setDraft] = useState(null);
   const [activeTab, setActiveTab] = useState("basic");
-  const [status, setStatus] = useState("System Ready");
+  const [status, setStatus] = useState("🔌 Connecting to Firebase...");
+  const [statusType, setStatusType] = useState("info");
   const [previewMode, setPreviewMode] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
   
   // Save confirmation states
   const [changesPopupOpen, setChangesPopupOpen] = useState(false);
   const [pendingChanges, setPendingChanges] = useState([]);
   const [secretInput, setSecretInput] = useState("");
+  const [adminCode, setAdminCode] = useState(null);
   
   // Committed snapshot (last confirmed save)
   const committedRef = useRef(null);
+  const draftChangeTimeoutRef = useRef(null);
+  const prevDraftRef = useRef(null);
 
   const defaultConfig = {
     image: { 
@@ -215,46 +232,185 @@ export default function CRTAdminPanel() {
       { type: "interests", content: "Computer Vision, NLP, MLOps" }
     ],
     resumeTarget: "resume",
+    lastUpdated: new Date().toISOString(),
+    updatedBy: "deepak",
   };
 
-  useEffect(() => {
-    const session = sessionStorage.getItem(STORAGE_DRAFT_KEY);
-    if (session) {
-      try {
-        const parsed = JSON.parse(session);
-        setDraft(parsed);
-        committedRef.current = JSON.parse(JSON.stringify(parsed));
-        return;
-      } catch (e) {}
+  // Load data from Firebase
+  const loadFromFirebase = useCallback(async () => {
+    try {
+      // Fetch admin code
+      const adminDocRef = doc(db, FIRESTORE_ADMIN_DOC);
+      const adminSnap = await getDoc(adminDocRef);
+      
+      if (adminSnap.exists()) {
+        const adminData = adminSnap.data();
+        setAdminCode(String(adminData.secretCode));
+        setStatus("✓ Admin credentials loaded");
+        setStatusType("success");
+      } else {
+        throw new Error("Admin credentials not found");
+      }
+
+      // Load about page data from Firestore
+      const aboutDocRef = doc(db, FIRESTORE_ABOUT_DOC);
+      const aboutSnap = await getDoc(aboutDocRef);
+      
+      let initialDraft = null;
+      
+      if (aboutSnap.exists()) {
+        // Use data from Firestore
+        initialDraft = aboutSnap.data();
+        setStatus("✓ Config loaded from Firestore");
+      } else {
+        // Fallback to session storage or default
+        const session = sessionStorage.getItem(STORAGE_DRAFT_KEY);
+        
+        if (session) {
+          initialDraft = JSON.parse(session);
+          setStatus("✓ Draft loaded from session");
+        } else {
+          initialDraft = defaultConfig;
+          setStatus("✓ Using default config");
+        }
+      }
+      
+      setDraft(initialDraft);
+      committedRef.current = JSON.parse(JSON.stringify(initialDraft));
+      prevDraftRef.current = JSON.stringify(initialDraft);
+      setStatusType("success");
+
+    } catch (error) {
+      console.error("Init error:", error);
+      setStatus("⚠ Using offline mode");
+      setStatusType("error");
+      
+      // Fallback to session storage or default
+      const session = sessionStorage.getItem(STORAGE_DRAFT_KEY);
+      const fallbackDraft = session ? JSON.parse(session) : defaultConfig;
+      
+      setDraft(fallbackDraft);
+      committedRef.current = JSON.parse(JSON.stringify(fallbackDraft));
+      prevDraftRef.current = JSON.stringify(fallbackDraft);
+      setAdminCode(ADMIN_CODE);
     }
-    const saved = localStorage.getItem(STORAGE_SAVED_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setDraft(parsed);
-        committedRef.current = JSON.parse(JSON.stringify(parsed));
-        return;
-      } catch (e) {}
-    }
-    setDraft(defaultConfig);
-    committedRef.current = JSON.parse(JSON.stringify(defaultConfig));
   }, []);
 
+  // Save to Firebase
+  const saveToFirebase = useCallback(async (config) => {
+    if (!isOnline) {
+      setStatus("✗ No internet connection");
+      setStatusType("error");
+      return false;
+    }
+
+    setIsSyncing(true);
+    try {
+      const enrichedConfig = {
+        ...config,
+        lastUpdated: new Date().toISOString(),
+        updatedBy: "deepak",
+        updatedAt: Timestamp.now(),
+      };
+
+      await setDoc(
+        doc(db, FIRESTORE_ABOUT_DOC),
+        enrichedConfig,
+        { merge: true }
+      );
+
+      setStatus("✓ SAVED TO FIREBASE");
+      setStatusType("success");
+      setHasChanges(false);
+      return true;
+    } catch (error) {
+      console.error("Firebase save error:", error);
+      setStatus("✗ Firebase save failed");
+      setStatusType("error");
+      return false;
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [isOnline]);
+
+  // Initialize from Firebase
+  useEffect(() => {
+    loadFromFirebase();
+
+    const handleOnline = () => {
+      setIsOnline(true);
+      setStatus("✓ Back online");
+      setStatusType("success");
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+      setStatus("⚠ Offline mode");
+      setStatusType("error");
+    };
+    
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+      clearTimeout(draftChangeTimeoutRef.current);
+    };
+  }, [loadFromFirebase]);
+
+  // Debounced draft tracking
   useEffect(() => {
     if (!draft) return;
-    sessionStorage.setItem(STORAGE_DRAFT_KEY, JSON.stringify(draft));
+
+    if (draftChangeTimeoutRef.current) {
+      clearTimeout(draftChangeTimeoutRef.current);
+    }
+
+    const draftString = JSON.stringify(draft);
+    if (draftString === prevDraftRef.current) {
+      return;
+    }
+
+    prevDraftRef.current = draftString;
+    setHasChanges(true);
+    sessionStorage.setItem(STORAGE_DRAFT_KEY, draftString);
   }, [draft]);
 
-  // Ctrl/Cmd+S -> open save-confirm popup
+  // Block Google auto-save
   useEffect(() => {
-    const handler = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+    const preventAutoSave = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
         e.preventDefault();
+        setStatus("⚠ Use SAVE button instead of Ctrl+S");
+        setStatusType("info");
+        setTimeout(() => {
+          setStatus("✓ Ready to save");
+          setStatusType("success");
+        }, 2000);
         initiateSaveConfirmation();
+        return false;
       }
+    }
+
+    window.addEventListener('keydown', preventAutoSave);
+    
+    const disableAutofill = () => {
+      const inputs = document.querySelectorAll('input, textarea');
+      inputs.forEach(input => {
+        input.setAttribute('autocomplete', 'off');
+        input.setAttribute('autocorrect', 'off');
+        input.setAttribute('autocapitalize', 'off');
+        input.setAttribute('spellcheck', 'false');
+      });
     };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    
+    disableAutofill();
+    const interval = setInterval(disableAutofill, 1000);
+
+    return () => {
+      window.removeEventListener('keydown', preventAutoSave);
+      clearInterval(interval);
+    };
   }, [draft]);
 
   const updateNested = (path, value) => {
@@ -269,6 +425,7 @@ export default function CRTAdminPanel() {
     cur[parts[parts.length - 1]] = value;
     setDraft(copy);
     setStatus("Draft updated");
+    setStatusType("info");
   };
 
   const pushArray = (path, item) => {
@@ -318,6 +475,7 @@ export default function CRTAdminPanel() {
     const changed = computeChanges(prev, draft);
     if (changed.length === 0) {
       setStatus("No changes detected");
+      setStatusType("info");
       return;
     }
     setPendingChanges(changed);
@@ -325,38 +483,42 @@ export default function CRTAdminPanel() {
     setChangesPopupOpen(true);
   };
 
-  const confirmSaveWithCode = () => {
-    if (secretInput.trim() !== ADMIN_CODE) {
+  const confirmSaveWithCode = async () => {
+    if (secretInput.trim() !== String(adminCode)) {
       setStatus("✗ ACCESS DENIED");
+      setStatusType("error");
       return;
     }
     
     try {
-      localStorage.setItem(STORAGE_SAVED_KEY, JSON.stringify(draft));
-      sessionStorage.removeItem(STORAGE_DRAFT_KEY);
-      committedRef.current = JSON.parse(JSON.stringify(draft));
-      setChangesPopupOpen(false);
-      setStatus("✓ SAVED SUCCESSFULLY");
+      // Save to Firebase
+      const success = await saveToFirebase(draft);
+      
+      if (success) {
+        sessionStorage.removeItem(STORAGE_DRAFT_KEY);
+        committedRef.current = JSON.parse(JSON.stringify(draft));
+        setChangesPopupOpen(false);
+        setStatus("✓ SAVED SUCCESSFULLY");
+        setStatusType("success");
+      }
     } catch {
       setStatus("Save failed");
+      setStatusType("error");
     }
   };
 
-  const manualSaveDirect = () => {
-    try {
-      localStorage.setItem(STORAGE_SAVED_KEY, JSON.stringify(draft));
-      sessionStorage.removeItem(STORAGE_DRAFT_KEY);
-      committedRef.current = JSON.parse(JSON.stringify(draft));
-      setStatus("✓ SAVED SUCCESSFULLY");
-    } catch {
-      setStatus("Save failed");
-    }
+  const refreshFromFirebase = async () => {
+    setStatus("🔄 Refreshing from Firebase...");
+    setStatusType("info");
+    await loadFromFirebase();
   };
 
   const resetToDefault = () => {
     if (window.confirm("Reset all changes to default?")) {
       setDraft(defaultConfig);
       setStatus("Reset to default");
+      setStatusType("info");
+      setHasChanges(false);
     }
   };
 
@@ -369,6 +531,7 @@ export default function CRTAdminPanel() {
     a.click();
     URL.revokeObjectURL(url);
     setStatus("Exported configuration");
+    setStatusType("success");
   };
 
   const importJson = (e) => {
@@ -380,14 +543,27 @@ export default function CRTAdminPanel() {
         const imported = JSON.parse(evt.target.result);
         setDraft(imported);
         setStatus("Imported successfully");
+        setStatusType("success");
+        setHasChanges(true);
       } catch (err) {
         setStatus("Import failed: Invalid JSON");
+        setStatusType("error");
       }
     };
     reader.readAsText(file);
   };
 
-  if (!draft) return null;
+  if (!draft) {
+    return (
+      <div className="w-screen h-screen crt-screen crt-glow flex items-center justify-center">
+        <CRTStyles />
+        <div className="crt-text text-xl flex items-center gap-3">
+          <Loader className="animate-spin" size={24} />
+          Loading Admin Panel...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-screen h-screen overflow-hidden crt-screen crt-glow">
@@ -405,9 +581,44 @@ export default function CRTAdminPanel() {
                 ABOUT.US ADMIN TERMINAL
               </h1>
               <div className="text-xs crt-text opacity-60">v2.0.1</div>
+              <div className="flex items-center gap-2">
+                {isOnline ? (
+                  <>
+                    <Wifi size={16} className="text-green-400" />
+                    <span className="text-xs text-green-400">ONLINE</span>
+                  </>
+                ) : (
+                  <>
+                    <WifiOff size={16} className="text-red-400" />
+                    <span className="text-xs text-red-400">OFFLINE</span>
+                  </>
+                )}
+              </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="text-sm crt-text terminal-cursor">{status}</div>
+              <div className={`text-sm crt-text status-${statusType} flex items-center gap-2`}>
+                {isSyncing ? (
+                  <>
+                    <Loader size={14} className="animate-spin" />
+                    Syncing...
+                  </>
+                ) : statusType === "success" ? (
+                  <>
+                    <CheckCircle size={14} />
+                    {status}
+                  </>
+                ) : statusType === "error" ? (
+                  <>
+                    <AlertCircle size={14} />
+                    {status}
+                  </>
+                ) : (
+                  <>
+                    <Loader size={14} />
+                    {status}
+                  </>
+                )}
+              </div>
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -416,6 +627,16 @@ export default function CRTAdminPanel() {
               >
                 <Eye size={16} />
                 {previewMode ? "EDIT" : "PREVIEW"}
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={refreshFromFirebase}
+                className="crt-button px-4 py-2 rounded flex items-center gap-2 crt-text"
+                title="Refresh from Firebase"
+              >
+                <RotateCcw size={16} />
+                REFRESH
               </motion.button>
             </div>
           </div>
@@ -454,17 +675,18 @@ export default function CRTAdminPanel() {
                 <div>
                   <h3 className="text-sm crt-text mb-3 opacity-60">ACTIONS</h3>
                   <div className="space-y-2">
-                    <button onClick={initiateSaveConfirmation} className="w-full crt-button px-3 py-2 rounded crt-text flex items-center gap-2">
+                    <button 
+                      onClick={initiateSaveConfirmation} 
+                      disabled={!hasChanges}
+                      className="w-full crt-button px-3 py-2 rounded crt-text flex items-center gap-2"
+                    >
                       <Save size={16} /> SAVE (CONFIRM)
-                    </button>
-                    <button onClick={manualSaveDirect} className="w-full crt-button px-3 py-2 rounded crt-text flex items-center gap-2">
-                      <Save size={16} /> QUICK SAVE
-                    </button>
-                    <button onClick={resetToDefault} className="w-full crt-button px-3 py-2 rounded crt-text flex items-center gap-2">
-                      <RotateCcw size={16} /> RESET
                     </button>
                     <button onClick={exportJson} className="w-full crt-button px-3 py-2 rounded crt-text flex items-center gap-2">
                       <Download size={16} /> EXPORT
+                    </button>
+                    <button onClick={resetToDefault} className="w-full crt-button px-3 py-2 rounded crt-text flex items-center gap-2">
+                      <RotateCcw size={16} /> RESET
                     </button>
                     <label className="w-full crt-button px-3 py-2 rounded crt-text flex items-center gap-2 cursor-pointer">
                       <Upload size={16} /> IMPORT
@@ -481,7 +703,6 @@ export default function CRTAdminPanel() {
               >
                 <div className="h-full overflow-y-auto hide-scrollbar">
                   <AnimatePresence mode="wait">
-                    {/* ... (rest of your editor tabs remain exactly the same) */}
                     {activeTab === "basic" && (
                       <motion.div
                         key="basic"
@@ -499,6 +720,7 @@ export default function CRTAdminPanel() {
                             value={draft.image?.url || ""}
                             onChange={(e) => updateNested('image.url', e.target.value)}
                             className="w-full crt-input px-4 py-2 rounded"
+                            autoComplete="off"
                           />
                         </div>
 
@@ -521,6 +743,7 @@ export default function CRTAdminPanel() {
                               value={draft.resumeTarget || ""}
                               onChange={(e) => updateNested('resumeTarget', e.target.value)}
                               className="w-full crt-input px-4 py-2 rounded"
+                              autoComplete="off"
                             />
                           </div>
                         </div>
@@ -531,6 +754,7 @@ export default function CRTAdminPanel() {
                             value={draft.bio?.short || ""}
                             onChange={(e) => updateNested('bio.short', e.target.value)}
                             className="w-full crt-input px-4 py-2 rounded h-24"
+                            autoComplete="off"
                           />
                         </div>
                       </motion.div>
@@ -578,6 +802,7 @@ export default function CRTAdminPanel() {
                                       }}
                                       className="crt-input px-3 py-1 rounded text-sm"
                                       placeholder="Title"
+                                      autoComplete="off"
                                     />
                                     <select
                                       value={card.icon || "laptop"}
@@ -626,6 +851,7 @@ export default function CRTAdminPanel() {
                                   }}
                                   className="w-full crt-input px-3 py-1 rounded text-sm mb-2"
                                   placeholder="Short description"
+                                  autoComplete="off"
                                 />
                                 <textarea
                                   value={card.long || ""}
@@ -636,6 +862,7 @@ export default function CRTAdminPanel() {
                                   }}
                                   className="w-full crt-input px-3 py-1 rounded text-sm h-20"
                                   placeholder="Long description"
+                                  autoComplete="off"
                                 />
                               </div>
                             );
@@ -679,6 +906,7 @@ export default function CRTAdminPanel() {
                                 }}
                                 className="flex-1 crt-input px-3 py-2 rounded"
                                 placeholder="Label"
+                                autoComplete="off"
                               />
                               <input
                                 type="number"
@@ -689,6 +917,7 @@ export default function CRTAdminPanel() {
                                   setDraft(copy);
                                 }}
                                 className="w-24 crt-input px-3 py-2 rounded text-center"
+                                autoComplete="off"
                               />
                               <div className="flex gap-1">
                                 <button
@@ -742,6 +971,7 @@ export default function CRTAdminPanel() {
                                   e.target.value = '';
                                 }
                               }}
+                              autoComplete="off"
                             />
                             <button
                               onClick={() => {
@@ -777,6 +1007,7 @@ export default function CRTAdminPanel() {
                             value={draft.bio?.expanded?.recent || ""}
                             onChange={(e) => updateNested('bio.expanded.recent', e.target.value)}
                             className="w-full crt-input px-4 py-2 rounded h-24"
+                            autoComplete="off"
                           />
                         </div>
 
@@ -786,6 +1017,7 @@ export default function CRTAdminPanel() {
                             value={draft.bio?.expanded?.values || ""}
                             onChange={(e) => updateNested('bio.expanded.values', e.target.value)}
                             className="w-full crt-input px-4 py-2 rounded h-24"
+                            autoComplete="off"
                           />
                         </div>
                       </motion.div>
@@ -810,11 +1042,15 @@ export default function CRTAdminPanel() {
                                 const parsed = JSON.parse(e.target.value);
                                 setDraft(parsed);
                                 setStatus("JSON updated");
+                                setStatusType("info");
+                                setHasChanges(true);
                               } catch (err) {
                                 setStatus("Invalid JSON");
+                                setStatusType("error");
                               }
                             }}
                             className="w-full crt-input px-4 py-2 rounded font-mono text-xs h-96"
+                            autoComplete="off"
                           />
                         </div>
                       </motion.div>
@@ -894,7 +1130,9 @@ export default function CRTAdminPanel() {
                 <div>
                   <h3 className="text-xl crt-text crt-header mb-2">CONFIRM CHANGES</h3>
                   <p className="text-sm crt-text opacity-60">
-                    These sections have been modified. Enter admin code to save.
+                    {isOnline
+                      ? "These sections have been modified. Enter admin code to save to Firebase."
+                      : "🔌 Offline: Will save locally only. Firebase sync when online."}
                   </p>
                 </div>
               </div>
@@ -932,6 +1170,7 @@ export default function CRTAdminPanel() {
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') confirmSaveWithCode();
                     }}
+                    autoComplete="off"
                   />
                 </div>
               </div>
@@ -949,9 +1188,17 @@ export default function CRTAdminPanel() {
                 </button>
                 <button
                   onClick={confirmSaveWithCode}
-                  className="crt-button px-4 py-2 rounded crt-text bg-cyan-500/20 border-cyan-400"
+                  disabled={isSyncing}
+                  className="crt-button px-4 py-2 rounded crt-text bg-cyan-500/20 border-cyan-400 flex items-center gap-2"
                 >
-                  CONFIRM & SAVE
+                  {isSyncing ? (
+                    <>
+                      <Loader size={16} className="animate-spin" />
+                      SAVING...
+                    </>
+                  ) : (
+                    "CONFIRM & SAVE"
+                  )}
                 </button>
               </div>
             </motion.div>

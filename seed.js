@@ -269,7 +269,7 @@ async function seed() {
     await setDoc(doc(db, "projects", "data"), projectsData);
     
     // Config
-    await setDoc(doc(db, "config", "portfolio"), { theme: "holo" });
+    //await setDoc(doc(db, "config", "portfolio"), { theme: "holo" });
 
     console.log("✅ All collections seeded successfully!");
     console.log("📦 Collections created:");

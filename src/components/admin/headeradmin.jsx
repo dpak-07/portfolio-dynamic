@@ -1,19 +1,24 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Eye, Save, RotateCcw, Download, Upload,
-  Plus, X, ArrowUp, ArrowDown, Link as LinkIcon, FileText, Type, KeyRound
+  Plus, X, ArrowUp, ArrowDown, Link as LinkIcon, FileText, Type, KeyRound,
+  Loader, AlertCircle, CheckCircle, Wifi, WifiOff
 } from "lucide-react";
 import { Typewriter } from "react-simple-typewriter";
+import { doc, setDoc, getDoc, Timestamp } from "firebase/firestore";
+import { db } from "@/firebase";
 
 /* ================================
    STORAGE & ADMIN SETTINGS
 ================================== */
 const STORAGE_DRAFT_KEY = "header_config_draft";
 const STORAGE_SAVED_KEY = "header_config_saved";
-const ADMIN_CODE = "69";
+const FIRESTORE_HEADER_DOC = "portfolio/profile";
+const FIRESTORE_ADMIN_DOC = "admin/credentials";
+const SYNC_DEBOUNCE = 500;
 
 /* ================================
    CRT STYLES
@@ -44,6 +49,9 @@ const CRTStyles = () => (
     .hide-scrollbar::-webkit-scrollbar-track{background:rgba(0,0,0,.3);}
     .hide-scrollbar::-webkit-scrollbar-thumb{background:rgba(0,229,255,.3);border-radius:4px;}
     .hide-scrollbar::-webkit-scrollbar-thumb:hover{background:rgba(0,229,255,.5);}
+    .status-success{color:#4ade80;text-shadow:0 0 10px rgba(74,222,128,0.6);}
+    .status-error{color:#f87171;text-shadow:0 0 10px rgba(248,113,113,0.6);}
+    .status-info{color:#60a5fa;text-shadow:0 0 10px rgba(96,165,250,0.6);}
   `}</style>
 );
 
@@ -58,8 +66,7 @@ const defaultConfig = {
     "Automating tasks with Linux scripts 🐧",
     "Building scalable full-stack apps with React & Node ⚙️",
   ],
-  resumeDriveLink:
-    "https://drive.google.com/file/d/1BzHbJLKXz0xJFrsd9ZgJkAB0aR9d8nW_/view?usp=sharing",
+  resumeDriveLink: "https://drive.google.com/file/d/1BazHbJLKXz0xJFrsd9ZgJkAB0aR9d8nW_/view?usp=sharing",
   socials: {
     github: "https://github.com/dpak-07",
     linkedin: "https://www.linkedin.com/in/deepak-saminathan/",
@@ -68,6 +75,8 @@ const defaultConfig = {
     twitter: "",
     website: "https://deepak-portfolio.vercel.app",
   },
+  lastUpdated: new Date().toISOString().slice(0, 19).replace("T", " "),
+  updatedBy: "kavshick",
 };
 
 /* ================================
@@ -97,47 +106,243 @@ function prettyValue(v) {
 ================================== */
 export default function HeaderAdminCRT() {
   const [draft, setDraft] = useState(null);
-  const [status, setStatus] = useState("System Ready");
-  const [activeTab, setActiveTab] = useState("basic"); // basic | typewriter | links | advanced
+  const [status, setStatus] = useState("🔌 Connecting to Firebase...");
+  const [statusType, setStatusType] = useState("info");
+  const [activeTab, setActiveTab] = useState("basic");
   const [previewMode, setPreviewMode] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
 
   // Save confirmation modal
   const [changesPopupOpen, setChangesPopupOpen] = useState(false);
   const [pendingChanges, setPendingChanges] = useState([]);
   const [secretInput, setSecretInput] = useState("");
+  const [adminCode, setAdminCode] = useState(null);
 
   const committedRef = useRef(null);
+  const draftChangeTimeoutRef = useRef(null);
+  const prevDraftRef = useRef(null);
 
-  /* ---------------- Load / Persist ---------------- */
+  // Format timestamp for display
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp) return "Not set";
+    
+    try {
+      // Handle Firestore Timestamp
+      if (timestamp.toDate) {
+        return timestamp.toDate().toLocaleString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit"
+        });
+      }
+      
+      // Handle ISO string
+      if (typeof timestamp === "string") {
+        const date = new Date(timestamp.replace(" ", "T"));
+        return date.toLocaleString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit"
+        });
+      }
+      
+      return "Invalid date";
+    } catch (err) {
+      return String(timestamp);
+    }
+  };
+
+  // Block Google auto-save
   useEffect(() => {
-    // session > local > default
-    const s = sessionStorage.getItem(STORAGE_DRAFT_KEY);
-    if (s) {
-      try {
-        const parsed = JSON.parse(s);
-        setDraft(parsed);
-        committedRef.current = JSON.parse(JSON.stringify(parsed));
-        return;
-      } catch {}
-    }
-    const l = localStorage.getItem(STORAGE_SAVED_KEY);
-    if (l) {
-      try {
-        const parsed = JSON.parse(l);
-        setDraft(parsed);
-        committedRef.current = JSON.parse(JSON.stringify(parsed));
-        return;
-      } catch {}
-    }
-    setDraft(defaultConfig);
-    committedRef.current = JSON.parse(JSON.stringify(defaultConfig));
+    const preventAutoSave = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        setStatus("⚠ Use SAVE button instead of Ctrl+S");
+        setStatusType("info");
+        setTimeout(() => {
+          setStatus("✓ Ready to save");
+          setStatusType("success");
+        }, 2000);
+        return false;
+      }
+    };
+
+    window.addEventListener('keydown', preventAutoSave);
+    
+    const disableAutofill = () => {
+      const inputs = document.querySelectorAll('input, textarea');
+      inputs.forEach(input => {
+        input.setAttribute('autocomplete', 'off');
+        input.setAttribute('autocorrect', 'off');
+        input.setAttribute('autocapitalize', 'off');
+        input.setAttribute('spellcheck', 'false');
+      });
+    };
+    
+    disableAutofill();
+    const interval = setInterval(disableAutofill, 1000);
+
+    return () => {
+      window.removeEventListener('keydown', preventAutoSave);
+      clearInterval(interval);
+    };
   }, []);
 
-  useEffect(() => {
-    if (draft) {
-      sessionStorage.setItem(STORAGE_DRAFT_KEY, JSON.stringify(draft));
+  // Load data from Firebase using getDoc (one-time fetch)
+  const loadFromFirebase = useCallback(async () => {
+    try {
+      // Fetch admin code
+      const adminDocRef = doc(db, FIRESTORE_ADMIN_DOC);
+      const adminSnap = await getDoc(adminDocRef);
+      
+      if (adminSnap.exists()) {
+        const adminData = adminSnap.data();
+        setAdminCode(String(adminData.secretCode));
+        setStatus("✓ Admin credentials loaded");
+        setStatusType("success");
+      } else {
+        throw new Error("Admin credentials not found");
+      }
+
+      // Load header data from Firestore
+      const headerDocRef = doc(db, FIRESTORE_HEADER_DOC);
+      const headerSnap = await getDoc(headerDocRef);
+      
+      let initialDraft = null;
+      
+      if (headerSnap.exists()) {
+        // Use data from Firestore
+        initialDraft = headerSnap.data();
+        setStatus("✓ Config loaded from Firestore");
+      } else {
+        // Fallback to localStorage or default
+        const saved = localStorage.getItem(STORAGE_SAVED_KEY);
+        const session = sessionStorage.getItem(STORAGE_DRAFT_KEY);
+        
+        if (session) {
+          initialDraft = JSON.parse(session);
+          setStatus("✓ Draft loaded from session");
+        } else if (saved) {
+          initialDraft = JSON.parse(saved);
+          setStatus("✓ Config loaded from cache");
+        } else {
+          initialDraft = defaultConfig;
+          setStatus("✓ Using default config");
+        }
+      }
+      
+      setDraft(initialDraft);
+      committedRef.current = initialDraft;
+      prevDraftRef.current = JSON.stringify(initialDraft);
+      setStatusType("success");
+
+    } catch (error) {
+      console.error("Init error:", error);
+      setStatus("⚠ Using offline mode");
+      setStatusType("error");
+      setDraft(defaultConfig);
+      committedRef.current = defaultConfig;
+      prevDraftRef.current = JSON.stringify(defaultConfig);
+      setAdminCode("69");
     }
+  }, []);
+
+  // Initialize from Firebase (one-time load)
+  useEffect(() => {
+    loadFromFirebase();
+
+    const handleOnline = () => {
+      setIsOnline(true);
+      // Optionally reload data when coming back online
+      if (!draft) {
+        loadFromFirebase();
+      }
+    };
+    const handleOffline = () => setIsOnline(false);
+    
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+      clearTimeout(draftChangeTimeoutRef.current);
+    };
+  }, [loadFromFirebase]);
+
+  // Debounced draft save
+  useEffect(() => {
+    if (!draft) return;
+
+    if (draftChangeTimeoutRef.current) {
+      clearTimeout(draftChangeTimeoutRef.current);
+    }
+
+    const draftString = JSON.stringify(draft);
+    if (draftString === prevDraftRef.current) {
+      return;
+    }
+
+    prevDraftRef.current = draftString;
+    setHasChanges(true);
+
+    // Debounce session storage write
+    draftChangeTimeoutRef.current = setTimeout(() => {
+      sessionStorage.setItem(STORAGE_DRAFT_KEY, draftString);
+    }, SYNC_DEBOUNCE);
   }, [draft]);
+
+  // Firebase save function
+  const saveToFirebase = useCallback(async (config) => {
+    if (!isOnline) {
+      setStatus("✗ No internet connection");
+      setStatusType("error");
+      return false;
+    }
+
+    setIsSyncing(true);
+    try {
+      const enrichedConfig = {
+        ...config,
+        lastUpdated: new Date().toISOString(),
+        updatedBy: "kavshick",
+        updatedAt: Timestamp.now(),
+      };
+
+      await setDoc(
+        doc(db, FIRESTORE_HEADER_DOC),
+        enrichedConfig,
+        { merge: true }
+      );
+
+      setStatus("✓ SAVED TO FIREBASE");
+      setStatusType("success");
+      setHasChanges(false);
+      return true;
+    } catch (error) {
+      console.error("Firebase save error:", error);
+      setStatus("✗ Firebase save failed");
+      setStatusType("error");
+      return false;
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [isOnline]);
+
+  // Refresh data from Firebase
+  const refreshFromFirebase = async () => {
+    setStatus("🔄 Refreshing from Firebase...");
+    setStatusType("info");
+    await loadFromFirebase();
+  };
 
   /* ---------------- Helpers ---------------- */
   const update = (path, value) => {
@@ -151,6 +356,7 @@ export default function HeaderAdminCRT() {
     cur[parts[parts.length - 1]] = value;
     setDraft(copy);
     setStatus("Draft updated");
+    setStatusType("info");
   };
 
   // typewriter helpers
@@ -205,6 +411,7 @@ export default function HeaderAdminCRT() {
     const diffs = computeChanges(prev, draft);
     if (diffs.length === 0) {
       setStatus("No changes detected");
+      setStatusType("info");
       return;
     }
     setPendingChanges(diffs);
@@ -212,30 +419,46 @@ export default function HeaderAdminCRT() {
     setChangesPopupOpen(true);
   };
 
-  const confirmSaveWithCode = () => {
-    if (secretInput.trim() !== ADMIN_CODE) {
+  const confirmSaveWithCode = async () => {
+    if (String(secretInput).trim() !== String(adminCode)) {
       setStatus("✗ ACCESS DENIED");
+      setStatusType("error");
+      setTimeout(() => setSecretInput(""), 2000);
       return;
     }
+    
     try {
       localStorage.setItem(STORAGE_SAVED_KEY, JSON.stringify(draft));
       sessionStorage.removeItem(STORAGE_DRAFT_KEY);
       committedRef.current = JSON.parse(JSON.stringify(draft));
-      setChangesPopupOpen(false);
-      setStatus("✓ SAVED SUCCESSFULLY");
+
+      const success = await saveToFirebase(draft);
+      
+      if (success) {
+        setChangesPopupOpen(false);
+        setSecretInput("");
+      }
     } catch {
       setStatus("Save failed");
+      setStatusType("error");
     }
   };
 
-  const quickSave = () => {
+  const quickSave = async () => {
     try {
       localStorage.setItem(STORAGE_SAVED_KEY, JSON.stringify(draft));
       sessionStorage.removeItem(STORAGE_DRAFT_KEY);
       committedRef.current = JSON.parse(JSON.stringify(draft));
-      setStatus("✓ SAVED SUCCESSFULLY");
+
+      if (isOnline) {
+        await saveToFirebase(draft);
+      } else {
+        setStatus("✓ Saved locally (offline)");
+        setStatusType("info");
+      }
     } catch {
       setStatus("Save failed");
+      setStatusType("error");
     }
   };
 
@@ -243,6 +466,8 @@ export default function HeaderAdminCRT() {
     if (window.confirm("Reset to default configuration?")) {
       setDraft(defaultConfig);
       setStatus("Reset to default");
+      setStatusType("info");
+      setHasChanges(false);
     }
   };
 
@@ -257,6 +482,7 @@ export default function HeaderAdminCRT() {
     a.click();
     URL.revokeObjectURL(url);
     setStatus("Exported configuration");
+    setStatusType("success");
   };
 
   const importJson = (e) => {
@@ -275,14 +501,27 @@ export default function HeaderAdminCRT() {
         };
         setDraft(merged);
         setStatus("Imported successfully");
+        setStatusType("success");
       } catch {
         setStatus("Import failed: Invalid JSON");
+        setStatusType("error");
       }
     };
     reader.readAsText(file);
   };
 
-  if (!draft) return null;
+  if (!draft) {
+    return (
+      <div className="w-screen h-screen crt-screen crt-glow flex items-center justify-center">
+        <CRTStyles />
+        <div className="crt-panel p-8 rounded-lg flex flex-col items-center gap-4">
+          <Loader className="animate-spin" size={32} />
+          <p className="crt-text text-lg">Initializing Header Admin...</p>
+          <p className="crt-text opacity-60 text-sm">{status}</p>
+        </div>
+      </div>
+    );
+  }
 
   /* ================================
      UI
@@ -302,10 +541,44 @@ export default function HeaderAdminCRT() {
               <h1 className="text-2xl font-bold crt-text crt-header">
                 HEADER.ADMIN TERMINAL
               </h1>
-              <div className="text-xs crt-text opacity-60">v1.0.0</div>
+              <div className="flex items-center gap-2">
+                {isOnline ? (
+                  <>
+                    <Wifi size={16} className="text-green-400" />
+                    <span className="text-xs text-green-400">ONLINE</span>
+                  </>
+                ) : (
+                  <>
+                    <WifiOff size={16} className="text-red-400" />
+                    <span className="text-xs text-red-400">OFFLINE</span>
+                  </>
+                )}
+              </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="text-sm crt-text terminal-cursor">{status}</div>
+              <div className={`text-sm crt-text status-${statusType} flex items-center gap-2`}>
+                {isSyncing ? (
+                  <>
+                    <Loader size={14} className="animate-spin" />
+                    Syncing...
+                  </>
+                ) : statusType === "success" ? (
+                  <>
+                    <CheckCircle size={14} />
+                    {status}
+                  </>
+                ) : statusType === "error" ? (
+                  <>
+                    <AlertCircle size={14} />
+                    {status}
+                  </>
+                ) : (
+                  <>
+                    <Loader size={14} />
+                    {status}
+                  </>
+                )}
+              </div>
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -314,6 +587,16 @@ export default function HeaderAdminCRT() {
               >
                 <Eye size={16} />
                 {previewMode ? "EDIT" : "PREVIEW"}
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={refreshFromFirebase}
+                className="crt-button px-4 py-2 rounded flex items-center gap-2 crt-text"
+                title="Refresh from Firebase"
+              >
+                <RotateCcw size={16} />
+                REFRESH
               </motion.button>
             </div>
           </div>
@@ -359,12 +642,14 @@ export default function HeaderAdminCRT() {
                 <div className="space-y-2">
                   <button
                     onClick={initiateSave}
+                    disabled={!hasChanges}
                     className="w-full crt-button px-3 py-2 rounded crt-text flex items-center gap-2"
                   >
                     <Save size={16} /> SAVE (CONFIRM)
                   </button>
                   <button
                     onClick={quickSave}
+                    disabled={!hasChanges}
                     className="w-full crt-button px-3 py-2 rounded crt-text flex items-center gap-2"
                   >
                     <Save size={16} /> QUICK SAVE
@@ -446,6 +731,37 @@ export default function HeaderAdminCRT() {
                           onChange={(e) => update("resumeDriveLink", e.target.value)}
                           placeholder="https://drive.google.com/file/d/..."
                         />
+                      </div>
+
+                      {/* Metadata Section */}
+                      <div className="mt-6 pt-4 border-t border-cyan-700/40">
+                        <h3 className="text-lg crt-text mb-3">Metadata</h3>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <label className="block text-sm crt-text mb-2 opacity-60">Updated By</label>
+                            <input
+                              value={draft.updatedBy || ""}
+                              onChange={(e) => update("updatedBy", e.target.value)}
+                              className="crt-input w-full px-3 py-2"
+                              placeholder="Updated by"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm crt-text mb-2 opacity-60">Last Updated</label>
+                            <input
+                              value={draft.lastUpdated || ""}
+                              onChange={(e) => update("lastUpdated", e.target.value)}
+                              className="crt-input w-full px-3 py-2"
+                              placeholder="Last updated date"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm crt-text mb-2 opacity-60">Updated At (Auto)</label>
+                            <div className="crt-input bg-gray-800/50 cursor-not-allowed opacity-70 px-3 py-2">
+                              {draft.updatedAt ? formatTimestamp(draft.updatedAt) : "Not set"}
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </motion.div>
                   )}
@@ -654,6 +970,24 @@ export default function HeaderAdminCRT() {
                       </div>
                     </div>
                   </div>
+
+                  <div className="crt-panel p-4 rounded mt-4">
+                    <div className="text-lg mb-2">Metadata</div>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-cyan-400">Updated By:</span>
+                        <p>{draft.updatedBy || "Not set"}</p>
+                      </div>
+                      <div>
+                        <span className="text-cyan-400">Last Updated:</span>
+                        <p>{draft.lastUpdated || "Not set"}</p>
+                      </div>
+                      <div>
+                        <span className="text-cyan-400">Updated At:</span>
+                        <p>{draft.updatedAt ? formatTimestamp(draft.updatedAt) : "Not set"}</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -678,9 +1012,11 @@ export default function HeaderAdminCRT() {
             >
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h3 className="text-xl crt-text crt-header mb-2">CONFIRM CHANGES</h3>
+                  <h3 className="text-xl crt-text crt-header mb-2">CONFIRM SAVE</h3>
                   <p className="text-sm crt-text opacity-60">
-                    These sections were modified. Enter admin code to save.
+                    {isOnline
+                      ? "Enter admin code to save to Firestore & local storage."
+                      : "🔌 Offline: Will save locally only. Firestore sync when online."}
                   </p>
                 </div>
               </div>
@@ -721,6 +1057,8 @@ export default function HeaderAdminCRT() {
                   onKeyDown={(e) => {
                     if (e.key === "Enter") confirmSaveWithCode();
                   }}
+                  autoComplete="off"
+                  spellCheck="false"
                 />
               </div>
 
@@ -737,9 +1075,10 @@ export default function HeaderAdminCRT() {
                 </button>
                 <button
                   onClick={confirmSaveWithCode}
+                  disabled={isSyncing}
                   className="crt-button px-4 py-2 rounded crt-text bg-cyan-500/20 border-cyan-400"
                 >
-                  CONFIRM & SAVE
+                  {isSyncing ? "SAVING..." : "CONFIRM & SAVE"}
                 </button>
               </div>
             </motion.div>

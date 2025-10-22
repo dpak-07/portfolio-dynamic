@@ -6,39 +6,16 @@ import { useFirestoreData } from "@/hooks/useFirestoreData"
 
 export default function Resume() {
   const [isOpen, setIsOpen] = useState(false)
-  const [resumeData, setResumeData] = useState(null)
-  const [loading, setLoading] = useState(true)
 
-  // Fetch resume data from Firestore
-  const { data: firestoreData, error: firestoreError } = useFirestoreData("resume", "data")
-
-  // Fallback resume data
-  const FALLBACK_DATA = {
-    header: {
-      title: "My Interactive Resume",
-      gradient: "from-cyan-400 via-blue-400 to-purple-400",
-    },
-    description:
-      "Driven software engineer passionate about designing intelligent, scalable, and visually refined digital systems. Focused on merging AI, full-stack architecture, and human-centered design to craft seamless experiences that empower users and transform industries.",
-    skills: [
-      "Full-Stack Development",
-      "AI & Machine Learning",
-      "Cloud Infrastructure",
-      "DevOps & CI/CD",
-      "Data Engineering",
-      "Product Design",
-    ],
-    resumeDriveLink:
-      "https://drive.google.com/file/d/1BazHbJLKXz0xJFrsd9ZgJkAB0aR9d8nW_/view?usp=sharing",
-    lastUpdated: new Date().toISOString().slice(0, 19).replace("T", " "),
-    updatedBy: "admin",
-  }
+  // Fetch resume data directly from Firestore
+  const { data: resumeData, loading, error } = useFirestoreData("resume", "data")
 
   // Convert timestamp format for display
   const formatDate = (dateString) => {
     if (!dateString) return "Unknown"
     try {
-      const date = new Date(dateString.replace(" ", "T"))
+      // Handle both ISO string and Firestore Timestamp
+      const date = new Date(dateString.replace?.(" ", "T") || dateString)
       return date.toLocaleDateString("en-US", {
         year: "numeric",
         month: "long",
@@ -51,47 +28,8 @@ export default function Resume() {
     }
   }
 
-  // Process Firestore data
-  useEffect(() => {
-    if (firestoreData) {
-      try {
-        const processedData = {
-          header: {
-            title: firestoreData.header?.title || "My Interactive Resume",
-            gradient: firestoreData.header?.gradient || "from-cyan-400 via-blue-400 to-purple-400",
-          },
-          description:
-            firestoreData.description || FALLBACK_DATA.description,
-          skills: firestoreData.skills || FALLBACK_DATA.skills,
-          resumeDriveLink: firestoreData.resumeDriveLink || FALLBACK_DATA.resumeDriveLink,
-          lastUpdated: firestoreData.lastUpdated || FALLBACK_DATA.lastUpdated,
-          updatedBy: firestoreData.updatedBy || FALLBACK_DATA.updatedBy,
-        }
-        setResumeData(processedData)
-        console.log("✅ Resume data loaded from Firestore")
-        setLoading(false)
-      } catch (err) {
-        console.warn("⚠️ Error processing Firestore data, using fallback:", err)
-        setResumeData(FALLBACK_DATA)
-        setLoading(false)
-      }
-    } else if (!loading && !firestoreData) {
-      setResumeData(FALLBACK_DATA)
-    }
-  }, [firestoreData])
-
-  // Show fallback if there's an error or no data
-  useEffect(() => {
-    if (firestoreError && !resumeData) {
-      console.warn("⚠️ Using fallback resume data due to error:", firestoreError)
-      setResumeData(FALLBACK_DATA)
-      setLoading(false)
-    }
-  }, [firestoreError, resumeData])
-
   // 🧠 Extract Drive ID and generate preview/download links
-  const currentData = resumeData || FALLBACK_DATA
-  const fileId = currentData.resumeDriveLink.match(/\/d\/(.*?)\//)?.[1] || null
+  const fileId = resumeData?.resumeDriveLink?.match(/\/d\/(.*?)\//)?.[1] || null
   const embedLink = fileId
     ? `https://drive.google.com/file/d/${fileId}/preview`
     : null
@@ -121,6 +59,22 @@ export default function Resume() {
     )
   }
 
+  if (error || !resumeData) {
+    return (
+      <section
+        id="resume"
+        className="relative bg-[#030712] py-20 sm:py-28 px-4 sm:px-8 text-white overflow-hidden"
+      >
+        <div className="relative max-w-5xl mx-auto rounded-3xl p-6 sm:p-10 bg-white/5 backdrop-blur-2xl border border-white/10 flex items-center justify-center h-64">
+          <div className="text-center">
+            <p className="text-red-400 mb-2">Failed to load resume data</p>
+            <p className="text-white/70 text-sm">Please check your connection</p>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
   return (
     <section
       id="resume"
@@ -140,9 +94,9 @@ export default function Resume() {
         {/* ✨ Header with Updated Info */}
         <div className="flex flex-col sm:flex-row justify-between gap-4 sm:gap-0 items-start sm:items-center relative z-10 mb-6">
           <h2
-            className={`text-3xl sm:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r ${currentData.header.gradient}`}
+            className={`text-3xl sm:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r ${resumeData.header?.gradient || "from-cyan-400 via-blue-400 to-purple-400"}`}
           >
-            {currentData.header.title}
+            {resumeData.header?.title || "My Interactive Resume"}
           </h2>
           
           {/* Update Info */}
@@ -155,7 +109,7 @@ export default function Resume() {
             >
               <Calendar className="w-4 h-4" />
               <span className="whitespace-nowrap">
-                Updated: {formatDate(currentData.lastUpdated)}
+                Updated: {formatDate(resumeData.lastUpdated)}
               </span>
             </motion.div>
 
@@ -168,7 +122,7 @@ export default function Resume() {
             >
               <User className="w-4 h-4" />
               <span className="whitespace-nowrap">
-                By: {currentData.updatedBy}
+                By: {resumeData.updatedBy || "admin"}
               </span>
             </motion.div>
           </div>
@@ -181,12 +135,12 @@ export default function Resume() {
           transition={{ delay: 0.3, duration: 0.6 }}
           className="text-white/80 mt-5 sm:mt-6 text-sm sm:text-base leading-relaxed relative z-10"
         >
-          {currentData.description}
+          {resumeData.description}
         </motion.p>
 
         {/* 🧩 Skills */}
         <div className="flex flex-wrap gap-2 sm:gap-3 mt-8 sm:mt-10 relative z-10">
-          {currentData.skills.map((skill, i) => (
+          {resumeData.skills?.map((skill, i) => (
             <motion.span
               key={i}
               whileHover={{ scale: 1.05 }}
