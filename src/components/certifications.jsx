@@ -12,97 +12,15 @@ import {
   BookOpen,
   Briefcase,
   Award,
+  Loader2,
 } from "lucide-react";
+import { useFirestoreData } from "@/hooks/useFirestoreData";
 
-const certificateData = {
-  categories: [
-    {
-      id: "courses",
-      label: "Courses",
-      icon: <BookOpen className="w-5 h-5 text-cyan-400" />,
-      items: [
-        {
-          title: "Full Stack Web Development",
-          issuer: "Udemy",
-          date: "Jan 2024",
-          desc: "Mastered the MERN stack with real-world projects.",
-          images: [
-            "https://cdn.pixabay.com/photo/2017/08/30/07/55/certificate-2699421_960_720.png",
-          ],
-        },
-        {
-          title: "AI Fundamentals",
-          issuer: "Google Cloud",
-          date: "Oct 2023",
-          desc: "Built hands-on ML pipelines using TensorFlow and Vertex AI.",
-          images: [
-            "https://cdn.pixabay.com/photo/2016/03/31/20/11/certificate-1295391_960_720.png",
-            "https://cdn.pixabay.com/photo/2017/08/30/07/55/certificate-2699421_960_720.png",
-          ],
-        },
-        {
-          title: "Data Structures Mastery",
-          issuer: "Coursera",
-          date: "Nov 2023",
-          desc: "Solved over 150 coding challenges across various platforms.",
-          images: [
-            "https://cdn.pixabay.com/photo/2016/03/31/20/11/certificate-1295391_960_720.png",
-          ],
-        },
-      ],
-    },
-    {
-      id: "internships",
-      label: "Internships",
-      icon: <Briefcase className="w-5 h-5 text-purple-400" />,
-      items: [
-        {
-          title: "Frontend Developer Intern",
-          issuer: "TechNova Pvt. Ltd.",
-          date: "May 2024 – Aug 2024",
-          desc: "Created dynamic, animated UI with React + Framer Motion.",
-          images: [
-            "https://cdn.pixabay.com/photo/2016/03/31/20/11/certificate-1295391_960_720.png",
-          ],
-        },
-        {
-          title: "Data Science Intern",
-          issuer: "DataVision Labs",
-          date: "Dec 2023 – Feb 2024",
-          desc: "Built predictive dashboards and visual analytics.",
-          images: [
-            "https://cdn.pixabay.com/photo/2017/08/30/07/55/certificate-2699421_960_720.png",
-          ],
-        },
-      ],
-    },
-    {
-      id: "participations",
-      label: "Participations",
-      icon: <Award className="w-5 h-5 text-amber-400" />,
-      items: [
-        {
-          title: "HackByte 2024 Finalist",
-          issuer: "NIT Hackathon",
-          date: "Apr 2024",
-          desc: "Top 10 team out of 200, AI-powered innovation project.",
-          images: [
-            "https://cdn.pixabay.com/photo/2017/08/30/07/55/certificate-2699421_960_720.png",
-          ],
-        },
-        {
-          title: "UI Design Challenge",
-          issuer: "Dribbble Community",
-          date: "Jul 2023",
-          desc: "Designed futuristic interfaces using Figma.",
-          images: [
-            "https://cdn.pixabay.com/photo/2016/03/31/20/11/certificate-1295391_960_720.png",
-            "https://cdn.pixabay.com/photo/2017/08/30/07/55/certificate-2699421_960_720.png",
-          ],
-        },
-      ],
-    },
-  ],
+// Icon mapping
+const iconComponents = {
+  BookOpen: BookOpen,
+  Briefcase: Briefcase,
+  Award: Award,
 };
 
 const containerVariants = {
@@ -125,10 +43,45 @@ const cardVariants = {
 };
 
 export default function CertificationsSection() {
+  // 🔥 Fetch certifications from Firestore
+  const { data: certsData, loading: firestoreLoading, error: firestoreError } = useFirestoreData('certifications', 'data');
+
+  // Parse Firestore data and map icons
+  const certificateData = certsData ? {
+    categories: certsData.categories.map(cat => ({
+      ...cat,
+      icon: iconComponents[cat.icon] ? React.createElement(iconComponents[cat.icon], { 
+        className: "w-5 h-5 text-cyan-400" 
+      }) : null
+    }))
+  } : {
+    categories: [
+      {
+        id: "courses",
+        label: "Courses",
+        icon: <BookOpen className="w-5 h-5 text-cyan-400" />,
+        items: [],
+      },
+      {
+        id: "internships",
+        label: "Internships", 
+        icon: <Briefcase className="w-5 h-5 text-purple-400" />,
+        items: [],
+      },
+      {
+        id: "participations",
+        label: "Participations",
+        icon: <Award className="w-5 h-5 text-amber-400" />,
+        items: [],
+      },
+    ],
+  };
+
   const [active, setActive] = useState("courses");
   const [selected, setSelected] = useState(null);
   const [imageIndex, setImageIndex] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [loading, setLoading] = useState(false);
 
   const sectionRef = useRef(null);
   const scrollRef = useRef(null);
@@ -138,9 +91,17 @@ export default function CertificationsSection() {
     (cat) => cat.id === active
   );
 
+  const handleCategoryChange = (cat) => {
+    setLoading(true);
+    setTimeout(() => {
+      setActive(cat);
+      setLoading(false);
+    }, 400);
+  };
+
   // Auto scroll horizontally (mobile)
   useEffect(() => {
-    if (window.innerWidth < 768 && scrollRef.current) {
+    if (window.innerWidth < 768 && scrollRef.current && !firestoreLoading && !loading) {
       const scrollInterval = setInterval(() => {
         const container = scrollRef.current;
         if (!container) return;
@@ -150,7 +111,7 @@ export default function CertificationsSection() {
       }, 3500);
       return () => clearInterval(scrollInterval);
     }
-  }, [active]);
+  }, [active, firestoreLoading, loading]);
 
   // Scroll progress bar update
   useEffect(() => {
@@ -190,8 +151,21 @@ export default function CertificationsSection() {
     );
   };
 
+  // Show error state if Firestore fails
+  if (firestoreError) {
+    return (
+      <section id="certifications" className="relative w-full min-h-screen px-6 py-16 text-white overflow-hidden bg-[radial-gradient(circle_at_top_left,#0a0a0a_0%,#000000_60%,#050505_100%)]">
+        <div className="relative z-10 text-center">
+          <h2 className="text-3xl font-bold text-red-400 mb-4">Failed to Load Certifications</h2>
+          <p className="text-white/70">{firestoreError}</p>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <motion.section
+      id="certifications"
       ref={sectionRef}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -216,7 +190,7 @@ export default function CertificationsSection() {
         {certificateData.categories.map((cat) => (
           <motion.button
             key={cat.id}
-            onClick={() => setActive(cat.id)}
+            onClick={() => handleCategoryChange(cat.id)}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className={`flex items-center gap-2 px-5 py-2 rounded-full font-medium border transition-all ${
@@ -231,54 +205,76 @@ export default function CertificationsSection() {
         ))}
       </div>
 
+      {/* Loader */}
+      <AnimatePresence>
+        {(loading || firestoreLoading) && (
+          <motion.div
+            key="loader"
+            className="flex justify-center items-center h-40"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }}
+            >
+              <Loader2 size={40} className="text-cyan-400" />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Certificates */}
       <AnimatePresence mode="wait">
-        <motion.div
-          key={active}
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          exit="hidden"
-          ref={scrollRef}
-          className="flex md:grid md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto overflow-x-auto snap-x snap-mandatory scroll-smooth md:overflow-visible no-scrollbar pb-4"
-        >
-          {activeCategory.items.map((item, i) => (
-            <motion.div
-              key={i}
-              variants={cardVariants}
-              whileHover={{
-                scale: 1.05,
-                rotateX: 2,
-                rotateY: -2,
-                boxShadow:
-                  "0 0 25px rgba(255,255,255,0.15), 0 0 50px rgba(0,255,255,0.1)",
-              }}
-              transition={{ type: "spring", stiffness: 180, damping: 14 }}
-              onClick={() => {
-                setSelected(item);
-                setImageIndex(0);
-              }}
-              className="cursor-pointer min-w-[85%] sm:min-w-[45%] md:min-w-0 snap-center p-6 rounded-2xl border border-white/20 bg-white/10 backdrop-blur-lg text-left relative group overflow-hidden"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/10 to-transparent opacity-0 group-hover:opacity-20 transition-all"></div>
+        {!loading && !firestoreLoading && (
+          <motion.div
+            key={active}
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
+            ref={scrollRef}
+            className="flex md:grid md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto overflow-x-auto snap-x snap-mandatory scroll-smooth md:overflow-visible no-scrollbar pb-4"
+          >
+            {activeCategory?.items?.map((item, i) => (
+              <motion.div
+                key={i}
+                variants={cardVariants}
+                whileHover={{
+                  scale: 1.05,
+                  rotateX: 2,
+                  rotateY: -2,
+                  boxShadow:
+                    "0 0 25px rgba(255,255,255,0.15), 0 0 50px rgba(0,255,255,0.1)",
+                }}
+                transition={{ type: "spring", stiffness: 180, damping: 14 }}
+                onClick={() => {
+                  setSelected(item);
+                  setImageIndex(0);
+                }}
+                className="cursor-pointer min-w-[85%] sm:min-w-[45%] md:min-w-0 snap-center p-6 rounded-2xl border border-white/20 bg-white/10 backdrop-blur-lg text-left relative group overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/10 to-transparent opacity-0 group-hover:opacity-20 transition-all"></div>
 
-              <div className="flex items-center gap-2 mb-1">
-                <FileBadge className="w-4 h-4 text-cyan-400" />
-                <h3 className="text-lg font-semibold">{item.title}</h3>
-              </div>
+                <div className="flex items-center gap-2 mb-1">
+                  <FileBadge className="w-4 h-4 text-cyan-400" />
+                  <h3 className="text-lg font-semibold">{item.title}</h3>
+                </div>
 
-              <div className="flex items-center gap-2 mb-1 text-gray-400 text-sm">
-                <Building2 className="w-4 h-4" /> {item.issuer}
-              </div>
+                <div className="flex items-center gap-2 mb-1 text-gray-400 text-sm">
+                  <Building2 className="w-4 h-4" /> {item.issuer}
+                </div>
 
-              <div className="flex items-center gap-2 mb-2 text-gray-500 text-xs">
-                <CalendarDays className="w-4 h-4" /> {item.date}
-              </div>
+                <div className="flex items-center gap-2 mb-2 text-gray-500 text-xs">
+                  <CalendarDays className="w-4 h-4" /> {item.date}
+                </div>
 
-              <p className="text-gray-300 text-sm">{item.desc}</p>
-            </motion.div>
-          ))}
-        </motion.div>
+                <p className="text-gray-300 text-sm">{item.desc}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
       </AnimatePresence>
 
       {/* Animated Scrollbar */}

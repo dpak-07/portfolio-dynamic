@@ -249,14 +249,107 @@ const projectsData = {
 };
 
 /* -------------------------------------------------------
+   📜 Certifications Data
+------------------------------------------------------- */
+const certificationsData = {
+  categories: [
+    {
+      id: "courses",
+      label: "Courses",
+      icon: "BookOpen",
+      items: [
+        {
+          title: "Full Stack Web Development",
+          issuer: "Udemy",
+          date: "Jan 2024",
+          desc: "Mastered the MERN stack with real-world projects.",
+          images: [
+            "https://cdn.pixabay.com/photo/2017/08/30/07/55/certificate-2699421_960_720.png",
+          ],
+        },
+        {
+          title: "AI Fundamentals",
+          issuer: "Google Cloud",
+          date: "Oct 2023",
+          desc: "Built hands-on ML pipelines using TensorFlow and Vertex AI.",
+          images: [
+            "https://cdn.pixabay.com/photo/2016/03/31/20/11/certificate-1295391_960_720.png",
+            "https://cdn.pixabay.com/photo/2017/08/30/07/55/certificate-2699421_960_720.png",
+          ],
+        },
+        {
+          title: "Data Structures Mastery",
+          issuer: "Coursera",
+          date: "Nov 2023",
+          desc: "Solved over 150 coding challenges across various platforms.",
+          images: [
+            "https://cdn.pixabay.com/photo/2016/03/31/20/11/certificate-1295391_960_720.png",
+          ],
+        },
+      ],
+    },
+    {
+      id: "internships",
+      label: "Internships",
+      icon: "Briefcase",
+      items: [
+        {
+          title: "Frontend Developer Intern",
+          issuer: "TechNova Pvt. Ltd.",
+          date: "May 2024 – Aug 2024",
+          desc: "Created dynamic, animated UI with React + Framer Motion.",
+          images: [
+            "https://cdn.pixabay.com/photo/2016/03/31/20/11/certificate-1295391_960_720.png",
+          ],
+        },
+        {
+          title: "Data Science Intern",
+          issuer: "DataVision Labs",
+          date: "Dec 2023 – Feb 2024",
+          desc: "Built predictive dashboards and visual analytics.",
+          images: [
+            "https://cdn.pixabay.com/photo/2017/08/30/07/55/certificate-2699421_960_720.png",
+          ],
+        },
+      ],
+    },
+    {
+      id: "participations",
+      label: "Participations",
+      icon: "Award",
+      items: [
+        {
+          title: "HackByte 2024 Finalist",
+          issuer: "NIT Hackathon",
+          date: "Apr 2024",
+          desc: "Top 10 team out of 200, AI-powered innovation project.",
+          images: [
+            "https://cdn.pixabay.com/photo/2017/08/30/07/55/certificate-2699421_960_720.png",
+          ],
+        },
+        {
+          title: "UI Design Challenge",
+          issuer: "Dribbble Community",
+          date: "Jul 2023",
+          desc: "Designed futuristic interfaces using Figma.",
+          images: [
+            "https://cdn.pixabay.com/photo/2016/03/31/20/11/certificate-1295391_960_720.png",
+            "https://cdn.pixabay.com/photo/2017/08/30/07/55/certificate-2699421_960_720.png",
+          ],
+        },
+      ],
+    },
+  ],
+};
+
+/* -------------------------------------------------------
    🚀 Firestore Seeder
 ------------------------------------------------------- */
 async function seed() {
   try {
-    // Admin & Sections
     // await setDoc(doc(db, "admin", "credentials"), adminData);
-    await setDoc(doc(db, "sections", "visibility"), sectionsData);
-    
+    //await setDoc(doc(db, "sections", "visibility"), sectionsData);
+    await setDoc(doc(db, "certifications", "data"), certificationsData);
     // // Profile data
     // await setDoc(doc(db, "portfolio", "profile"), profileData);
     
