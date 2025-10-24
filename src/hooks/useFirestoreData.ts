@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { db } from "@/firebase/firebase";
+import { db } from "@/firebase";
 import { collection, getDoc, getDocs, doc } from "firebase/firestore";
 
 interface UseFirestoreDataOptions {
