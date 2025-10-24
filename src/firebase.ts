@@ -1,8 +1,7 @@
-// src/firebase.js
+// ✅ src/firebase.js
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 
-// --- ✅ Firebase Configuration ---
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -12,23 +11,6 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-// --- ✅ Validate environment variables in development ---
-if (import.meta.env.DEV) {
-  const missingKeys = Object.entries(firebaseConfig)
-    .filter(([_, v]) => !v)
-    .map(([k]) => k);
-  if (missingKeys.length > 0) {
-    console.warn(
-      `⚠️ Missing Firebase environment variables: ${missingKeys.join(", ")}`
-    );
-  }
-}
-
-// --- ✅ Initialize Firebase only once ---
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-
-// --- ✅ Initialize Firestore ---
 export const db = getFirestore(app);
-
-// --- ✅ Optional: Export Firebase app if needed elsewhere ---
 export default app;
