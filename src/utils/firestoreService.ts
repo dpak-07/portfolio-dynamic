@@ -1,5 +1,5 @@
 // src/utils/firestoreService.ts
-import { db } from "@/firebase";
+import { db } from "@/firebase/firebase";
 import {
   collection,
   doc,

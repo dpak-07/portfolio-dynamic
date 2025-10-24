@@ -40,35 +40,55 @@ const mobileSlideVariants = {
   },
 }
 
-// Fallback categories in case Firestore data is unavailable
-const FALLBACK_CATEGORIES = [
-  { title: "Languages", color: "from-purple-400 to-pink-500", tech: ["C", "Python", "Java", "JavaScript", "Dart", "HTML", "CSS", "TypeScript"] },
-  { title: "Frontend", color: "from-blue-500 to-cyan-400", tech: ["React", "Next.js", "Tailwind CSS", "Flutter", "Bootstrap", "Vite"] },
-  { title: "Backend", color: "from-green-500 to-emerald-400", tech: ["Node.js", "Express", "Flask", "FastAPI", "Spring Boot"] },
-  { title: "Databases", color: "from-orange-400 to-amber-500", tech: ["MongoDB", "MySQL", "SQLite", "PostgreSQL", "Firebase"] },
-  { title: "Cloud & DevOps", color: "from-yellow-400 to-lime-400", tech: ["AWS", "Google Cloud", "Docker", "Kubernetes", "Vercel"] },
-  { title: "AI & ML", color: "from-red-400 to-pink-400", tech: ["TensorFlow", "PyTorch", "OpenCV", "Keras", "NumPy", "Pandas"] },
-  { title: "Mobile", color: "from-teal-400 to-green-400", tech: [""] },
-  { title: "Tools", color: "from-indigo-400 to-blue-400", tech: ["Git", "GitHub", "VS Code", "Postman", "Linux", "Figma"] },
-]
-
-// Color mapping for categories
+// Color mapping for categories - dynamically handles any category title
 const COLOR_MAP = {
-  Languages: "from-purple-400 to-pink-500",
-  Frontend: "from-blue-500 to-cyan-400",
-  Backend: "from-green-500 to-emerald-400",
-  Databases: "from-orange-400 to-amber-500",
+  // Programming & Languages
+  "Programming Languages": "from-purple-400 to-pink-500",
+  "Languages": "from-purple-400 to-pink-500",
+  
+  // Frontend
+  "Frontend Development": "from-blue-500 to-cyan-400",
+  "Frontend": "from-blue-500 to-cyan-400",
+  
+  // Backend
+  "Backend Development": "from-green-500 to-emerald-400",
+  "Backend": "from-green-500 to-emerald-400",
+  
+  // Databases
+  "Databases": "from-orange-400 to-amber-500",
+  
+  // Cloud & DevOps
   "Cloud & DevOps": "from-yellow-400 to-lime-400",
+  
+  // AI & ML
+  "AI & Machine Learning": "from-red-400 to-pink-400",
   "AI & ML": "from-red-400 to-pink-400",
-  Mobile: "from-teal-400 to-green-400",
-  Tools: "from-indigo-400 to-blue-400",
+  
+  // Mobile
+  "Mobile Development": "from-teal-400 to-green-400",
+  "Mobile": "from-teal-400 to-green-400",
+  
+  // Tools
+  "Tools": "from-indigo-400 to-blue-400",
 }
 
+// Default gradient colors for unknown categories
+const DEFAULT_GRADIENTS = [
+  "from-cyan-400 to-blue-500",
+  "from-purple-400 to-pink-500", 
+  "from-green-400 to-emerald-500",
+  "from-orange-400 to-amber-500",
+  "from-red-400 to-pink-500",
+  "from-yellow-400 to-lime-500",
+  "from-indigo-400 to-blue-500",
+  "from-teal-400 to-green-500",
+]
+
 export default function AnimatedTechStack() {
-  // Fetch tech stack data from Firestore
+  // Fetch tech stack data from Firestore - matches your seed.js structure
   const { data: firestoreData, loading, error } = useFirestoreData("techStack", "categories")
 
-  const [categories, setCategories] = useState(FALLBACK_CATEGORIES)
+  const [categories, setCategories] = useState([])
   const [index, setIndex] = useState(0)
   const [dragStart, setDragStart] = useState(0)
   const [autoPlay, setAutoPlay] = useState(true)
@@ -79,27 +99,42 @@ export default function AnimatedTechStack() {
   const rotateX = useTransform(y, [-100, 100], [8, -8])
   const rotateY = useTransform(x, [-100, 100], [-8, 8])
 
-  // Process Firestore data and merge with colors
+  // Process Firestore data and assign colors dynamically
   useEffect(() => {
     if (firestoreData && firestoreData.techStackData) {
-      const processedCategories = firestoreData.techStackData.map((cat) => ({
-        title: cat.title,
-        color: COLOR_MAP[cat.title] || "from-cyan-400 to-blue-500",
-        tech: Array.isArray(cat.tech) ? cat.tech : [],
-      }))
+      const processedCategories = firestoreData.techStackData.map((cat, index) => {
+        // Get color from map or use a default based on index
+        const color = COLOR_MAP[cat.title] || 
+                     DEFAULT_GRADIENTS[index % DEFAULT_GRADIENTS.length] || 
+                     "from-cyan-400 to-blue-500"
+        
+        return {
+          title: cat.title,
+          color: color,
+          tech: Array.isArray(cat.tech) ? cat.tech : [],
+        }
+      })
       setCategories(processedCategories)
-      console.log("✅ Tech stack loaded from Firestore")
+      console.log("✅ Tech stack loaded from Firestore:", processedCategories.length, "categories")
     }
   }, [firestoreData])
 
+  // Auto-play for mobile carousel
   useEffect(() => {
-    if (!autoPlay) return
+    if (!autoPlay || categories.length === 0) return
     const timer = setInterval(() => handleNext(), 4000)
     return () => clearInterval(timer)
-  }, [index, autoPlay])
+  }, [index, autoPlay, categories.length])
 
-  const handleNext = () => setIndex((prev) => (prev + 1) % categories.length)
-  const handlePrev = () => setIndex((prev) => (prev - 1 + categories.length) % categories.length)
+  const handleNext = () => {
+    if (categories.length === 0) return
+    setIndex((prev) => (prev + 1) % categories.length)
+  }
+  
+  const handlePrev = () => {
+    if (categories.length === 0) return
+    setIndex((prev) => (prev - 1 + categories.length) % categories.length)
+  }
 
   // Touch & Swipe Controls
   const handleDragStart = (e) => {
@@ -147,7 +182,30 @@ export default function AnimatedTechStack() {
   }
 
   if (error) {
-    console.warn("⚠️ Using fallback tech stack data due to error:", error)
+    console.warn("⚠️ Error loading tech stack:", error)
+    return (
+      <section id="tech-stack" className="relative py-20 bg-black overflow-hidden">
+        <div className="max-w-6xl mx-auto px-6 md:px-10 flex items-center justify-center h-96">
+          <div className="text-center">
+            <Code2 className="w-12 h-12 text-red-400 mx-auto mb-4" />
+            <p className="text-white/70">Unable to load tech stack data</p>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  if (!categories || categories.length === 0) {
+    return (
+      <section id="tech-stack" className="relative py-20 bg-black overflow-hidden">
+        <div className="max-w-6xl mx-auto px-6 md:px-10 flex items-center justify-center h-96">
+          <div className="text-center">
+            <Code2 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-white/70">No tech stack data available</p>
+          </div>
+        </div>
+      </section>
+    )
   }
 
   return (
@@ -181,25 +239,30 @@ export default function AnimatedTechStack() {
               key={category.title}
               variants={cardVariants}
               whileHover={{ scale: 1.07, y: -5, boxShadow: "0 0 35px rgba(0,255,255,0.15)" }}
-              className="relative overflow-hidden rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md px-6 py-8 group flex flex-col items-start justify-between"
+              className="relative overflow-hidden rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md px-6 py-8 group flex flex-col"
             >
+              {/* Header Section */}
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2.5 bg-white/10 rounded-xl shadow-inner">
                   <Code2 className="w-6 h-6 text-cyan-400" />
                 </div>
                 <h3 className="text-lg font-semibold text-white tracking-wide">{category.title}</h3>
               </div>
-              <ul className="grid grid-cols-2 gap-2 w-full">
-                {category.tech.map((tech) => (
-                  <motion.li
-                    key={tech}
-                    whileHover={{ scale: 1.08, color: "#fff", textShadow: "0px 0px 10px rgba(0,255,255,0.7)" }}
-                    className="text-white/70 text-sm font-medium bg-white/5 px-3 py-2 text-center rounded-md border border-white/10 hover:bg-gradient-to-r hover:from-cyan-500/30 hover:to-blue-500/30 transition-all"
-                  >
-                    {tech}
-                  </motion.li>
-                ))}
-              </ul>
+
+              {/* Tech Items - Now at top with proper spacing */}
+              <div className="flex-1">
+                <ul className="grid grid-cols-2 gap-2 w-full">
+                  {category.tech.map((tech) => (
+                    <motion.li
+                      key={tech}
+                      whileHover={{ scale: 1.08, color: "#fff", textShadow: "0px 0px 10px rgba(0,255,255,0.7)" }}
+                      className="text-white/70 text-sm font-medium bg-white/5 px-3 py-2 text-center rounded-md border border-white/10 hover:bg-gradient-to-r hover:from-cyan-500/30 hover:to-blue-500/30 transition-all"
+                    >
+                      {tech}
+                    </motion.li>
+                  ))}
+                </ul>
+              </div>
             </motion.div>
           ))}
         </motion.div>
@@ -211,45 +274,49 @@ export default function AnimatedTechStack() {
           onTouchEnd={handleDragEnd}
         >
           <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={categories[index].title}
-              variants={mobileSlideVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-              onTouchMove={handleMove}
-              onTouchEnd={handleLeave}
-              className="relative w-[90%] flex flex-col items-start justify-between rounded-3xl border border-cyan-300/20 backdrop-blur-[10px] p-6 shadow-[0_0_40px_rgba(0,255,255,0.15)] transition-transform duration-300 bg-[linear-gradient(135deg,rgba(255,255,255,0.1)_0%,rgba(255,255,255,0.05)_100%)] before:absolute before:inset-0 before:bg-[linear-gradient(120deg,rgba(255,255,255,0.25)_0%,transparent_60%)] before:opacity-10 before:rounded-3xl before:pointer-events-none overflow-hidden"
-            >
-              {/* Glow line */}
-              <div className={`absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r ${categories[index].color} animate-pulse z-10`} />
+            {categories[index] && (
+              <motion.div
+                key={categories[index].title}
+                variants={mobileSlideVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
+                onTouchMove={handleMove}
+                onTouchEnd={handleLeave}
+                className="relative w-[90%] flex flex-col rounded-3xl border border-cyan-300/20 backdrop-blur-[10px] p-6 shadow-[0_0_40px_rgba(0,255,255,0.15)] transition-transform duration-300 bg-[linear-gradient(135deg,rgba(255,255,255,0.1)_0%,rgba(255,255,255,0.05)_100%)] before:absolute before:inset-0 before:bg-[linear-gradient(120deg,rgba(255,255,255,0.25)_0%,transparent_60%)] before:opacity-10 before:rounded-3xl before:pointer-events-none overflow-hidden"
+              >
+                {/* Glow line */}
+                <div className={`absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r ${categories[index].color} animate-pulse z-10`} />
 
-              {/* Header */}
-              <div className="flex items-center gap-3 mb-4 z-20">
-                <div className="p-2 bg-white/10 rounded-xl border border-white/10">
-                  <Code2 className="w-6 h-6 text-cyan-400" />
+                {/* Header */}
+                <div className="flex items-center gap-3 mb-6 z-20">
+                  <div className="p-2 bg-white/10 rounded-xl border border-white/10">
+                    <Code2 className="w-6 h-6 text-cyan-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-white tracking-wide">{categories[index].title}</h3>
                 </div>
-                <h3 className="text-xl font-semibold text-white tracking-wide">{categories[index].title}</h3>
-              </div>
 
-              {/* Tech List */}
-              <ul className="grid grid-cols-2 gap-3 w-full z-20">
-                {categories[index].tech.map((tech) => (
-                  <motion.li
-                    key={tech}
-                    whileHover={{
-                      scale: 1.05,
-                      color: "#fff",
-                      textShadow: "0px 0px 10px rgba(0,255,255,0.8)",
-                    }}
-                    className="text-white/70 text-sm font-medium bg-white/5 px-3 py-2 text-center rounded-md border border-white/10 hover:bg-gradient-to-r hover:from-cyan-500/20 hover:to-blue-500/20 transition-all"
-                  >
-                    {tech}
-                  </motion.li>
-                ))}
-              </ul>
-            </motion.div>
+                {/* Tech List - Better spacing and alignment */}
+                <div className="flex-1">
+                  <ul className="grid grid-cols-2 gap-3 w-full z-20">
+                    {categories[index].tech.map((tech) => (
+                      <motion.li
+                        key={tech}
+                        whileHover={{
+                          scale: 1.05,
+                          color: "#fff",
+                          textShadow: "0px 0px 10px rgba(0,255,255,0.8)",
+                        }}
+                        className="text-white/70 text-sm font-medium bg-white/5 px-3 py-2 text-center rounded-md border border-white/10 hover:bg-gradient-to-r hover:from-cyan-500/20 hover:to-blue-500/20 transition-all"
+                      >
+                        {tech}
+                      </motion.li>
+                    ))}
+                  </ul>
+                </div>
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
 

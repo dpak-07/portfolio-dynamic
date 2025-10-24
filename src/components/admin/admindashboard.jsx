@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { db } from "../../firebase"; // Adjust path to your Firebase config
+import { db } from "../../firebase/firebase"; // Adjust path to your Firebase config
 
 export default function AdminDashboard() {
   const navigate = useNavigate();

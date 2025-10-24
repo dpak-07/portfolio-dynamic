@@ -129,7 +129,7 @@ export default function Header() {
     <header
       id="home"
       ref={sectionRef}
-      className={`relative w-full min-h-screen flex flex-col items-center justify-center text-white overflow-hidden px-5 py-16 sm:px-8 md:py-24 transition-opacity duration-700 ${
+      className={`relative w-full min-h-screen flex flex-col items-center justify-center text-white overflow-hidden px-4 sm:px-6 lg:px-8 transition-opacity duration-700 ${
         visible ? "opacity-100" : "opacity-0"
       }`}
     >
@@ -203,13 +203,14 @@ export default function Header() {
 
       {/* ========================== MAIN CONTENT =========================== */}
       <motion.div
-        className="relative z-10 max-w-3xl w-full flex flex-col items-center text-center gap-6 sm:gap-8"
+        className="relative z-10 w-full max-w-4xl mx-auto flex flex-col items-center text-center px-4 sm:px-6 lg:px-8"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
+        {/* Name */}
         <motion.h1
-          className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-cyansoft drop-shadow-lg leading-tight"
+          className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-cyansoft drop-shadow-lg leading-tight mb-4 sm:mb-6"
           variants={itemVariants}
           animate={{ y: [0, -10, 0] }}
           transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
@@ -217,15 +218,17 @@ export default function Header() {
           Hi, I'm {profileData.name}
         </motion.h1>
 
+        {/* Roles */}
         <motion.p
-          className="text-lg sm:text-xl md:text-2xl text-white/80"
+          className="text-lg sm:text-xl md:text-2xl text-white/80 mb-4 sm:mb-6 max-w-2xl mx-auto px-4"
           variants={itemVariants}
         >
           {profileData.roles}
         </motion.p>
 
-        <motion.p
-          className="text-sm sm:text-base md:text-lg text-white/60 font-mono h-[28px] sm:h-[32px]"
+        {/* Typewriter */}
+        <motion.div
+          className="text-sm sm:text-base md:text-lg text-white/60 font-mono h-[28px] sm:h-[32px] mb-6 sm:mb-8 max-w-2xl mx-auto px-4"
           variants={itemVariants}
         >
           <Typewriter
@@ -237,11 +240,11 @@ export default function Header() {
             deleteSpeed={30}
             delaySpeed={1800}
           />
-        </motion.p>
+        </motion.div>
 
         {/* ==== Buttons Section ==== */}
         <motion.div
-          className="mt-6 grid grid-cols-2 sm:flex sm:flex-row sm:flex-wrap gap-4 justify-center items-center w-full sm:w-auto"
+          className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center w-full max-w-2xl mx-auto mb-6 sm:mb-8 px-4"
           variants={itemVariants}
         >
           <a
@@ -252,7 +255,7 @@ export default function Header() {
                 .getElementById("projects")
                 ?.scrollIntoView({ behavior: "smooth" });
             }}
-            className="bg-cyansoft text-black px-5 py-3 rounded-full font-semibold shadow-lg hover:bg-cyan-300 hover:scale-105 transition-all text-center"
+            className="w-full sm:w-auto bg-cyansoft text-black px-6 py-3 rounded-full font-semibold shadow-lg hover:bg-cyan-300 hover:scale-105 transition-all text-center min-w-[140px]"
           >
             View Projects
           </a>
@@ -265,30 +268,30 @@ export default function Header() {
                 .getElementById("contact")
                 ?.scrollIntoView({ behavior: "smooth" });
             }}
-            className="border border-white/20 text-white/90 px-5 py-3 rounded-full font-medium hover:border-cyansoft hover:bg-white/10 transition-all text-center"
+            className="w-full sm:w-auto border border-white/20 text-white/90 px-6 py-3 rounded-full font-medium hover:border-cyansoft hover:bg-white/10 transition-all text-center min-w-[140px]"
           >
             Contact
           </a>
 
           <button
             onClick={() => setShowResume(true)}
-            className="flex items-center justify-center gap-2 bg-cyansoft text-black px-5 py-3 rounded-full font-semibold shadow-lg hover:bg-cyan-300 hover:scale-105 transition-all"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-cyansoft text-black px-6 py-3 rounded-full font-semibold shadow-lg hover:bg-cyan-300 hover:scale-105 transition-all min-w-[140px]"
           >
-            <FaFileAlt /> Open Resume
+            <FaFileAlt className="w-4 h-4" /> Open Resume
           </button>
 
           <a
             href={download}
             download
-            className="flex items-center justify-center gap-2 border border-white/20 text-white/90 px-5 py-3 rounded-full font-medium hover:border-cyansoft hover:bg-white/10 transition-all"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 border border-white/20 text-white/90 px-6 py-3 rounded-full font-medium hover:border-cyansoft hover:bg-white/10 transition-all min-w-[140px]"
           >
-            <FaDownload /> Download
+            <FaDownload className="w-4 h-4" /> Download
           </a>
         </motion.div>
 
         {/* ===== Social Icons ===== */}
         <motion.div
-          className="flex flex-wrap gap-6 mt-6 justify-center"
+          className="flex flex-wrap gap-4 sm:gap-6 justify-center items-center px-4"
           variants={itemVariants}
         >
           {allSocials.map(([key, url], idx) => {
@@ -299,9 +302,9 @@ export default function Header() {
                 href={url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-white/80 hover:text-cyansoft transition-all"
+                className="text-white/80 hover:text-cyansoft transition-all transform hover:scale-110"
               >
-                <Icon size={26} />
+                <Icon className="w-6 h-6" />
               </a>
             );
           })}
@@ -326,7 +329,7 @@ export default function Header() {
           <span className="text-sm font-medium opacity-75 group-hover:opacity-100">
             Explore More
           </span>
-          <FaChevronDown size={20} className="group-hover:scale-125 transition-transform" />
+          <FaChevronDown className="w-5 h-5 group-hover:scale-125 transition-transform" />
         </button>
       </motion.div>
 
@@ -335,17 +338,17 @@ export default function Header() {
         <div className="fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 backdrop-blur-md">
           <motion.button
             onClick={() => setShowResume(false)}
-            className="absolute top-5 right-5 text-white hover:text-cyansoft transition-all"
+            className="absolute top-4 right-4 sm:top-6 sm:right-6 text-white hover:text-cyansoft transition-all z-10 bg-black/50 rounded-full p-2"
             whileHover={{ scale: 1.2 }}
           >
-            <FaTimes size={28} />
+            <FaTimes className="w-6 h-6" />
           </motion.button>
 
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.4, ease: "easeOut" }}
-            className="w-full max-w-5xl h-[80vh] bg-[#0a0a0a] border border-white/10 rounded-xl overflow-hidden shadow-2xl"
+            className="w-full max-w-4xl lg:max-w-5xl h-[80vh] bg-[#0a0a0a] border border-white/10 rounded-xl overflow-hidden shadow-2xl mx-4"
           >
             <iframe
               src={preview}

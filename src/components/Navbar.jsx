@@ -1,248 +1,280 @@
 "use client";
 import { useState, useEffect, useRef, useMemo } from "react";
-import { FaBars, FaTimes } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import { useFirestoreData } from "@/hooks/useFirestoreData";
+import { FaBars, FaTimes } from "react-icons/fa";
 
 export default function Navbar() {
-  // 🔥 Fetch sections visibility from Firestore
-  const { data: firestoreSectionsData } = useFirestoreData('sections', 'visibility');
+  const { data: firestoreSectionsData } = useFirestoreData("sections", "visibility");
 
-  // Maintain original order: home, about, tech-stack, projects, resume, contact
-  const sectionOrder = ["home", "about", "tech-stack", "projects", "resume", "contact"];
-  
-  // Use Firestore data directly (memoized to prevent unnecessary recalculations)
-  const sectionsConfig = useMemo(() => {
-    return firestoreSectionsData || {
-      home: true,
-      about: true,
-      "tech-stack": true,
-      projects: true,
-      resume: true,
-      contact: true,
-    };
-  }, [firestoreSectionsData]);
+  const sectionOrder = [
+    "home",
+    "about",
+    "tech-stack",
+    "projects",
+    "resume",
+    "certifications",
+    "timeline",
+    "contact",
+  ];
 
-  const sections = useMemo(() => sectionOrder.filter(sec => sectionsConfig[sec]), [sectionsConfig]);
+  const sectionsConfig = useMemo(
+    () =>
+      firestoreSectionsData || {
+        home: true,
+        about: true,
+        "tech-stack": true,
+        projects: true,
+        resume: true,
+        certifications: true,
+        timeline: true,
+        contact: true,
+      },
+    [firestoreSectionsData]
+  );
+
+  const sections = useMemo(
+    () => sectionOrder.filter((sec) => sectionsConfig[sec]),
+    [sectionsConfig]
+  );
 
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState("home");
-  const [isScrolled, setIsScrolled] = useState(false);
-  const buttonsRef = useRef({});
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScroll, setLastScroll] = useState(0);
   const [underlinePos, setUnderlinePos] = useState({ x: 0, width: 0 });
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const buttonsRef = useRef({});
 
-  // Update underline position
+  // 🌈 Scroll progress + visibility
+  useEffect(() => {
+    let ticking = false;
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const scrolled = window.scrollY;
+          const height = document.body.scrollHeight - window.innerHeight;
+          setScrollProgress((scrolled / height) * 100);
+          setIsVisible(scrolled < lastScroll || scrolled < 50);
+          setLastScroll(scrolled);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [lastScroll]);
+
+  // 🧭 Active section observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) =>
+        entries.forEach((e) => {
+          if (e.isIntersecting && sectionsConfig[e.target.id]) {
+            setActive(e.target.id);
+          }
+        }),
+      { threshold: 0.45 }
+    );
+    sections.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+    return () => observer.disconnect();
+  }, [sections]);
+
+  // 🟦 Underline animation
   useEffect(() => {
     if (buttonsRef.current[active]) {
-      const activeBtn = buttonsRef.current[active];
-      setUnderlinePos({
-        x: activeBtn.offsetLeft,
-        width: activeBtn.offsetWidth,
-      });
+      const btn = buttonsRef.current[active];
+      setUnderlinePos({ x: btn.offsetLeft, width: btn.offsetWidth });
     }
-  }, [active, sections]);
+  }, [active]);
 
-  // Smooth Scroll
+  // ✨ Smooth scroll
   const scrollTo = (id) => {
     if (!sectionsConfig[id]) return;
     const el = document.getElementById(id);
-    const navbar = document.querySelector("header");
-    if (el && navbar) {
-      const navbarHeight = navbar.offsetHeight;
-      const y = el.getBoundingClientRect().top + window.scrollY - navbarHeight + 5;
+    const nav = document.querySelector("header");
+    if (el && nav) {
+      const navH = nav.offsetHeight;
+      const y = el.getBoundingClientRect().top + window.scrollY - navH + 5;
       window.scrollTo({ top: y, behavior: "smooth" });
     }
     setOpen(false);
   };
 
-  // Track Active Section
+  // 🚫 Prevent background scroll when menu open
   useEffect(() => {
-    if (sections.length === 0) return;
+    document.body.style.overflow = open ? "hidden" : "auto";
+  }, [open]);
 
-    const navbar = document.querySelector("header");
-    const navbarHeight = navbar ? navbar.offsetHeight : 80;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && sectionsConfig[entry.target.id]) {
-            setActive(entry.target.id || "home");
-          }
-        });
-      },
-      {
-        rootMargin: `-${navbarHeight + 20}px 0px -50% 0px`,
-        threshold: 0.4,
-      }
-    );
-
-    sections.forEach((id) => {
-      const el = document.getElementById(id);
-      if (el && sectionsConfig[id]) observer.observe(el);
-    });
-
-    return () => observer.disconnect();
-  }, [sectionsConfig, sections]);
-
-  // Scroll effect for navbar style
-  useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 40);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  // Classes
   const linkClass = (id) =>
-    `relative px-4 py-2 text-sm md:text-base font-medium tracking-wide transition-all duration-500 ${
+    `relative px-3 md:px-4 py-2 text-xs sm:text-sm md:text-base font-medium tracking-wide transition-all duration-500 group ${
       sectionsConfig[id]
         ? active === id
           ? "text-cyansoft glow-text"
-          : "text-white/80 hover:text-cyansoft hover:glow-text"
-        : "text-gray-500 cursor-not-allowed opacity-50"
+          : "text-white/70 hover:text-cyansoft"
+        : "text-gray-500 opacity-50 cursor-not-allowed"
     }`;
 
   return (
     <motion.header
       initial={{ y: -80, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ type: "spring", stiffness: 80, damping: 20 }}
-      className="fixed inset-x-0 top-0 z-50"
+      animate={{ y: isVisible ? 0 : -80, opacity: isVisible ? 1 : 0 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+      className="fixed inset-x-0 top-0 z-[999] flex flex-col items-center"
     >
+      {/* 🔹 Scroll Progress */}
+      <motion.div
+        style={{ width: `${scrollProgress}%` }}
+        className="h-[2px] bg-gradient-to-r from-cyansoft to-cyan-300 shadow-[0_0_10px_#00ffff] rounded-full"
+      />
+
+      {/* 🔸 Main Navbar */}
       <motion.nav
         animate={{
-          backgroundColor: isScrolled ? "rgba(0,0,0,0.55)" : "rgba(0,0,0,0.25)",
-          backdropFilter: isScrolled ? "blur(10px)" : "blur(4px)",
-          boxShadow: isScrolled
-            ? "0 0 20px rgba(0,255,255,0.15)"
-            : "0 0 0 rgba(0,255,255,0)",
+          y: [0, -1, 0],
+          boxShadow: [
+            "0 0 10px rgba(0,255,255,0.1)",
+            "0 0 20px rgba(0,255,255,0.25)",
+            "0 0 10px rgba(0,255,255,0.1)",
+          ],
         }}
-        transition={{ duration: 0.6 }}
-        className="relative w-full px-6 py-3 border-b border-white/10"
+        transition={{
+          duration: 3,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+        className="relative mt-3 sm:mt-4 px-4 sm:px-6 py-2 sm:py-3 flex items-center justify-between w-[95%] sm:w-[90%] md:w-[80%] lg:w-[70%] max-w-7xl
+          rounded-full border border-white/10 bg-[rgba(15,15,15,0.4)]
+          backdrop-blur-xl shadow-[0_0_20px_rgba(0,255,255,0.15)]"
       >
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          {/* 🚀 Logo */}
-          <motion.h1
-            whileHover={{ scale: 1.08 }}
-            className="font-extrabold cursor-pointer bg-gradient-to-r from-cyan-300 to-cyansoft bg-clip-text text-transparent text-2xl md:text-3xl font-[Playfair] glow-text"
-            onClick={() => scrollTo("home")}
-          >
-            Deepak | Portfolio
-          </motion.h1>
+        {/* 🚀 Logo */}
+        <motion.h1
+          whileHover={{ scale: 1.06 }}
+          animate={{
+            textShadow: [
+              "0 0 10px rgba(0,255,255,0.3)",
+              "0 0 20px rgba(0,255,255,0.7)",
+              "0 0 10px rgba(0,255,255,0.3)",
+            ],
+          }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          onClick={() => scrollTo("home")}
+          className="font-extrabold cursor-pointer bg-gradient-to-r from-cyan-300 via-blue-300 to-cyansoft bg-clip-text text-transparent text-lg sm:text-xl md:text-2xl"
+        >
+          Deepak<span className="text-white/60 font-light">.dev</span>
+        </motion.h1>
 
-          {/* 🖥 Desktop Navigation */}
-          <div className="hidden md:flex gap-6 items-center relative">
-            {sections.map((sec) => (
-              <motion.button
-                key={sec}
-                ref={(el) => {
-                  if (el) buttonsRef.current[sec] = el;
-                }}
-                onClick={() => scrollTo(sec)}
-                disabled={!sectionsConfig[sec]}
-                whileHover={{ scale: 1.08 }}
-                className={linkClass(sec)}
-              >
-                {sec.replace("-", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-              </motion.button>
-            ))}
-
-            {/* 🔥 Neon underline */}
-            <motion.div
-              className="absolute bottom-0 h-[2px] bg-cyansoft/90 rounded-full shadow-[0_0_10px_#00ffff]"
-              initial={false}
-              animate={{
-                x: underlinePos.x,
-                width: underlinePos.width,
-              }}
-              transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            />
-          </div>
-
-          {/* 📱 Mobile Toggle */}
-          <motion.div
-            whileTap={{ scale: 0.85 }}
-            className="md:hidden z-50"
-          >
-            <button
-              onClick={() => setOpen(!open)}
-              aria-label="Toggle menu"
-              className="text-white/90 hover:text-cyansoft transition-all"
+        {/* 🖥 Desktop Nav */}
+        <div className="hidden md:flex items-center gap-4 lg:gap-6 relative">
+          {sections.map((sec) => (
+            <motion.button
+              key={sec}
+              ref={(el) => (buttonsRef.current[sec] = el)}
+              onClick={() => scrollTo(sec)}
+              className={linkClass(sec)}
+              whileHover={{ scale: 1.08 }}
             >
-              {open ? <FaTimes size={24} /> : <FaBars size={24} />}
-            </button>
-          </motion.div>
+              {sec.replace("-", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+              <span className="absolute inset-0 rounded-full bg-cyansoft/10 opacity-0 group-hover:animate-ripple" />
+            </motion.button>
+          ))}
+
+          {/* ⚡ Underline */}
+          <motion.div
+            className="absolute bottom-0 h-[2px] bg-gradient-to-r from-cyan-400 via-cyansoft to-cyan-400 shadow-[0_0_10px_#00ffff] rounded-full"
+            animate={{ x: underlinePos.x, width: underlinePos.width }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+          />
         </div>
 
-        {/* 📱 Mobile Drawer — Innovative Style */}
+        {/* 📱 Mobile Menu Button */}
+        <motion.button
+          whileTap={{ scale: 0.9 }}
+          onClick={() => setOpen(!open)}
+          className="md:hidden text-white/90 hover:text-cyansoft"
+        >
+          {open ? <FaTimes size={22} /> : <FaBars size={22} />}
+        </motion.button>
+
+        {/* 📱 Mobile Drawer */}
         <AnimatePresence>
           {open && (
             <motion.div
-              key="mobile-menu"
-              initial={{ opacity: 0, y: -20, rotateX: -20 }}
-              animate={{ opacity: 1, y: 0, rotateX: 0 }}
-              exit={{ opacity: 0, y: -20, rotateX: 20 }}
-              transition={{
-                type: "spring",
-                stiffness: 120,
-                damping: 18,
-              }}
-              className="absolute top-full mt-4 left-1/2 -translate-x-1/2 w-[92%] max-w-sm 
-                bg-gradient-to-b from-black/90 to-black/60 border border-cyansoft/30 
-                backdrop-blur-xl rounded-2xl p-5 shadow-[0_0_30px_rgba(0,255,255,0.2)] 
-                md:hidden"
+              key="menu"
+              initial={{ opacity: 0, y: -20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+              transition={{ duration: 0.4 }}
+              className="absolute top-full mt-3 left-0 right-0 mx-auto w-[95%] bg-black/85 backdrop-blur-2xl border border-cyan-400/30 rounded-2xl p-5 shadow-[0_0_25px_rgba(0,255,255,0.25)] md:hidden"
             >
-              <motion.div
-                className="flex flex-col gap-4"
-                initial="hidden"
-                animate="visible"
-                exit="hidden"
-                variants={{
-                  hidden: {},
-                  visible: { transition: { staggerChildren: 0.07 } },
-                }}
-              >
+              <div className="flex flex-col gap-3">
                 {sections.map((sec) => (
                   <motion.button
                     key={sec}
                     onClick={() => scrollTo(sec)}
-                    disabled={!sectionsConfig[sec]}
-                    whileTap={{ scale: 0.95 }}
-                    variants={{
-                      hidden: { opacity: 0, y: 20 },
-                      visible: { opacity: 1, y: 0 },
-                    }}
-                    transition={{ type: "spring", stiffness: 100, damping: 15 }}
-                    className={`text-left px-4 py-2 rounded-md text-white transition-all duration-200 
-                      relative overflow-hidden group ${
-                        sectionsConfig[sec]
-                          ? active === sec
-                            ? "bg-cyansoft text-black font-semibold"
-                            : "hover:bg-cyansoft/10"
-                          : "text-gray-500 cursor-not-allowed opacity-50"
-                      }`}
+                    whileTap={{ scale: 0.97 }}
+                    className={`text-left px-4 py-3 text-base rounded-md transition-all duration-300 ${
+                      active === sec
+                        ? "bg-cyansoft text-black font-semibold"
+                        : "text-white/80 hover:bg-cyansoft/10"
+                    }`}
                   >
-                    {/* 💡 Animated Gradient Shine on hover */}
-                    <span className="relative z-10">
-                      {sec.replace("-", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-                    </span>
-                    <motion.span
-                      className="absolute inset-0 bg-gradient-to-r from-cyansoft/20 via-cyansoft/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                      initial={false}
-                      animate={{ x: open ? 0 : -50 }}
-                    />
+                    {sec.replace("-", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
                   </motion.button>
                 ))}
-              </motion.div>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
       </motion.nav>
 
-      {/* ✨ Global Glow Styles */}
+      {/* 💫 Glow Trail */}
+      <motion.div
+        className="absolute bottom-0 w-[60%] sm:w-[40%] h-[2px] bg-gradient-to-r from-transparent via-cyansoft to-transparent opacity-40 blur-sm"
+        animate={{ x: ["-40%", "40%"] }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+      />
+
+      {/* ✨ Styles */}
       <style jsx="true">{`
         .glow-text {
-          text-shadow: 0 0 10px rgba(0, 255, 255, 0.6),
-            0 0 20px rgba(0, 255, 255, 0.4);
+          text-shadow: 0 0 8px rgba(0, 255, 255, 0.6),
+            0 0 15px rgba(0, 255, 255, 0.4);
+        }
+        @keyframes ripple {
+          0% {
+            opacity: 0.3;
+            transform: scale(0.9);
+          }
+          50% {
+            opacity: 0.6;
+            transform: scale(1.1);
+          }
+          100% {
+            opacity: 0;
+            transform: scale(1.3);
+          }
+        }
+        .animate-ripple {
+          animation: ripple 0.8s ease-out;
+        }
+
+        /* 🧠 Responsive optimization for ultra-wide */
+        @media (min-width: 1600px) {
+          nav {
+            max-width: 1400px !important;
+          }
+        }
+
+        /* 💡 Reduce heavy glow on small screens */
+        @media (max-width: 480px) {
+          .shadow-[0_0_20px_rgba(0,255,255,0.15)] {
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.1) !important;
+          }
         }
       `}</style>
     </motion.header>

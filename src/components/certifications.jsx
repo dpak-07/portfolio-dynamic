@@ -13,6 +13,8 @@ import {
   Briefcase,
   Award,
   Loader2,
+  ChevronDown,
+  ExternalLink,
 } from "lucide-react";
 import { useFirestoreData } from "@/hooks/useFirestoreData";
 
@@ -40,6 +42,146 @@ const cardVariants = {
     y: 0,
     transition: { duration: 0.5, ease: "easeOut" },
   },
+};
+
+// Utility function to optimize OneDrive links for direct image access
+const optimizeOneDriveLink = (url) => {
+  if (!url) return null;
+  
+  try {
+    // If it's already a direct image link, return as is
+    if (url.match(/\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i)) {
+      return url;
+    }
+    
+    // Convert OneDrive share links to direct download links
+    if (url.includes('onedrive.live.com') || url.includes('1drv.ms')) {
+      // For OneDrive share links, we need to convert them to direct download links
+      // This is a basic conversion - you might need to adjust based on your OneDrive link structure
+      if (url.includes('1drv.ms')) {
+        // Shortened OneDrive link - we'll need to expand it first
+        return url; // Return original, will need server-side processing or manual conversion
+      }
+      
+      // For direct OneDrive links, add download parameter
+      const urlObj = new URL(url);
+      if (!urlObj.searchParams.has('download')) {
+        urlObj.searchParams.set('download', '1');
+      }
+      return urlObj.toString();
+    }
+    
+    return url;
+  } catch (error) {
+    console.error('Error optimizing OneDrive link:', error);
+    return url;
+  }
+};
+
+// Preload images for better performance
+const preloadImages = (imageUrls) => {
+  if (!imageUrls || !Array.isArray(imageUrls)) return;
+  
+  imageUrls.forEach((url) => {
+    const optimizedUrl = optimizeOneDriveLink(url);
+    if (optimizedUrl) {
+      const img = new Image();
+      img.src = optimizedUrl;
+    }
+  });
+};
+
+// High-quality image component with optimized loading
+const HighQualityImage = ({ 
+  src, 
+  alt, 
+  className, 
+  onLoad, 
+  onError,
+  priority = false 
+}) => {
+  const [optimizedSrc, setOptimizedSrc] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    if (!src) {
+      setHasError(true);
+      return;
+    }
+
+    const optimized = optimizeOneDriveLink(src);
+    setOptimizedSrc(optimized);
+    setIsLoading(true);
+    setHasError(false);
+
+    // Preload high-quality image
+    const img = new Image();
+    img.onload = () => {
+      setIsLoading(false);
+      onLoad?.();
+    };
+    img.onerror = () => {
+      setIsLoading(false);
+      setHasError(true);
+      onError?.();
+      console.error('Failed to load image:', src);
+    };
+    img.src = optimized;
+
+    // If priority, preload immediately
+    if (priority) {
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.as = 'image';
+      link.href = optimized;
+      document.head.appendChild(link);
+    }
+  }, [src, onLoad, onError, priority]);
+
+  if (hasError || !optimizedSrc) {
+    return (
+      <div className={`flex items-center justify-center bg-gray-800 rounded-lg ${className}`}>
+        <div className="text-center text-gray-400">
+          <FileBadge className="w-12 h-12 mx-auto mb-2 opacity-50" />
+          <p className="text-sm">Image not available</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative">
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-800 rounded-lg z-10">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }}
+          >
+            <Loader2 size={32} className="text-cyan-400" />
+          </motion.div>
+        </div>
+      )}
+      <img
+        src={optimizedSrc}
+        alt={alt}
+        className={`${className} transition-opacity duration-300 ${
+          isLoading ? 'opacity-0' : 'opacity-100'
+        }`}
+        onLoad={() => {
+          setIsLoading(false);
+          onLoad?.();
+        }}
+        onError={() => {
+          setIsLoading(false);
+          setHasError(true);
+          onError?.();
+        }}
+        loading={priority ? "eager" : "lazy"}
+        decoding="async"
+      />
+    </div>
+  );
 };
 
 export default function CertificationsSection() {
@@ -80,40 +222,60 @@ export default function CertificationsSection() {
   const [active, setActive] = useState("courses");
   const [selected, setSelected] = useState(null);
   const [imageIndex, setImageIndex] = useState(0);
+  const [imageLoadingStates, setImageLoadingStates] = useState({});
   const [scrollProgress, setScrollProgress] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const sectionRef = useRef(null);
   const scrollRef = useRef(null);
   const progressControls = useAnimation();
+  const dropdownRef = useRef(null);
 
   const activeCategory = certificateData.categories.find(
     (cat) => cat.id === active
   );
 
+  // Preload images for active category when data changes
+  useEffect(() => {
+    if (activeCategory?.items) {
+      activeCategory.items.forEach(item => {
+        if (item.images && item.images.length > 0) {
+          preloadImages(item.images);
+        }
+      });
+    }
+  }, [activeCategory]);
+
+  // Preload all images when selected item changes
+  useEffect(() => {
+    if (selected?.images) {
+      preloadImages(selected.images);
+    }
+  }, [selected]);
+
   const handleCategoryChange = (cat) => {
     setLoading(true);
+    setIsDropdownOpen(false);
     setTimeout(() => {
       setActive(cat);
       setLoading(false);
     }, 400);
   };
 
-  // Auto scroll horizontally (mobile)
+  // Close dropdown when clicking outside
   useEffect(() => {
-    if (window.innerWidth < 768 && scrollRef.current && !firestoreLoading && !loading) {
-      const scrollInterval = setInterval(() => {
-        const container = scrollRef.current;
-        if (!container) return;
-        const maxScroll = container.scrollWidth - container.clientWidth;
-        container.scrollLeft =
-          container.scrollLeft >= maxScroll ? 0 : container.scrollLeft + 320;
-      }, 3500);
-      return () => clearInterval(scrollInterval);
-    }
-  }, [active, firestoreLoading, loading]);
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
 
-  // Scroll progress bar update
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Scroll progress bar update (for desktop)
   useEffect(() => {
     const container = scrollRef.current;
     if (!container) return;
@@ -130,12 +292,25 @@ export default function CertificationsSection() {
     return () => container.removeEventListener("scroll", handleScroll);
   }, [progressControls]);
 
+  // Reset image loading when selected item changes
+  useEffect(() => {
+    if (selected) {
+      setImageIndex(0);
+      // Reset loading states for all images of selected item
+      const newLoadingStates = {};
+      selected.images?.forEach((_, index) => {
+        newLoadingStates[index] = true;
+      });
+      setImageLoadingStates(newLoadingStates);
+    }
+  }, [selected]);
+
   // Auto image carousel
   useEffect(() => {
     if (!selected?.images || selected.images.length <= 1) return;
     const timer = setInterval(() => {
       setImageIndex((prev) => (prev + 1) % selected.images.length);
-    }, 3000);
+    }, 5000); // Increased interval for high-quality images
     return () => clearInterval(timer);
   }, [selected]);
 
@@ -149,6 +324,28 @@ export default function CertificationsSection() {
     setImageIndex(
       (prev) => (prev - 1 + selected.images.length) % selected.images.length
     );
+  };
+
+  const handleImageLoad = (index) => {
+    setImageLoadingStates(prev => ({
+      ...prev,
+      [index]: false
+    }));
+  };
+
+  const handleImageError = (index) => {
+    setImageLoadingStates(prev => ({
+      ...prev,
+      [index]: false
+    }));
+    console.error("Failed to load image:", selected?.images?.[index]);
+  };
+
+  // Function to open original OneDrive link
+  const openOriginalLink = () => {
+    if (selected?.images?.[imageIndex]) {
+      window.open(selected.images[imageIndex], '_blank', 'noopener noreferrer');
+    }
   };
 
   // Show error state if Firestore fails
@@ -185,8 +382,8 @@ export default function CertificationsSection() {
         🪄 My Certifications & Milestones
       </h2>
 
-      {/* Tabs */}
-      <div className="flex justify-center flex-wrap gap-4 mb-10">
+      {/* Desktop Tabs */}
+      <div className="hidden md:flex justify-center flex-wrap gap-4 mb-10">
         {certificateData.categories.map((cat) => (
           <motion.button
             key={cat.id}
@@ -203,6 +400,51 @@ export default function CertificationsSection() {
             {cat.label}
           </motion.button>
         ))}
+      </div>
+
+      {/* Mobile Dropdown */}
+      <div className="md:hidden relative mb-8" ref={dropdownRef}>
+        <motion.button
+          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+          whileTap={{ scale: 0.95 }}
+          className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-gray-600 bg-white/5 backdrop-blur-lg"
+        >
+          <div className="flex items-center gap-2">
+            {certificateData.categories.find(cat => cat.id === active)?.icon}
+            <span>{certificateData.categories.find(cat => cat.id === active)?.label}</span>
+          </div>
+          <motion.div
+            animate={{ rotate: isDropdownOpen ? 180 : 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <ChevronDown className="w-5 h-5" />
+          </motion.div>
+        </motion.button>
+
+        <AnimatePresence>
+          {isDropdownOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="absolute top-full left-0 right-0 mt-2 bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl overflow-hidden z-20"
+            >
+              {certificateData.categories.map((cat) => (
+                <motion.button
+                  key={cat.id}
+                  onClick={() => handleCategoryChange(cat.id)}
+                  whileHover={{ backgroundColor: "rgba(255,255,255,0.1)" }}
+                  className={`w-full flex items-center gap-2 px-4 py-3 text-left border-b border-white/10 last:border-b-0 ${
+                    active === cat.id ? "bg-cyan-400/20" : ""
+                  }`}
+                >
+                  {cat.icon}
+                  {cat.label}
+                </motion.button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Loader */}
@@ -225,7 +467,7 @@ export default function CertificationsSection() {
         )}
       </AnimatePresence>
 
-      {/* Certificates */}
+      {/* Certificates - Stacked on Mobile */}
       <AnimatePresence mode="wait">
         {!loading && !firestoreLoading && (
           <motion.div
@@ -234,58 +476,87 @@ export default function CertificationsSection() {
             initial="hidden"
             animate="visible"
             exit="hidden"
-            ref={scrollRef}
-            className="flex md:grid md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto overflow-x-auto snap-x snap-mandatory scroll-smooth md:overflow-visible no-scrollbar pb-4"
+            className="max-w-6xl mx-auto"
           >
-            {activeCategory?.items?.map((item, i) => (
-              <motion.div
-                key={i}
-                variants={cardVariants}
-                whileHover={{
-                  scale: 1.05,
-                  rotateX: 2,
-                  rotateY: -2,
-                  boxShadow:
-                    "0 0 25px rgba(255,255,255,0.15), 0 0 50px rgba(0,255,255,0.1)",
-                }}
-                transition={{ type: "spring", stiffness: 180, damping: 14 }}
-                onClick={() => {
-                  setSelected(item);
-                  setImageIndex(0);
-                }}
-                className="cursor-pointer min-w-[85%] sm:min-w-[45%] md:min-w-0 snap-center p-6 rounded-2xl border border-white/20 bg-white/10 backdrop-blur-lg text-left relative group overflow-hidden"
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/10 to-transparent opacity-0 group-hover:opacity-20 transition-all"></div>
+            {/* Mobile: Vertical Stack */}
+            <div className="md:hidden space-y-4">
+              {activeCategory?.items?.map((item, i) => (
+                <motion.div
+                  key={i}
+                  variants={cardVariants}
+                  whileHover={{
+                    scale: 1.02,
+                    boxShadow: "0 0 25px rgba(255,255,255,0.15)",
+                  }}
+                  transition={{ type: "spring", stiffness: 180, damping: 14 }}
+                  onClick={() => {
+                    setSelected(item);
+                    setImageIndex(0);
+                  }}
+                  className="cursor-pointer p-6 rounded-2xl border border-white/20 bg-white/10 backdrop-blur-lg text-left relative group overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/10 to-transparent opacity-0 group-hover:opacity-20 transition-all"></div>
 
-                <div className="flex items-center gap-2 mb-1">
-                  <FileBadge className="w-4 h-4 text-cyan-400" />
-                  <h3 className="text-lg font-semibold">{item.title}</h3>
-                </div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <FileBadge className="w-4 h-4 text-cyan-400" />
+                    <h3 className="text-lg font-semibold">{item.title}</h3>
+                  </div>
 
-                <div className="flex items-center gap-2 mb-1 text-gray-400 text-sm">
-                  <Building2 className="w-4 h-4" /> {item.issuer}
-                </div>
+                  <div className="flex items-center gap-2 mb-1 text-gray-400 text-sm">
+                    <Building2 className="w-4 h-4" /> {item.issuer}
+                  </div>
 
-                <div className="flex items-center gap-2 mb-2 text-gray-500 text-xs">
-                  <CalendarDays className="w-4 h-4" /> {item.date}
-                </div>
+                  <div className="flex items-center gap-2 mb-2 text-gray-500 text-xs">
+                    <CalendarDays className="w-4 h-4" /> {item.date}
+                  </div>
 
-                <p className="text-gray-300 text-sm">{item.desc}</p>
-              </motion.div>
-            ))}
+                  <p className="text-gray-300 text-sm">{item.desc}</p>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Desktop: Grid Layout */}
+            <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 overflow-visible">
+              {activeCategory?.items?.map((item, i) => (
+                <motion.div
+                  key={i}
+                  variants={cardVariants}
+                  whileHover={{
+                    scale: 1.05,
+                    rotateX: 2,
+                    rotateY: -2,
+                    boxShadow:
+                      "0 0 25px rgba(255,255,255,0.15), 0 0 50px rgba(0,255,255,0.1)",
+                  }}
+                  transition={{ type: "spring", stiffness: 180, damping: 14 }}
+                  onClick={() => {
+                    setSelected(item);
+                    setImageIndex(0);
+                  }}
+                  className="cursor-pointer p-6 rounded-2xl border border-white/20 bg-white/10 backdrop-blur-lg text-left relative group overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/10 to-transparent opacity-0 group-hover:opacity-20 transition-all"></div>
+
+                  <div className="flex items-center gap-2 mb-1">
+                    <FileBadge className="w-4 h-4 text-cyan-400" />
+                    <h3 className="text-lg font-semibold">{item.title}</h3>
+                  </div>
+
+                  <div className="flex items-center gap-2 mb-1 text-gray-400 text-sm">
+                    <Building2 className="w-4 h-4" /> {item.issuer}
+                  </div>
+
+                  <div className="flex items-center gap-2 mb-2 text-gray-500 text-xs">
+                    <CalendarDays className="w-4 h-4" /> {item.date}
+                  </div>
+
+                  <p className="text-gray-300 text-sm">{item.desc}</p>
+                </motion.div>
+              ))}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Animated Scrollbar */}
-      <div className="block md:hidden w-full max-w-5xl mx-auto mt-2 h-[3px] bg-white/10 rounded-full overflow-hidden">
-        <motion.div
-          animate={progressControls}
-          initial={{ scaleX: 0 }}
-          style={{ originX: 0 }}
-          className="h-full bg-gradient-to-r from-cyan-400 to-blue-500"
-        />
-      </div>
 
       {/* Modal */}
       <AnimatePresence>
@@ -295,52 +566,87 @@ export default function CertificationsSection() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4"
+            onClick={() => setSelected(null)}
           >
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
               transition={{ type: "spring", damping: 12 }}
-              className="relative bg-white/10 border border-white/20 rounded-2xl p-6 max-w-2xl w-full backdrop-blur-xl"
+              className="relative bg-white/10 border border-white/20 rounded-2xl p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto backdrop-blur-xl"
+              onClick={(e) => e.stopPropagation()}
             >
               <button
                 onClick={() => setSelected(null)}
-                className="absolute top-3 right-3 text-white hover:text-gray-300"
+                className="absolute top-3 right-3 text-white hover:text-gray-300 z-10 bg-black/50 rounded-full p-1"
               >
-                <X />
+                <X size={24} />
               </button>
 
-              <h3 className="text-2xl font-semibold mb-2">{selected.title}</h3>
-              <p className="text-gray-300 text-sm mb-4">{selected.desc}</p>
+              <h3 className="text-2xl font-semibold mb-2 pr-8">{selected.title}</h3>
+              <div className="flex items-center gap-2 mb-2 text-gray-300">
+                <Building2 className="w-4 h-4" />
+                <span>{selected.issuer}</span>
+              </div>
+              <div className="flex items-center gap-2 mb-4 text-gray-400 text-sm">
+                <CalendarDays className="w-4 h-4" />
+                <span>{selected.date}</span>
+              </div>
+              <p className="text-gray-300 text-sm mb-6">{selected.desc}</p>
 
               {selected.images && selected.images.length > 0 && (
-                <div className="relative flex justify-center items-center">
-                  <motion.img
-                    key={imageIndex}
+                <div className="relative flex justify-center items-center bg-black/30 rounded-lg p-4">
+                  {/* High Quality Image Component */}
+                  <HighQualityImage
                     src={selected.images[imageIndex]}
                     alt={`${selected.title}-${imageIndex}`}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                    className="rounded-lg border border-white/20 shadow-lg max-h-[70vh] object-contain"
+                    className="rounded-lg border border-white/20 shadow-lg max-h-[60vh] object-contain"
+                    onLoad={() => handleImageLoad(imageIndex)}
+                    onError={() => handleImageError(imageIndex)}
+                    priority={imageIndex === 0}
                   />
 
+                  {/* Navigation Arrows */}
                   {selected.images.length > 1 && (
                     <>
                       <button
                         onClick={prevImage}
-                        className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 p-2 rounded-full border border-white/30"
+                        className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 p-3 rounded-full border border-white/30 transition-all z-20"
                       >
-                        <ChevronLeft className="w-5 h-5 text-white" />
+                        <ChevronLeft className="w-6 h-6 text-white" />
                       </button>
                       <button
                         onClick={nextImage}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 p-2 rounded-full border border-white/30"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 p-3 rounded-full border border-white/30 transition-all z-20"
                       >
-                        <ChevronRight className="w-5 h-5 text-white" />
+                        <ChevronRight className="w-6 h-6 text-white" />
                       </button>
                     </>
                   )}
+
+                  {/* Image Counter */}
+                  {selected.images.length > 1 && (
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 px-3 py-1 rounded-full text-sm text-white border border-white/20">
+                      {imageIndex + 1} / {selected.images.length}
+                    </div>
+                  )}
+
+                  {/* View Original Button */}
+                  <button
+                    onClick={openOriginalLink}
+                    className="absolute top-4 right-4 bg-black/60 hover:bg-black/80 p-2 rounded-full border border-white/30 transition-all z-20 flex items-center gap-1 text-xs"
+                    title="View original in OneDrive"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+
+              {/* Fallback if no images */}
+              {(!selected.images || selected.images.length === 0) && (
+                <div className="text-center py-12 text-gray-400 border-2 border-dashed border-gray-600 rounded-lg">
+                  <FileBadge className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p>No certificate image available</p>
                 </div>
               )}
             </motion.div>

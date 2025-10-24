@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import "./index.css";
@@ -11,10 +11,11 @@ import TechStack from "./components/TechStack";
 import Projects from "./components/Projects";
 import Resume from "./components/Resume";
 import Contact from "./components/Contact";
-import Certifications from "./components/Certifications"; // ✅ New
-import TimelineSection from "./components/timeline"; // ✅ New
+import Certifications from "./components/Certifications";
+import TimelineSection from "./components/timeline";
 import Footer from "./components/Footer";
 import LoadingScreen from "./components/LoadingScreen";
+import OfflinePage from "./components/offiline"; // ✅ NEW
 
 // Admin pages
 import AdminLogin from "./components/admin/adminlogin";
@@ -24,14 +25,14 @@ import AboutEditor from "./components/admin/aboutusadmin";
 import TechStackEditor from "./components/admin/techadmin";
 import ProjectsEditor from "./components/admin/projectadmin";
 import ResumeEditor from "./components/admin/resumeadmin";
-import CertificationsEditor from "./components/admin/certificationsadmin"; // ✅ New
-import TimelineEditor from "./components/admin/timelineadmin"; // ✅ New
+import CertificationsEditor from "./components/admin/certificationsadmin";
+import TimelineEditor from "./components/admin/timelineadmin";
 
 // Blog page
 import MassiveAnimatedBlogPage from "./components/blogpage";
 
 // Firestore hook
-import { useFirestoreData } from "./hooks/useFirestoreData";
+import { useFirestoreData } from "./firebase/hooks/useFirestoreData";
 
 /* ✅ Fetch Sections Configuration from Firestore */
 function SectionsConfigLoader({ children }) {
@@ -43,17 +44,14 @@ function SectionsConfigLoader({ children }) {
     "tech-stack": true,
     projects: true,
     resume: true,
-    certifications: true, // ✅ Added
-    timeline: true, // ✅ Added
+    certifications: true,
+    timeline: true,
     contact: true,
-    blog: true, // Blog is separate page but toggled for nav link
+    blog: true,
   };
 
-  if (sectionsLoading) {
-    return <LoadingScreen />;
-  }
-
-  return children(sectionsConfig);
+  // Instead of directly returning a loader, pass both values
+  return children(sectionsConfig, sectionsLoading);
 }
 
 /* ✅ AdminRoute — Protect admin pages */
@@ -73,8 +71,8 @@ function AdminNavbar() {
     { name: "Tech", path: "/admin/techadmin" },
     { name: "Projects", path: "/admin/projects" },
     { name: "Resume", path: "/admin/resume" },
-    { name: "Certifications", path: "/admin/certifications" }, // ✅ New
-    { name: "Timeline", path: "/admin/timeline" }, // ✅ New
+    { name: "Certifications", path: "/admin/certifications" },
+    { name: "Timeline", path: "/admin/timeline" },
   ];
 
   return (
@@ -107,97 +105,22 @@ function AdminNavbar() {
   );
 }
 
-/* ✅ Lazy Section Loader (only renders when visible) */
-function LazySection({ children, threshold = 0.25 }) {
-  const ref = useRef(null);
-  const [isVisible, setIsVisible] = useState(false);
-  const [hasAppeared, setHasAppeared] = useState(false);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          setHasAppeared(true);
-        } else {
-          setIsVisible(false);
-        }
-      },
-      { threshold }
-    );
-
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, [threshold]);
-
-  return (
-    <div ref={ref} className="relative min-h-[50vh]">
-      <AnimatePresence>
-        {hasAppeared && (
-          <motion.div
-            key="lazy-content"
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: isVisible ? 1 : 0.6, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-          >
-            {children}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
 /* ✅ Public Home Page Shell */
 function HomeShell({ sectionsConfig }) {
   return (
     <div className="relative overflow-x-hidden text-white">
       <Navbar />
 
-      {sectionsConfig.home && (
-        <LazySection>
-          <Header />
-        </LazySection>
-      )}
+      {sectionsConfig.home && <Header />}
 
       <main>
-        {sectionsConfig.about && (
-          <LazySection>
-            <About />
-          </LazySection>
-        )}
-        {sectionsConfig["tech-stack"] && (
-          <LazySection>
-            <TechStack />
-          </LazySection>
-        )}
-        {sectionsConfig.projects && (
-          <LazySection>
-            <Projects />
-          </LazySection>
-        )}
-        {sectionsConfig.resume && (
-          <LazySection>
-            <Resume />
-          </LazySection>
-        )}
-        {sectionsConfig.certifications && (
-          <LazySection>
-            <Certifications />
-          </LazySection>
-        )}
-        {sectionsConfig.timeline && (
-          <LazySection>
-            <TimelineSection />
-          </LazySection>
-        )}
-        {sectionsConfig.contact && (
-          <LazySection>
-            <Contact />
-          </LazySection>
-        )}
+        {sectionsConfig.about && <About />}
+        {sectionsConfig["tech-stack"] && <TechStack />}
+        {sectionsConfig.projects && <Projects />}
+        {sectionsConfig.resume && <Resume />}
+        {sectionsConfig.certifications && <Certifications />}
+        {sectionsConfig.timeline && <TimelineSection />}
+        {sectionsConfig.contact && <Contact />}
       </main>
 
       <Footer />
@@ -207,14 +130,29 @@ function HomeShell({ sectionsConfig }) {
 
 /* ✅ Main App */
 function App() {
-  const [loading, setLoading] = useState(true);
+  const [minTimePassed, setMinTimePassed] = useState(false);
+  const [fadeOut, setFadeOut] = useState(false);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
+  // ⏱ Force loader to stay for at least 2 seconds
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 1);
+    const timer = setTimeout(() => setMinTimePassed(true), 2000);
     return () => clearTimeout(timer);
   }, []);
 
-  // Mouse glow UI effect
+  // 🌐 Detect offline / online
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  // ✨ Mouse glow UI
   useEffect(() => {
     const handleMouseMove = (e) => {
       document.body.style.setProperty("--mouse-x", `${e.clientX}px`);
@@ -224,137 +162,116 @@ function App() {
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
 
-  if (loading) return <LoadingScreen />;
+  // 🚨 If offline, show offline page
+  if (isOffline) {
+    return <OfflinePage />;
+  }
 
   return (
     <SectionsConfigLoader>
-      {(sectionsConfig) => (
-        <BrowserRouter>
-          <Routes>
-            {/* 🌍 Public Routes */}
-            <Route path="/" element={<HomeShell sectionsConfig={sectionsConfig} />} />
+      {(sectionsConfig, sectionsLoading) => {
+        const stillLoading = !minTimePassed || sectionsLoading;
 
-            {/* 📰 Blog Page (Separate Page) */}
-            <Route
-              path="/blog"
-              element={
-                sectionsConfig.blog ? (
-                  <div className="min-h-screen bg-slate-50 text-slate-900">
-                    <Navbar />
-                    <main className="pt-6">
-                      <MassiveAnimatedBlogPage />
-                    </main>
-                    <Footer />
-                  </div>
-                ) : (
-                  <Navigate to="/" replace />
-                )
-              }
-            />
+        // 🔥 Smooth fade-out animation for loader
+        useEffect(() => {
+          if (!stillLoading) {
+            setFadeOut(true);
+            const t = setTimeout(() => setFadeOut(false), 800);
+            return () => clearTimeout(t);
+          }
+        }, [stillLoading]);
 
-            {/* 🔐 Admin Routes */}
-            <Route path="/admin/login" element={<AdminLogin />} />
-            <Route
-              path="/admindsh"
-              element={
-                <AdminRoute>
-                  <AdminDashboard />
-                </AdminRoute>
-              }
-            />
+        return (
+          <>
+            <AnimatePresence>
+              {stillLoading && (
+                <motion.div
+                  key="loader"
+                  initial={{ opacity: 1 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.8, ease: "easeInOut" }}
+                  className="fixed inset-0 z-[9999]"
+                >
+                  <LoadingScreen isLoading={true} />
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-            {/* 🧭 Admin Editor Routes */}
-            <Route
-              path="/admin/header"
-              element={
-                <AdminRoute>
-                  <div className="min-h-screen bg-[#000] text-white">
-                    <AdminNavbar />
-                    <HeaderEditor />
-                  </div>
-                </AdminRoute>
-              }
-            />
+            {!stillLoading && (
+              <motion.div
+                key="main"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 1 }}
+              >
+                <BrowserRouter>
+                  <Routes>
+                    {/* 🌍 Public Routes */}
+                    <Route path="/" element={<HomeShell sectionsConfig={sectionsConfig} />} />
 
-            <Route
-              path="/admin/about"
-              element={
-                <AdminRoute>
-                  <div className="min-h-screen bg-[#000] text-white">
-                    <AdminNavbar />
-                    <AboutEditor />
-                  </div>
-                </AdminRoute>
-              }
-            />
+                    {/* 📰 Blog Page */}
+                    <Route
+                      path="/blog"
+                      element={
+                        sectionsConfig.blog ? (
+                          <div className="min-h-screen bg-slate-50 text-slate-900">
+                            <Navbar />
+                            <main className="pt-6">
+                              <MassiveAnimatedBlogPage />
+                            </main>
+                            <Footer />
+                          </div>
+                        ) : (
+                          <Navigate to="/" replace />
+                        )
+                      }
+                    />
 
-            <Route
-              path="/admin/techadmin"
-              element={
-                <AdminRoute>
-                  <div className="min-h-screen bg-[#000] text-white">
-                    <AdminNavbar />
-                    <TechStackEditor />
-                  </div>
-                </AdminRoute>
-              }
-            />
+                    {/* 🔐 Admin Routes */}
+                    <Route path="/admin/login" element={<AdminLogin />} />
+                    <Route
+                      path="/admindsh"
+                      element={
+                        <AdminRoute>
+                          <AdminDashboard />
+                        </AdminRoute>
+                      }
+                    />
 
-            <Route
-              path="/admin/projects"
-              element={
-                <AdminRoute>
-                  <div className="min-h-screen bg-[#000] text-white">
-                    <AdminNavbar />
-                    <ProjectsEditor />
-                  </div>
-                </AdminRoute>
-              }
-            />
+                    {/* 🧭 Admin Editor Routes */}
+                    {[
+                      ["header", HeaderEditor],
+                      ["about", AboutEditor],
+                      ["techadmin", TechStackEditor],
+                      ["projects", ProjectsEditor],
+                      ["resume", ResumeEditor],
+                      ["certifications", CertificationsEditor],
+                      ["timeline", TimelineEditor],
+                    ].map(([path, Component]) => (
+                      <Route
+                        key={path}
+                        path={`/admin/${path}`}
+                        element={
+                          <AdminRoute>
+                            <div className="min-h-screen bg-[#000] text-white">
+                              <AdminNavbar />
+                              <Component />
+                            </div>
+                          </AdminRoute>
+                        }
+                      />
+                    ))}
 
-            <Route
-              path="/admin/resume"
-              element={
-                <AdminRoute>
-                  <div className="min-h-screen bg-[#000] text-white">
-                    <AdminNavbar />
-                    <ResumeEditor />
-                  </div>
-                </AdminRoute>
-              }
-            />
-
-            {/* ✅ Certifications Admin Route */}
-            <Route
-              path="/admin/certifications"
-              element={
-                <AdminRoute>
-                  <div className="min-h-screen bg-[#000] text-white">
-                    <AdminNavbar />
-                    <CertificationsEditor />
-                  </div>
-                </AdminRoute>
-              }
-            />
-
-            {/* ✅ Timeline Admin Route */}
-            <Route
-              path="/admin/timeline"
-              element={
-                <AdminRoute>
-                  <div className="min-h-screen bg-[#000] text-white">
-                    <AdminNavbar />
-                    <TimelineEditor />
-                  </div>
-                </AdminRoute>
-              }
-            />
-
-            {/* 🧭 Catch-all redirect */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </BrowserRouter>
-      )}
+                    {/* 🧭 Catch-all redirect */}
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                  </Routes>
+                </BrowserRouter>
+              </motion.div>
+            )}
+          </>
+        );
+      }}
     </SectionsConfigLoader>
   );
 }
