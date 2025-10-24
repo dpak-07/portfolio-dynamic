@@ -12,7 +12,7 @@ export default function AdminDashboard() {
     "tech-stack": true,
     projects: true,
     resume: true,
-    contact: true,
+    contact: true, 
   });
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
