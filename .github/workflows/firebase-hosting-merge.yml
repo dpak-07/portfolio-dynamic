@@ -30,6 +30,9 @@ jobs:
           echo "VITE_EMAILJS_TEMPLATE_ID=${{ secrets.VITE_EMAILJS_TEMPLATE_ID }}" >> .env
           echo "VITE_EMAILJS_PUBLIC_KEY=${{ secrets.VITE_EMAILJS_PUBLIC_KEY }}" >> .env
 
+      - name: Debug environment  # (remove after verifying)
+        run: cat .env
+
       - run: npm run build
 
       - uses: FirebaseExtended/action-hosting-deploy@v0
