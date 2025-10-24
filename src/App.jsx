@@ -32,7 +32,7 @@ import TimelineEditor from "./components/admin/timelineadmin";
 import MassiveAnimatedBlogPage from "./components/blogpage";
 
 // Firestore hook
-import { useFirestoreData } from "./firebase/hooks/useFirestoreData";
+import { useFirestoreData } from "./hooks/useFirestoreData";
 
 /* ✅ Fetch Sections Configuration from Firestore */
 function SectionsConfigLoader({ children }) {
