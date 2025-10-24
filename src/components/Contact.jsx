@@ -1,29 +1,23 @@
-import { useState } from 'react'
-import emailjs from '@emailjs/browser'
+"use client"
+import { useState } from "react"
+import emailjs from "@emailjs/browser"
+import { motion, AnimatePresence } from "framer-motion"
+import { SendHorizonal, Loader2 } from "lucide-react"
 
 export default function Contact() {
-  const [form, setForm] = useState({ name: '', email: '', message: '' })
+  const [form, setForm] = useState({ name: "", email: "", message: "" })
   const [status, setStatus] = useState(null)
   const [loading, setLoading] = useState(false)
 
-  const update = (k) => (e) => {
-    console.log(`[DEBUG] Updating field: ${k} ->`, e.target.value)
-    setForm((s) => ({ ...s, [k]: e.target.value }))
-  }
+  const update = (key) => (e) => setForm((s) => ({ ...s, [key]: e.target.value }))
 
   const submit = async (e) => {
     e.preventDefault()
-    console.log("[DEBUG] Form submit triggered")
     setStatus(null)
     setLoading(true)
 
-    console.log("[DEBUG] Form Data:", form)
-    console.log("[DEBUG] ENV Service ID:", import.meta.env.VITE_EMAILJS_SERVICE_ID)
-    console.log("[DEBUG] ENV Template ID:", import.meta.env.VITE_EMAILJS_TEMPLATE_ID)
-    console.log("[DEBUG] ENV Public Key:", import.meta.env.VITE_EMAILJS_PUBLIC_KEY)
-
     try {
-      const result = await emailjs.send(
+      const res = await emailjs.send(
         import.meta.env.VITE_EMAILJS_SERVICE_ID,
         import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
         {
@@ -34,78 +28,112 @@ export default function Contact() {
         import.meta.env.VITE_EMAILJS_PUBLIC_KEY
       )
 
-      console.log("[DEBUG] EmailJS response:", result)
-
-      setStatus({ type: 'success', text: '✅ Message sent! I’ll reply soon.' })
-      setForm({ name: '', email: '', message: '' })
+      console.log("✅ EmailJS Response:", res)
+      setStatus({ type: "success", text: "Message sent successfully 🚀" })
+      setForm({ name: "", email: "", message: "" })
     } catch (err) {
-      console.error("[DEBUG] EmailJS error:", err)
-      setStatus({ type: 'error', text: '❌ Failed to send. Try again later.' })
+      console.error("❌ EmailJS Error:", err)
+      setStatus({ type: "error", text: "Failed to send. Please try again later." })
     } finally {
       setLoading(false)
-      console.log("[DEBUG] Submit finished, loading =", false)
     }
   }
 
   return (
-    <section id="contact" className="py-12 px-4">
-      <div className="max-w-2xl mx-auto bg-panel/60 rounded-lg p-6 shadow-md animate-slideUp">
-        <h2 className="text-xl md:text-2xl font-bold text-cyansoft mb-3 text-center">
-          Contact Me
-        </h2>
-        <p className="text-white/70 mb-6 text-center text-sm md:text-base">
-          Have a project or question? Drop a message 🚀
+    <section id="contact" className="relative py-16 px-6 overflow-hidden">
+      {/* ✨ Background Glow */}
+      <div className="absolute inset-0 bg-gradient-to-b from-cyan-900/10 to-black" />
+      <div className="absolute -top-40 -left-40 w-96 h-96 bg-cyan-500/20 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-3xl animate-pulse" />
+
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7 }}
+        viewport={{ once: true }}
+        className="relative max-w-2xl mx-auto bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-8"
+      >
+        <motion.h2
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-3xl font-bold text-center mb-3 text-cyansoft"
+        >
+          Let’s Connect 💬
+        </motion.h2>
+        <p className="text-white/70 text-center mb-8 text-sm md:text-base">
+          Have an idea, collaboration, or project in mind? Drop a quick message — I’d love to hear from you.
         </p>
 
-        <form onSubmit={submit} className="grid grid-cols-1 gap-3">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <input
-              required
-              value={form.name}
-              onChange={update('name')}
-              placeholder="Your name"
-              className="bg-transparent border border-white/20 px-3 py-2 rounded-md outline-none focus:ring-2 focus:ring-cyansoft text-sm md:text-base"
-            />
-            <input
-              required
-              value={form.email}
-              onChange={update('email')}
-              placeholder="Your email"
-              type="email"
-              className="bg-transparent border border-white/20 px-3 py-2 rounded-md outline-none focus:ring-2 focus:ring-cyansoft text-sm md:text-base"
-            />
-          </div>
-
-          <textarea
+        <form onSubmit={submit} className="grid grid-cols-1 gap-5">
+          <motion.input
+            whileFocus={{ scale: 1.03, borderColor: "#22d3ee" }}
+            transition={{ type: "spring", stiffness: 200 }}
             required
-            value={form.message}
-            onChange={update('message')}
-            placeholder="Your message"
-            rows={5}
-            className="bg-transparent border border-white/20 px-3 py-2 rounded-md outline-none focus:ring-2 focus:ring-cyansoft text-sm md:text-base"
+            type="text"
+            placeholder="Your Name"
+            value={form.name}
+            onChange={update("name")}
+            className="bg-transparent border border-white/20 px-4 py-3 rounded-lg text-white placeholder-white/40 outline-none focus:ring-2 focus:ring-cyansoft text-sm"
           />
 
-          <div className="flex flex-col md:flex-row md:items-center gap-3">
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full md:w-auto inline-flex justify-center items-center gap-2 bg-cyansoft text-black px-5 py-2 rounded-md font-semibold shadow-cyanglow hover:scale-[1.02] transition-transform"
-            >
-              {loading ? 'Sending...' : 'Send Message'}
-            </button>
+          <motion.input
+            whileFocus={{ scale: 1.03, borderColor: "#22d3ee" }}
+            transition={{ type: "spring", stiffness: 200 }}
+            required
+            type="email"
+            placeholder="Your Email"
+            value={form.email}
+            onChange={update("email")}
+            className="bg-transparent border border-white/20 px-4 py-3 rounded-lg text-white placeholder-white/40 outline-none focus:ring-2 focus:ring-cyansoft text-sm"
+          />
 
-            {status && (
-              <div
-                className={`text-sm ${
-                  status.type === 'success' ? 'text-green-400' : 'text-red-400'
-                }`}
-              >
-                {status.text}
-              </div>
-            )}
+          <motion.textarea
+            whileFocus={{ scale: 1.02, borderColor: "#22d3ee" }}
+            transition={{ type: "spring", stiffness: 150 }}
+            required
+            rows="5"
+            placeholder="Your Message..."
+            value={form.message}
+            onChange={update("message")}
+            className="bg-transparent border border-white/20 px-4 py-3 rounded-lg text-white placeholder-white/40 outline-none focus:ring-2 focus:ring-cyansoft text-sm resize-none"
+          />
+
+          <div className="flex flex-col items-center md:flex-row md:justify-between gap-3">
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              disabled={loading}
+              type="submit"
+              className="inline-flex items-center justify-center gap-2 bg-cyansoft text-black font-semibold px-6 py-2.5 rounded-lg shadow-cyanglow hover:scale-[1.02] transition-transform w-full md:w-auto"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="animate-spin w-4 h-4" /> Sending...
+                </>
+              ) : (
+                <>
+                  <SendHorizonal className="w-4 h-4" /> Send Message
+                </>
+              )}
+            </motion.button>
+
+            <AnimatePresence>
+              {status && (
+                <motion.div
+                  key={status.text}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className={`text-sm font-medium ${
+                    status.type === "success" ? "text-green-400" : "text-red-400"
+                  }`}
+                >
+                  {status.text}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </form>
-      </div>
+      </motion.div>
     </section>
   )
 }

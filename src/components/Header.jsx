@@ -1,377 +1,363 @@
-// src/components/Header.jsx
-import { useEffect, useState, useRef } from "react";
-import { FaGithub, FaLinkedin, FaEnvelope } from "react-icons/fa";
-import { Typewriter } from "react-simple-typewriter";
+"use client";
+
 import { motion } from "framer-motion";
+import { Typewriter } from "react-simple-typewriter";
+import {
+  FaGithub,
+  FaLinkedin,
+  FaEnvelope,
+  FaDownload,
+  FaFileAlt,
+  FaTimes,
+  FaInstagram,
+  FaTwitter,
+  FaGlobe,
+  FaChevronDown,
+} from "react-icons/fa";
+import { useRef, useState, useEffect, useMemo } from "react";
+import { useFirestoreData } from "@/hooks/useFirestoreData";
+
+// ✅ Helper — Converts Google Drive URL → Preview & Download URLs
+const getDriveLinks = (url) => {
+  if (!url) return { preview: "", download: "" };
+  const match = url.match(/\/d\/([a-zA-Z0-9_-]+)\//);
+  if (!match) return { preview: url, download: url };
+  const fileId = match[1];
+  return {
+    preview: `https://drive.google.com/file/d/${fileId}/preview`,
+    download: `https://drive.google.com/uc?export=download&id=${fileId}`,
+  };
+};
 
 export default function Header() {
+  // 🔥 Fetch profile data from Firestore
+  const { data: firestoreProfileData, loading: firestoreLoading, error: firestoreError } = useFirestoreData('portfolio', 'profile');
+
+  const [profileData, setProfileData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [visible, setVisible] = useState(true);
+  const [showResume, setShowResume] = useState(false);
   const sectionRef = useRef(null);
-  const terminalRef = useRef(null);
-  const [lines, setLines] = useState([]);
-  const currentInputRef = useRef(""); // Ref for input to prevent re-render lag
-  const [terminalReady, setTerminalReady] = useState(false);
-  const [inputRender, setInputRender] = useState(""); // Only for display
-  const commandHistory = useRef([]);
-  const historyIndex = useRef(-1);
 
-  const asciiPigeon = [
-    "   ,     #_",
-    "   ~\\_  ####_ Amazon Linux 2023",
-    "  ~~  \\_#####\\",
-    "  ~~     \\###|",
-    "  ~~       \\#/ ____",
-    "   ~~       V~' '->",
-    "    ~~~         /",
-    "      ~~._.   _/",
-    "         _/ _/",
-    "       _/m/'",
-    "Connected to Deepak's EC2 instance",
-    "you can type commands here or use the buttons below",
-    "$ ",
-  ];
+  // ✅ Update profile data from Firestore
+  useEffect(() => {
+    if (firestoreProfileData) {
+      setProfileData(firestoreProfileData);
+      setLoading(false);
+    } else if (firestoreError) {
+      setError(firestoreError);
+      setLoading(false);
+    } else if (firestoreLoading) {
+      setLoading(true);
+    }
+  }, [firestoreProfileData, firestoreError, firestoreLoading]);
 
-  const recommendations = [
-    "ls",
-    "pwd",
-    "whoami",
-    "fortune",
-    "help",
-    "projects",
-    "resume",
-    "contact",
-    "games",
-  ];
+  // ✅ Drive links (memoized)
+  const { preview, download } = useMemo(() => {
+    if (!profileData?.resumeDriveLink) return { preview: "", download: "" };
+    return getDriveLinks(profileData.resumeDriveLink);
+  }, [profileData?.resumeDriveLink]);
 
-  const getRandomizedRecommendations = () => {
-    return [...recommendations].sort(() => Math.random() - 0.5);
-  };
-
-  const scrollToBottom = () => {
-    terminalRef.current?.scrollTo({
-      top: terminalRef.current.scrollHeight,
-      behavior: "smooth",
-    });
-  };
-
-  // Fade-in observer (kept)
+  // ✅ Fade-in trigger
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => setVisible(entry.isIntersecting),
       { threshold: 0.1 }
     );
     if (sectionRef.current) observer.observe(sectionRef.current);
-    return () => {
-      if (sectionRef.current) observer.unobserve(sectionRef.current);
-    };
+    return () => observer.disconnect();
   }, []);
 
-  // Initialize terminal
-  useEffect(() => {
-    setLines(
-      asciiPigeon.map((line) => ({
-        text: line,
-        style: line === "$ " ? "text-cyansoft" : "text-yellow-300",
-      }))
-    );
-    setTerminalReady(true);
-    scrollToBottom();
-  }, []);
-
-  // Command execution
-  const handleCommand = (cmd) => {
-    if (!cmd.trim()) return;
-
-    let newLines = [...lines];
-    newLines[newLines.length - 1] = { text: `$ ${cmd}`, style: "text-cyansoft" };
-
-    commandHistory.current.unshift(cmd);
-    historyIndex.current = -1;
-
-    const responses = {
-      clear: () => [{ text: "$ ", style: "text-cyansoft" }],
-      ls: () => [
-        { text: "projects  resume  contact  games", style: "text-white/80" },
-        { text: "$ ", style: "text-cyansoft" },
-      ],
-      pwd: () => [
-        { text: "/home/deepak", style: "text-white/80" },
-        { text: "$ ", style: "text-cyansoft" },
-      ],
-      whoami: () => [
-        { text: "deepak", style: "text-white/80" },
-        { text: "$ ", style: "text-cyansoft" },
-      ],
-      fortune: () => [
-        {
-          text: [
-            "You will code something amazing today!",
-            "A bug is lurking nearby, beware!",
-            "Coffee + Code = Magic",
-            "Deploy with confidence!",
-          ][Math.floor(Math.random() * 4)],
-          style: "text-white/80",
-        },
-        { text: "$ ", style: "text-cyansoft" },
-      ],
-      help: () => [
-        {
-          text: "Available commands: ls, pwd, whoami, projects, resume, contact, clear, fortune, help",
-          style: "text-white/80",
-        },
-        { text: "$ ", style: "text-cyansoft" },
-      ],
-    };
-
-    const navCommands = ["projects", "resume", "contact", "games"];
-
-    if (navCommands.includes(cmd.trim().toLowerCase())) {
-      const el = document.getElementById(cmd.trim().toLowerCase());
-      if (el) el.scrollIntoView({ behavior: "smooth" });
-      newLines.push({
-        text: `Navigated to ${cmd} section`,
-        style: "text-white/80",
-      });
-      newLines.push({ text: "$ ", style: "text-cyansoft" });
-    } else if (responses[cmd.trim().toLowerCase()]) {
-      newLines.push(...responses[cmd.trim().toLowerCase()]());
-    } else {
-      newLines.push({
-        text: `Command not found: ${cmd}`,
-        style: "text-red-500",
-      });
-      newLines.push({ text: "$ ", style: "text-cyansoft" });
-    }
-
-    setLines(newLines);
-    currentInputRef.current = "";
-    setInputRender("");
-    scrollToBottom();
-  };
-
-  // Keyboard input
-  useEffect(() => {
-    const handleKey = (e) => {
-      if (!terminalReady) return;
-
-      if (
-        ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(e.key)
-      ) {
-        e.preventDefault();
-      }
-
-      if (e.key === "Enter") handleCommand(currentInputRef.current);
-      else if (e.key === "Backspace") {
-        currentInputRef.current = currentInputRef.current.slice(0, -1);
-        setInputRender(currentInputRef.current);
-      } else if (e.key === "ArrowUp") {
-        if (
-          commandHistory.current.length > 0 &&
-          historyIndex.current < commandHistory.current.length - 1
-        ) {
-          historyIndex.current += 1;
-          currentInputRef.current =
-            commandHistory.current[historyIndex.current];
-          setInputRender(currentInputRef.current);
-        }
-      } else if (e.key === "ArrowDown") {
-        if (historyIndex.current > 0) {
-          historyIndex.current -= 1;
-          currentInputRef.current =
-            commandHistory.current[historyIndex.current];
-          setInputRender(currentInputRef.current);
-        } else {
-          historyIndex.current = -1;
-          currentInputRef.current = "";
-          setInputRender("");
-        }
-      } else if (e.key.length === 1 && e.key !== " ") {
-        currentInputRef.current += e.key;
-        setInputRender(currentInputRef.current);
-      }
-    };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [terminalReady]);
-
-  const runRecommendation = (cmd) => {
-    currentInputRef.current = cmd;
-    setInputRender(cmd);
-    handleCommand(cmd);
-  };
-
-  // ✨ Framer Motion Variants
+  // ✅ Animation variants
   const containerVariants = {
     hidden: { opacity: 0, y: 40 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { staggerChildren: 0.3, duration: 0.8, ease: "easeOut" },
+      transition: { staggerChildren: 0.25, duration: 1, ease: "easeOut" },
     },
   };
 
   const itemVariants = {
     hidden: { opacity: 0, y: 40 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.8 } },
+    visible: { opacity: 1, y: 0, transition: { duration: 1 } },
   };
+
+  // ✅ Map of social icons
+  const iconMap = {
+    github: FaGithub,
+    linkedin: FaLinkedin,
+    email: FaEnvelope,
+    instagram: FaInstagram,
+    twitter: FaTwitter,
+    website: FaGlobe,
+  };
+
+  // 🌀 Loading Spinner
+  if (loading) {
+    return (
+      <div className="w-full h-screen flex items-center justify-center bg-black text-white">
+        <motion.div
+          className="w-12 h-12 border-4 border-cyan-400 border-t-transparent rounded-full"
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+        />
+      </div>
+    );
+  }
+
+  // ❌ Error State
+  if (error || !profileData) {
+    return (
+      <div className="w-full h-screen flex items-center justify-center text-red-400 text-lg">
+        Error: {error || "No profile data found."}
+      </div>
+    );
+  }
+
+  // ✅ Filter socials
+  const validSocials = Object.entries(profileData.socials || {}).filter(
+    ([, url]) => url && typeof url === "string" && url.trim() !== ""
+  );
+  const allSocials =
+    validSocials.length > 0
+      ? validSocials
+      : [["website", profileData.socials?.website || ""]];
 
   return (
     <header
       id="home"
       ref={sectionRef}
-      className={`relative w-full min-h-screen flex flex-col md:flex-row items-center justify-center text-white overflow-hidden px-6 py-20 md:py-28 transition-opacity duration-700 ${
+      className={`relative w-full min-h-screen flex flex-col items-center justify-center text-white overflow-hidden px-4 sm:px-6 lg:px-8 transition-opacity duration-700 ${
         visible ? "opacity-100" : "opacity-0"
       }`}
     >
-      <div className="smoke-layer pointer-events-none fixed inset-0 -z-20"></div>
+      {/* 🌈 Animated Gradient Background */}
+      <div className="absolute inset-0 -z-10 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-cyan-800/40 via-black to-blue-900/30 animate-gradientShift"></div>
+        <div className="absolute -top-40 left-0 w-[500px] h-[500px] bg-cyan-500/20 blur-[180px] rounded-full animate-blob1"></div>
+        <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-blue-500/25 blur-[160px] rounded-full animate-blob2"></div>
+        <div className="absolute top-1/2 left-1/2 w-[600px] h-[600px] bg-teal-400/15 blur-[200px] rounded-full animate-blob3"></div>
 
+        <style jsx="true">{`
+          @keyframes gradientShift {
+            0% {
+              background-position: 0% 50%;
+            }
+            50% {
+              background-position: 100% 50%;
+            }
+            100% {
+              background-position: 0% 50%;
+            }
+          }
+          @keyframes blob1 {
+            0% {
+              transform: translate(0, 0) scale(1);
+            }
+            50% {
+              transform: translate(30px, -40px) scale(1.1);
+            }
+            100% {
+              transform: translate(0, 0) scale(1);
+            }
+          }
+          @keyframes blob2 {
+            0% {
+              transform: translate(0, 0) scale(1);
+            }
+            50% {
+              transform: translate(-50px, 40px) scale(1.2);
+            }
+            100% {
+              transform: translate(0, 0) scale(1);
+            }
+          }
+          @keyframes blob3 {
+            0% {
+              transform: translate(-20px, 20px) scale(1);
+            }
+            50% {
+              transform: translate(40px, -20px) scale(1.15);
+            }
+            100% {
+              transform: translate(-20px, 20px) scale(1);
+            }
+          }
+          .animate-gradientShift {
+            background-size: 200% 200%;
+            animation: gradientShift 12s ease-in-out infinite;
+          }
+          .animate-blob1 {
+            animation: blob1 20s ease-in-out infinite;
+          }
+          .animate-blob2 {
+            animation: blob2 18s ease-in-out infinite;
+          }
+          .animate-blob3 {
+            animation: blob3 22s ease-in-out infinite;
+          }
+        `}</style>
+      </div>
+
+      {/* ========================== MAIN CONTENT =========================== */}
       <motion.div
-        className="relative z-10 max-w-7xl w-full flex flex-col md:flex-row items-center justify-between gap-14"
+        className="relative z-10 w-full max-w-4xl mx-auto flex flex-col items-center text-center px-4 sm:px-6 lg:px-8"
         variants={containerVariants}
         initial="hidden"
-        whileInView="visible"
-        viewport={{ once: false, amount: 0.3 }}
+        animate="visible"
       >
-        {/* Left Intro */}
-        <motion.div
-          className="text-center md:text-left max-w-2xl space-y-4"
-          variants={containerVariants}
+        {/* Name */}
+        <motion.h1
+          className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-cyansoft drop-shadow-lg leading-tight mb-4 sm:mb-6"
+          variants={itemVariants}
+          animate={{ y: [0, -10, 0] }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
         >
-          <motion.h1
-            className="text-5xl md:text-6xl font-extrabold text-cyansoft drop-shadow-lg"
-            variants={itemVariants}
-          >
-            Hi, I'm Deepak
-          </motion.h1>
-          <motion.p
-            className="text-xl md:text-1xl text-white/80"
-            variants={itemVariants}
-          >
-          Full-Stack Developer • Cloud Engineer • AI Enthusiast
-          </motion.p>
-          <motion.p
-            className="text-md md:text-lg text-white/60 font-mono h-[32px]"
-            variants={itemVariants}
-          >
-            <Typewriter
-              words={[
-                "Deploying apps on AWS EC2 & S3",
-                "Automating tasks with Linux scripts",
-                "Building scalable full-stack apps with React & Node",
-              ]}
-              loop={0}
-              cursor
-              cursorStyle="|"
-              typeSpeed={50}
-              deleteSpeed={30}
-              delaySpeed={1800}
-            />
-          </motion.p>
+          Hi, I'm {profileData.name}
+        </motion.h1>
 
-          {/* Buttons */}
-          <motion.div
-            className="mt-6 flex flex-wrap gap-4 justify-center md:justify-start"
-            variants={itemVariants}
-          >
-            <a
-              href="#projects"
-              onClick={(e) => {
-                e.preventDefault();
-                document
-                  .getElementById("projects")
-                  ?.scrollIntoView({ behavior: "smooth" });
-              }}
-              className="bg-cyansoft text-black px-6 py-3 rounded-full font-semibold shadow-lg hover:bg-cyan-300 hover:scale-105 transition-all"
-            >
-              View Projects
-            </a>
-            <a
-              href="#contact"
-              onClick={(e) => {
-                e.preventDefault();
-                document
-                  .getElementById("contact")
-                  ?.scrollIntoView({ behavior: "smooth" });
-              }}
-              className="border border-white/20 text-white/90 px-6 py-3 rounded-full font-medium hover:border-cyansoft hover:bg-white/10 transition-all"
-            >
-              Contact
-            </a>
-          </motion.div>
-
-          {/* Socials */}
-          <motion.div
-            className="flex gap-4 mt-6 justify-center md:justify-start"
-            variants={itemVariants}
-          >
-            <a
-              href="https://github.com/dpak-07"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-white/80 hover:text-cyansoft transition-all"
-            >
-              <FaGithub size={24} />
-            </a>
-            <a
-              href="https://www.linkedin.com/in/deepak-saminathan/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-white/80 hover:text-cyansoft transition-all"
-            >
-              <FaLinkedin size={24} />
-            </a>
-            <a
-              href="mailto:deepakofficial0103@gmail.com"
-              className="text-white/80 hover:text-cyansoft transition-all"
-            >
-              <FaEnvelope size={24} />
-            </a>
-          </motion.div>
-        </motion.div>
-
-        {/* Right Terminal */}
-        <motion.div
-          className="w-full md:w-[50%] h-[400px] rounded-xl bg-[#101317] border border-white/10 font-mono text-sm md:text-base text-cyansoft shadow-xl flex flex-col overflow-hidden"
+        {/* Roles */}
+        <motion.p
+          className="text-lg sm:text-xl md:text-2xl text-white/80 mb-4 sm:mb-6 max-w-2xl mx-auto px-4"
           variants={itemVariants}
         >
-          <div className="bg-[#0b0d10] px-3 py-1 text-xs text-white/70">
-            Linux EC2 Terminal
-          </div>
-          <div className="flex-1 overflow-y-auto px-3 py-2" ref={terminalRef}>
-            {lines.map((lineObj, i) => {
-              const text = lineObj?.text || "";
-              const style = lineObj?.style || "";
-              const isPrompt = text.endsWith("$ ");
+          {profileData.roles}
+        </motion.p>
 
-              return (
-                <div key={i} className={`whitespace-pre-wrap break-words ${style}`}>
-                  {isPrompt ? (
-                    <>
-                      $ {inputRender}
-                      <span className="animate-pulse">█</span>
-                    </>
-                  ) : (
-                    text
-                  )}
-                </div>
-              );
-            })}
+        {/* Typewriter */}
+        <motion.div
+          className="text-sm sm:text-base md:text-lg text-white/60 font-mono h-[28px] sm:h-[32px] mb-6 sm:mb-8 max-w-2xl mx-auto px-4"
+          variants={itemVariants}
+        >
+          <Typewriter
+            words={profileData.typewriterLines || []}
+            loop={0}
+            cursor
+            cursorStyle="|"
+            typeSpeed={50}
+            deleteSpeed={30}
+            delaySpeed={1800}
+          />
+        </motion.div>
 
-            {/* Randomized Recommendations */}
-            <div className="mt-2 flex flex-wrap gap-2">
-              {getRandomizedRecommendations().map((cmd, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => runRecommendation(cmd)}
-                  className="bg-white/10 text-white/80 hover:bg-cyansoft hover:text-black px-3 py-1 rounded-full text-sm font-mono transition-all"
-                >
-                  {cmd}
-                </button>
-              ))}
-            </div>
-          </div>
+        {/* ==== Buttons Section ==== */}
+        <motion.div
+          className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center w-full max-w-2xl mx-auto mb-6 sm:mb-8 px-4"
+          variants={itemVariants}
+        >
+          <a
+            href="#projects"
+            onClick={(e) => {
+              e.preventDefault();
+              document
+                .getElementById("projects")
+                ?.scrollIntoView({ behavior: "smooth" });
+            }}
+            className="w-full sm:w-auto bg-cyansoft text-black px-6 py-3 rounded-full font-semibold shadow-lg hover:bg-cyan-300 hover:scale-105 transition-all text-center min-w-[140px]"
+          >
+            View Projects
+          </a>
+
+          <a
+            href="#contact"
+            onClick={(e) => {
+              e.preventDefault();
+              document
+                .getElementById("contact")
+                ?.scrollIntoView({ behavior: "smooth" });
+            }}
+            className="w-full sm:w-auto border border-white/20 text-white/90 px-6 py-3 rounded-full font-medium hover:border-cyansoft hover:bg-white/10 transition-all text-center min-w-[140px]"
+          >
+            Contact
+          </a>
+
+          <button
+            onClick={() => setShowResume(true)}
+            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-cyansoft text-black px-6 py-3 rounded-full font-semibold shadow-lg hover:bg-cyan-300 hover:scale-105 transition-all min-w-[140px]"
+          >
+            <FaFileAlt className="w-4 h-4" /> Open Resume
+          </button>
+
+          <a
+            href={download}
+            download
+            className="w-full sm:w-auto flex items-center justify-center gap-2 border border-white/20 text-white/90 px-6 py-3 rounded-full font-medium hover:border-cyansoft hover:bg-white/10 transition-all min-w-[140px]"
+          >
+            <FaDownload className="w-4 h-4" /> Download
+          </a>
+        </motion.div>
+
+        {/* ===== Social Icons ===== */}
+        <motion.div
+          className="flex flex-wrap gap-4 sm:gap-6 justify-center items-center px-4"
+          variants={itemVariants}
+        >
+          {allSocials.map(([key, url], idx) => {
+            const Icon = iconMap[key] || FaGlobe;
+            return (
+              <a
+                key={idx}
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-white/80 hover:text-cyansoft transition-all transform hover:scale-110"
+              >
+                <Icon className="w-6 h-6" />
+              </a>
+            );
+          })}
         </motion.div>
       </motion.div>
+
+      {/* ===== Explore More Button (Bottom) ===== */}
+      <motion.div
+        className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20"
+        animate={{ y: [0, 10, 0] }}
+        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            document
+              .getElementById("about")
+              ?.scrollIntoView({ behavior: "smooth" });
+          }}
+          className="flex flex-col items-center gap-2 text-cyansoft hover:text-cyan-300 transition-colors group"
+        >
+          <span className="text-sm font-medium opacity-75 group-hover:opacity-100">
+            Explore More
+          </span>
+          <FaChevronDown className="w-5 h-5 group-hover:scale-125 transition-transform" />
+        </button>
+      </motion.div>
+
+      {/* ===== Resume Modal ===== */}
+      {showResume && (
+        <div className="fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 backdrop-blur-md">
+          <motion.button
+            onClick={() => setShowResume(false)}
+            className="absolute top-4 right-4 sm:top-6 sm:right-6 text-white hover:text-cyansoft transition-all z-10 bg-black/50 rounded-full p-2"
+            whileHover={{ scale: 1.2 }}
+          >
+            <FaTimes className="w-6 h-6" />
+          </motion.button>
+
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className="w-full max-w-4xl lg:max-w-5xl h-[80vh] bg-[#0a0a0a] border border-white/10 rounded-xl overflow-hidden shadow-2xl mx-4"
+          >
+            <iframe
+              src={preview}
+              className="w-full h-full rounded-xl"
+              title="Resume"
+            ></iframe>
+          </motion.div>
+        </div>
+      )}
     </header>
   );
 }

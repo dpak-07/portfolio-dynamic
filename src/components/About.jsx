@@ -1,150 +1,1154 @@
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+"use client";
 
-export default function About() {
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+import React, { useEffect, useRef, useState, useMemo, useCallback, memo } from "react";
+import { motion, AnimatePresence, useInView } from "framer-motion";
+import {
+  FaCloud,
+  FaBrain,
+  FaLaptopCode,
+  FaGraduationCap,
+  FaTrophy,
+  FaCompass,
+  FaChevronDown,
+  FaChevronUp,
+  FaEnvelope,
+  FaMapMarkerAlt,
+  FaCalendarAlt,
+  FaBolt,
+} from "react-icons/fa";
+import { useFirestoreData } from "@/hooks/useFirestoreData";
 
-  // 🖱️ Mouse glow effect
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      setMousePos({ x: e.clientX, y: e.clientY });
-    };
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, []);
-
-  const mouseGlow = {
-    background: `radial-gradient(circle at ${mousePos.x}px ${mousePos.y}px, rgba(0,229,255,0.06), transparent 50%)`,
+/* ============================================================================
+   UTILITY FUNCTIONS
+============================================================================ */
+function mergeDeep(defaultObj, overrideObj) {
+  if (!overrideObj) return defaultObj;
+  const out = JSON.parse(JSON.stringify(defaultObj));
+  const merge = (t, s) => {
+    for (const k of Object.keys(s)) {
+      const v = s[k];
+      if (v && typeof v === "object" && !Array.isArray(v)) {
+        t[k] = t[k] || {};
+        merge(t[k], v);
+      } else {
+        t[k] = v;
+      }
+    }
   };
+  merge(out, overrideObj);
+  return out;
+}
+
+// Smooth scroll helper
+const smoothScroll = (id) => {
+  const element = document.getElementById(id);
+  if (element) {
+    element.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+};
+
+/* ============================================================================
+   ICON MAPPING
+============================================================================ */
+const iconMap = {
+  graduation: <FaGraduationCap size={22} />,
+  brain: <FaBrain size={22} />,
+  laptop: <FaLaptopCode size={22} />,
+  cloud: <FaCloud size={22} />,
+  trophy: <FaTrophy size={22} />,
+  compass: <FaCompass size={22} />,
+};
+
+/* ============================================================================
+   LOADING SPINNER
+============================================================================ */
+const LoadingSpinner = memo(() => {
+  return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="relative">
+        <motion.div
+          className="w-16 h-16 rounded-full border-4 border-cyan-500/20"
+          animate={{ scale: [1, 1.2, 1], rotate: [0, 180, 360] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          className="absolute inset-0 w-16 h-16 rounded-full border-4 border-transparent border-t-cyan-500"
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        />
+        <motion.div
+          className="absolute inset-0 m-auto w-2 h-2 rounded-full bg-cyan-500"
+          animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+        />
+      </div>
+    </div>
+  );
+});
+
+LoadingSpinner.displayName = "LoadingSpinner";
+
+/* ============================================================================
+   COUNTER COMPONENT - FIXED WITH KEY RESET
+============================================================================ */
+const Counter = memo(function Counter({ to = 0, ms = 1200, play = false, itemKey }) {
+
+  const [val, setVal] = useState(0);
+  const hasAnimatedRef = useRef(false);
+
+  useEffect(() => {
+    // Reset animation flag when key changes
+    hasAnimatedRef.current = false;
+  },[itemKey]);
+
+  useEffect(() => {
+    if (!play || hasAnimatedRef.current) return;
+
+    hasAnimatedRef.current = true;
+    let raf;
+    let start;
+
+    const step = (t) => {
+      if (!start) start = t;
+      const p = Math.min((t - start) / ms, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setVal(Math.floor(eased * to));
+
+      if (p < 1) {
+        raf = requestAnimationFrame(step);
+      }
+    };
+
+    raf = requestAnimationFrame(step);
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [to, play, ms]);
+
+  return <span className="block text-3xl md:text-4xl font-bold text-white">{val}</span>;
+});
+
+Counter.displayName = "Counter";
+
+/* ============================================================================
+   ANIMATION VARIANTS - OPTIMIZED
+============================================================================ */
+const page = {
+  hidden: { opacity: 0, y: 40, scale: 0.95, rotateX: 5, filter: "blur(10px)" },
+  enter: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    rotateX: 0,
+    filter: "blur(0px)",
+    transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1], staggerChildren: 0.1, delayChildren: 0.05 },
+  },
+  exit: {
+    opacity: 0,
+    y: -30,
+    scale: 0.95,
+    rotateX: -5,
+    filter: "blur(8px)",
+    transition: { duration: 0.5, ease: [0.65, 0, 0.35, 1] },
+  },
+};
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  enter: { opacity: 1, transition: { staggerChildren: 0.06, delayChildren: 0.08, duration: 0.4 } },
+  exit: { opacity: 0, transition: { staggerChildren: 0.04, staggerDirection: -1, duration: 0.25 } },
+};
+
+const itemFade = {
+  hidden: { opacity: 0, y: 15, scale: 0.98 },
+  enter: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] } },
+  exit: { opacity: 0, y: -10, scale: 0.98, transition: { duration: 0.25, ease: [0.65, 0, 0.35, 1] } },
+};
+
+const cardFactory = (isMobile) => ({
+  hidden: (i) => ({
+    opacity: 0,
+    y: isMobile ? 60 : 30,
+    x: isMobile ? 0 : -20,
+    scale: isMobile ? 0.8 : 0.95,
+    rotateX: isMobile ? 15 : 10,
+    rotateY: isMobile ? 0 : -15,
+    filter: "blur(10px)",
+  }),
+  enter: (i) => ({
+    opacity: 1,
+    y: 0,
+    x: 0,
+    scale: 1,
+    rotateX: 0,
+    rotateY: 0,
+    filter: "blur(0px)",
+    transition: {
+      duration: isMobile ? 0.6 : 0.5,
+      delay: isMobile ? i * 0.1 : i * 0.06,
+      ease: [0.22, 1, 0.36, 1],
+    },
+  }),
+  exit: (i) => ({
+    opacity: 0,
+    y: isMobile ? 40 : -20,
+    scale: isMobile ? 0.85 : 0.95,
+    filter: "blur(8px)",
+    transition: { duration: isMobile ? 0.4 : 0.3, delay: isMobile ? i * 0.08 : 0, ease: [0.65, 0, 0.35, 1] },
+  }),
+  hover: { scale: isMobile ? 1.02 : 1.05, y: isMobile ? -4 : -8, transition: { duration: 0.2, ease: "easeOut" } },
+  tap: { scale: 0.98, transition: { duration: 0.15, ease: "easeOut" } },
+});
+
+const imgFloat = (reduceMotion) => ({
+  idle: { y: 0, rotate: 0, scale: 1, filter: "brightness(1)" },
+  float: reduceMotion
+    ? { y: 0, rotate: 0, scale: 1, filter: "brightness(1)" }
+    : {
+        y: [-8, 8, -8],
+        rotate: [-1, 1, -1],
+        scale: [1, 1.02, 1],
+        filter: ["brightness(1)", "brightness(1.1)", "brightness(1)"],
+      },
+});
+
+/* ============================================================================
+   SHIMMER - OPTIMIZED
+============================================================================ */
+const Shimmer = memo(() => {
+  return (
+    <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="g1" x1="0" x2="1" y1="0" y2="1">
+          <stop offset="0%" stopOpacity="0" />
+          <stop offset="45%" stopOpacity="0.06" />
+          <stop offset="100%" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#g1)" transform="skewX(-12)" />
+    </svg>
+  );
+});
+
+Shimmer.displayName = "Shimmer";
+
+/* ============================================================================
+   INJECT STYLES
+============================================================================ */
+const InjectStyles = memo(() => {
+  return (
+    <style>{`
+      html {
+        scroll-behavior: smooth;
+      }
+      @keyframes gradientMove { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+      .fancy-border { position: relative; overflow: hidden; border-radius: 14px; }
+      .fancy-border::before {
+        content: '';
+        position: absolute; inset: -2px; z-index: 0; border-radius: 14px; padding: 2px;
+        background: linear-gradient(90deg, rgba(0,229,255,0.08), rgba(0,0,0,0) 30%, rgba(0,229,255,0.04));
+        mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor; mask-composite: exclude;
+        animation: gradientMove 8s linear infinite;
+        will-change: background-position;
+      }
+      .inner-glass { position: relative; z-index: 1; background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); box-shadow: inset 0 2px 10px rgba(0,0,0,0.42), 0 6px 18px rgba(0,0,0,0.45); }
+      .pulse-hover:hover { box-shadow: 0 10px 30px rgba(0,229,255,0.08); transform: translateY(-4px) scale(1.01); }
+      @media (max-width: 640px) {
+        .inner-glass { background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)); box-shadow: inset 0 2px 8px rgba(0,0,0,0.4), 0 8px 16px rgba(0,0,0,0.3); }
+        .fancy-border::before { background: linear-gradient(90deg, rgba(0,229,255,0.1), rgba(0,0,0,0) 30%, rgba(0,229,255,0.05)); }
+      }
+    `}</style>
+  );
+});
+
+InjectStyles.displayName = "InjectStyles";
+
+/* ============================================================================
+   SUB-COMPONENTS - MEMOIZED & OPTIMIZED
+============================================================================ */
+
+const Badge = memo(({ children, isMobile }) => {
+  const [isHovered, setIsHovered] = useState(false);
 
   return (
-    <section
-      id="about"
-      className="relative w-full py-28 px-6 scroll-mt-32 flex items-center justify-center"
-      style={mouseGlow}
+    <motion.span
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
+      initial={{ opacity: 0, scale: 0.8, y: 10 }}
+      animate={{ opacity: 1, scale: 1, y: 0, transition: { type: "spring", stiffness: 380, damping: 24, duration: 0.3 } }}
+      whileHover={{
+        scale: isMobile ? 1.02 : 1.08,
+        y: isMobile ? -2 : -4,
+        transition: { type: "spring", stiffness: 380, damping: 10, duration: 0.2 },
+      }}
+      whileTap={{ scale: 0.95, transition: { type: "spring", stiffness: 380, damping: 10, duration: 0.15 } }}
+      className={`relative inline-block ${isMobile ? "text-xs px-3 py-1" : "text-xs md:text-sm px-4 py-1.5"} bg-gradient-to-r from-cyan-500/15 via-blue-500/10 to-cyan-400/15 border ${
+        isMobile ? "border" : "border-2"
+      } border-cyan-500/20 ${isMobile ? "rounded-md" : "rounded-lg"} text-cyan-100 font-medium tracking-wide ${isMobile ? "shadow-sm" : "shadow-lg"} backdrop-blur-sm transition-all duration-300 transform hover:shadow-cyan-500/25 overflow-hidden ${
+        isMobile ? "active:scale-95" : ""
+      }`}
+      style={{ will: "change" }}
     >
       <motion.div
-        className="relative z-10 w-full max-w-7xl flex flex-col md:flex-row items-center gap-12 md:gap-16 p-8 md:p-16 border border-white/10 rounded-3xl shadow-2xl backdrop-blur-md bg-white/5"
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: false, amount: 0.3 }}
-        transition={{ staggerChildren: 0.2 }}
-      >
-        {/* 🖼️ Profile Image with Glow */}
-        <motion.div
-          className="relative flex-shrink-0 group"
-          variants={{
-            hidden: { opacity: 0, scale: 0.8 },
-            visible: { opacity: 1, scale: 1 },
-          }}
-          transition={{ duration: 0.8, type: "spring" }}
-        >
-          {/* Glow Ring */}
-          <motion.div
-            className="absolute -inset-3 rounded-2xl bg-gradient-to-r from-cyansoft/50 to-cyan-300/30 blur-3xl"
-            animate={{ opacity: [0.3, 0.8, 0.3] }}
-            transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
-          ></motion.div>
+        className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-cyan-400/20"
+        animate={{ x: isHovered ? ["0%", "100%", "0%"] : "0%", opacity: isHovered ? [0.3, 0.5, 0.3] : 0 }}
+        transition={{ duration: 1.8, repeat: Infinity, ease: "linear" }}
+        style={{ willChange: "transform, opacity" }}
+      />
+      <motion.div
+        className="absolute inset-0"
+        animate={{
+          boxShadow: isHovered
+            ? [
+                "0 0 10px 2px rgba(0,229,255,0.3), inset 0 0 4px 1px rgba(0,229,255,0.3)",
+                "0 0 15px 3px rgba(0,229,255,0.4), inset 0 0 6px 2px rgba(0,229,255,0.4)",
+                "0 0 10px 2px rgba(0,229,255,0.3), inset 0 0 4px 1px rgba(0,229,255,0.3)",
+              ]
+            : "none",
+        }}
+        transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+        style={{ willChange: "box-shadow" }}
+      />
+      <motion.span className="relative z-10" animate={isHovered ? { y: [0, -2, 0] } : {}} transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}>
+        {children}
+      </motion.span>
+    </motion.span>
+  );
+});
 
-          {/* Square Image */}
-          <img
-            src="images/your-image.jpg"
-            alt="Deepak"
-            className="relative w-64 h-64 md:w-80 md:h-80 object-cover rounded-2xl border-4 border-cyansoft shadow-[0_0_50px_rgba(0,229,255,0.5)] transition-transform duration-700 group-hover:scale-105"
-          />
-        </motion.div>
+Badge.displayName = "Badge";
 
-        {/* 📄 Text Content */}
-        <motion.div
-          className="text-center md:text-left space-y-6 md:space-y-8 max-w-3xl"
-          variants={{
-            hidden: { opacity: 0, x: 60 },
-            visible: { opacity: 1, x: 0 },
-          }}
-          transition={{ duration: 0.9, ease: "easeOut" }}
+const RevealSegment = memo(({ title, content }) => {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, amount: 0.25 });
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 12, scale: 0.97 }}
+      animate={inView ? { opacity: 1, y: 0, scale: 1, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } } : {}}
+      exit={{ opacity: 0, y: -12, scale: 0.97, transition: { duration: 0.3, ease: [0.65, 0, 0.35, 1] } }}
+      whileHover={{ scale: 1.02, y: -5, transition: { duration: 0.2 } }}
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
+      className="group p-5 rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-transparent backdrop-blur-xl shadow-lg relative overflow-hidden"
+      style={{ willChange: "transform" }}
+    >
+      <motion.div
+        className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-transparent to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+        animate={{ scale: isHovered ? [1, 1.2] : 1, rotate: isHovered ? [0, 45] : 0 }}
+        transition={{ duration: 7, repeat: Infinity, repeatType: "reverse", ease: "linear" }}
+        style={{ willChange: "transform" }}
+      />
+      <motion.div
+        className="absolute inset-0 opacity-0 group-hover:opacity-100"
+        animate={{ backgroundPosition: isHovered ? ["200% 0", "-200% 0"] : "0 0" }}
+        transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+        style={{ background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.1) 50%, transparent 100%)", backgroundSize: "200% 100%", willChange: "background-position" }}
+      />
+      <div className="relative z-10">
+        <motion.h5
+          initial={{ opacity: 0.8 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+          className="text-base md:text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-cyan-100 mb-2"
         >
+          {title}
+        </motion.h5>
+        <motion.p initial={{ opacity: 0.6 }} animate={{ opacity: 0.9 }} transition={{ duration: 0.3 }} className="text-sm md:text-base text-white/80">
+          {content}
+        </motion.p>
+      </div>
+      <motion.div
+        className="absolute inset-0 rounded-2xl pointer-events-none"
+        animate={{
+          boxShadow: isHovered
+            ? "0 0 20px 2px rgba(0, 229, 255, 0.1), inset 0 0 20px 2px rgba(0, 229, 255, 0.08)"
+            : "0 0 0px 0px rgba(0, 229, 255, 0), inset 0 0 0px 0px rgba(0, 229, 255, 0)",
+        }}
+        transition={{ duration: 0.3 }}
+        style={{ willChange: "box-shadow" }}
+      />
+    </motion.div>
+  );
+});
+
+RevealSegment.displayName = "RevealSegment";
+
+const CompactBio = memo(({ data, onExpandedChange, isMobile, isExpanded }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const [localExpanded, setLocalExpanded] = useState(isExpanded);
+  const bioShort = data?.short || "";
+  const badges = Array.isArray(data?.badges) ? data.badges : [];
+  const expanded = data?.expanded || {};
+
+  useEffect(() => {
+    setLocalExpanded(isExpanded);
+  }, [isExpanded]);
+
+  useEffect(() => {
+    if (typeof onExpandedChange === "function") {
+      onExpandedChange(localExpanded);
+    }
+  }, [localExpanded, onExpandedChange]);
+
+  const handleToggle = useCallback(() => {
+    setLocalExpanded((prev) => !prev);
+  }, []);
+
+  return (
+    <motion.div
+      variants={page}
+      initial="hidden"
+      animate="enter"
+      exit="exit"
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
+      className={`group relative ${
+        isMobile ? "px-4 py-4 mx-auto rounded-xl" : "p-5 sm:p-6 md:p-7 rounded-2xl"
+      } border-2 border-white/10 bg-gradient-to-br from-white/8 via-white/4 to-transparent backdrop-blur-xl overflow-hidden shadow-lg transform-gpu ${isMobile ? "shadow-cyan-500/10" : ""}`}
+      style={{ willChange: "transform, opacity" }}
+    >
+      <motion.div
+        className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-blue-500/5 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+        animate={{
+          boxShadow: isHovered
+            ? [
+                "0 0 20px rgba(0,229,255,0.3), inset 0 0 20px rgba(0,229,255,0.2)",
+                "0 0 40px rgba(0,229,255,0.5), inset 0 0 40px rgba(0,229,255,0.3)",
+                "0 0 20px rgba(0,229,255,0.3), inset 0 0 20px rgba(0,229,255,0.2)",
+              ]
+            : "0 0 0px rgba(0,229,255,0)",
+        }}
+        transition={{ duration: 2.3, repeat: Infinity, ease: "easeInOut" }}
+        style={{ willChange: "box-shadow" }}
+      />
+
+      <div className="relative z-10">
+        <div className="flex items-start gap-3">
+          <div className="flex-1 min-w-0">
+            <motion.h5
+              className={`${isMobile ? "text-base font-bold mb-3" : "text-lg md:text-xl font-bold mb-4"} text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-cyan-200 to-cyan-100 tracking-wide transform-gpu`}
+              animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
+              style={{ backgroundSize: "200% auto", willChange: "background-position" }}
+              transition={{ duration: 4.5, repeat: Infinity, ease: "linear" }}
+            >
+              Bio
+            </motion.h5>
+            <motion.p className={`${isMobile ? "text-sm leading-relaxed" : "text-sm md:text-base lg:text-lg leading-relaxed"} text-white/90 mb-5`}>
+              {bioShort}
+            </motion.p>
+            <motion.div className={`flex gap-2 sm:gap-3 flex-wrap ${isMobile ? "mt-3 justify-start" : "mt-2"}`}>
+              {badges.map((b, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ delay: 0.2 + i * 0.1, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  <Badge isMobile={isMobile}>{b}</Badge>
+                </motion.div>
+              ))}
+            </motion.div>
+            {!isMobile && (
+              <motion.button
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleToggle}
+                aria-expanded={localExpanded}
+                className="mt-6 flex items-center gap-2.5 px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500/20 via-blue-500/15 to-cyan-400/20 hover:from-cyan-500/30 hover:via-blue-500/25 hover:to-cyan-400/30 border-2 border-cyan-500/20 hover:border-cyan-400/30 transition-all duration-300 text-white shadow-lg hover:shadow-cyan-500/25 transform-gpu"
+                style={{ willChange: "transform" }}
+              >
+                <span className="text-sm font-medium tracking-wide">{localExpanded ? "Show Less" : "Read More"}</span>
+                <motion.div animate={{ rotate: localExpanded ? 180 : 0, y: localExpanded ? -1 : 1 }} transition={{ duration: 0.25 }} className="text-cyan-300">
+                  {localExpanded ? <FaChevronUp /> : <FaChevronDown />}
+                </motion.div>
+              </motion.button>
+            )}
+          </div>
+        </div>
+
+        <AnimatePresence mode="wait">
+          {localExpanded && (
+            <motion.div
+              key="expanded"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{
+                opacity: 1,
+                height: "auto",
+                transition: { height: { duration: isMobile ? 0.4 : 0.3 }, opacity: { duration: 0.25, delay: 0.05 } },
+              }}
+              exit={{ opacity: 0, height: 0, transition: { height: { duration: 0.25 }, opacity: { duration: 0.15 } } }}
+              className="overflow-hidden text-sm md:text-base text-white/80 mt-6"
+            >
+              <div className="space-y-6">
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.3 }}>
+                  <div className="text-sm text-cyan-300/90 mb-2 font-medium">Key strengths</div>
+                  <ul className="list-disc list-inside space-y-1 ml-4">
+                    {expanded.strengths?.map((s, i) => (
+                      <motion.li key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 + i * 0.08, duration: 0.3 }}>
+                        {s}
+                      </motion.li>
+                    ))}
+                  </ul>
+                </motion.div>
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.3 }}>
+                  <div className="text-sm text-cyan-300/90 mb-2 font-medium">Recent work</div>
+                  <p>{expanded.recent}</p>
+                </motion.div>
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25, duration: 0.3 }}>
+                  <div className="text-sm text-cyan-300/90 mb-2 font-medium">Why I build</div>
+                  <p>{expanded.values}</p>
+                </motion.div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      <motion.div
+        className="absolute inset-0 rounded-2xl pointer-events-none"
+        animate={{
+          boxShadow: isHovered
+            ? "0 0 25px 3px rgba(0, 229, 255, 0.12), inset 0 0 25px 3px rgba(0, 229, 255, 0.08)"
+            : "0 0 0px 0px rgba(0, 229, 255, 0), inset 0 0 0px 0px rgba(0, 229, 255, 0)",
+        }}
+        transition={{ duration: 0.3 }}
+        style={{ willChange: "box-shadow" }}
+      />
+    </motion.div>
+  );
+});
+
+CompactBio.displayName = "CompactBio";
+
+/* ============================================================================
+   MAIN COMPONENT - FULLY OPTIMIZED
+============================================================================ */
+export default function AboutWithDriveImage({ overrideConfig }) {
+  const { data: firestoreData, loading, error, refetch } = useFirestoreData("aboutpage", "main");
+
+  const cfg = useMemo(() => {
+    if (!firestoreData && loading) return null;
+    if (!firestoreData && !loading) return null;
+    let baseConfig = firestoreData;
+    if (overrideConfig) baseConfig = mergeDeep(firestoreData, overrideConfig);
+    return baseConfig;
+  }, [firestoreData, overrideConfig, loading]);
+
+  const [mode, setMode] = useState("holo");
+  const [hovered, setHovered] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [expandedCard, setExpandedCard] = useState(null);
+  const [contentExpanded, setContentExpanded] = useState(false);
+  const [rightExpanded, setRightExpanded] = useState(false);
+  const [imgSrc, setImgSrc] = useState("");
+  const [imgFailed, setImgFailed] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const [imgSize, setImgSize] = useState({ width: "14rem", height: "14rem" });
+  const [reduceMotion, setReduceMotion] = useState(false);
+  const [countersVisible, setCountersVisible] = useState(false);
+  const [introDone, setIntroDone] = useState(false);
+  const [modeKey, setModeKey] = useState(0); // NEW: Track mode changes to reset counters
+
+  const countersRef = useRef(null);
+  const sectionRef = useRef(null);
+  const sectionInView = useInView(sectionRef, { once: true, amount: 0.14 });
+
+  useEffect(() => {
+    if (cfg?.image?.url) {
+      setImgSrc(cfg.image.url);
+      setImgFailed(false);
+      setImgLoaded(false);
+    }
+  }, [cfg?.image?.url]);
+
+  useEffect(() => {
+    if (sectionInView) {
+      const t = setTimeout(() => setIntroDone(true), 100);
+      return () => clearTimeout(t);
+    }
+  }, [sectionInView]);
+
+  useEffect(() => {
+    if (!loading && cfg && cfg.counters && cfg.counters.length > 0 && !countersVisible) {
+      const timer = setTimeout(() => {
+        setCountersVisible(true);
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, cfg, countersVisible]);
+
+  useEffect(() => {
+    try {
+      const mq = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+      setReduceMotion(Boolean(mq?.matches));
+      const handler = (e) => setReduceMotion(e.matches);
+      if (mq?.addEventListener) mq.addEventListener("change", handler);
+      return () => mq?.removeEventListener?.("change", handler);
+    } catch (e) {}
+  }, []);
+
+  useEffect(() => {
+    const computeSize = () => {
+      const w = window.innerWidth;
+      const mobile = w < 768;
+      setIsMobile(mobile);
+
+      if (mobile) {
+        const size = Math.round(Math.min(w * 0.92, 300));
+        setImgSize({ width: `${size}px`, height: `${size}px`, maxWidth: "100%" });
+      } else if (w < 1024) {
+        const size = rightExpanded ? "22rem" : "16rem";
+        setImgSize({ width: size, height: size, maxWidth: "100%" });
+      } else {
+        const size = rightExpanded ? "20rem" : "16rem";
+        setImgSize({ width: size, height: size, maxWidth: "100%" });
+      }
+    };
+    computeSize();
+
+    let resizeTimer;
+    const handleResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(computeSize, 100);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      clearTimeout(resizeTimer);
+    };
+  }, [rightExpanded]);
+
+  const onImgError = useCallback(() => {
+    setImgFailed(true);
+    setImgLoaded(true);
+  }, []);
+
+  const onImgLoad = useCallback(() => {
+    setImgLoaded(true);
+    setImgFailed(false);
+  }, []);
+
+ const handleModeToggle = useCallback(() => {
+    setMode((prev) => (prev === "holo" ? "mosaic" : "holo"));
+    setModeKey((prev) => prev + 1); // NEW: Force counter reset on mode change
+    // Scroll to top of About section
+    setTimeout(() => {
+      smoothScroll("about");
+    }, 100);
+  }, []);
+  const handleCardExpand = useCallback((id) => {
+    setExpandedCard((prev) => (prev === id ? null : id));
+  }, []);
+
+  const handleHovered = useCallback((id) => {
+    setHovered(id);
+  }, []);
+
+  const handleHoveredLeave = useCallback(() => {
+    setHovered(null);
+  }, []);
+
+  if (!cfg || loading) {
+    return (
+      <motion.section id="about" className="relative w-full py-8 px-4 sm:py-14 sm:px-6 md:py-20 md:px-8 lg:px-10 overflow-hidden">
+        <InjectStyles />
+        <div className="mx-auto max-w-6xl">
           <motion.h2
-            className="text-4xl md:text-6xl font-black bg-gradient-to-r from-cyansoft to-cyan-300 bg-clip-text text-transparent font-[Orbitron]"
-            variants={{
-              hidden: { opacity: 0, y: -20 },
-              visible: { opacity: 1, y: 0 },
-            }}
-            transition={{ duration: 0.8 }}
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-2xl md:text-3xl lg:text-4xl font-bold text-white font-[Orbitron] mb-6"
           >
             About Me
           </motion.h2>
+          <LoadingSpinner />
+        </div>
+      </motion.section>
+    );
+  }
 
-          <motion.p
-            className="text-lg md:text-2xl text-white/90 leading-relaxed font-[Poppins]"
-            variants={{
-              hidden: { opacity: 0, y: 20 },
-              visible: { opacity: 1, y: 0 },
-            }}
-            transition={{ duration: 0.8 }}
-          >
-            I’m currently a{" "}
-            <span className="text-cyansoft font-bold">
-              pre-final year student in Artificial Intelligence and Data Science
-            </span>{" "}
-            at{" "}
-            <span className="text-cyan-300 font-bold">
-              Velammal Engineering College
-            </span>
-            . My passion is solving real-world problems with{" "}
-            <span className="text-white font-semibold">
-              AI, machine learning, and data-driven innovation
-            </span>
-            .
-          </motion.p>
+  const cards = cfg.cards || [];
+  const counterData = cfg.counters || [];
+  const iframeFallback = cfg.image?.iframeFallbackUrl || imgSrc;
+  const variantsForImg = imgFloat(reduceMotion);
+  const cardVariants = cardFactory(isMobile);
 
-          <motion.p
-            className="text-base md:text-xl text-white/70 leading-relaxed font-[Inter]"
-            variants={{
-              hidden: { opacity: 0, y: 20 },
-              visible: { opacity: 1, y: 0 },
-            }}
-            transition={{ duration: 0.8 }}
-          >
-            I love building{" "}
-            <span className="text-white font-semibold">scalable full-stack apps</span>{" "}
-            with <span className="text-cyan-200">React, Node.js, Flask, MongoDB</span>.{" "}
-            I’m also diving deep into{" "}
-            <span className="text-cyan-200">cloud computing</span> and{" "}
-            <span className="text-cyan-200">AI deployment pipelines</span> for production-ready systems.
-          </motion.p>
+  const orbsVariants = {
+    animate: {
+      scale: [1, 1.2, 1],
+      opacity: [0.3, 0.5, 0.3],
+      transition: { duration: 7, repeat: Infinity, ease: "easeInOut" },
+    },
+  };
 
-          {/* 🔗 Buttons */}
+  return (
+    <motion.section
+      id="about"
+      ref={sectionRef}
+      className="relative w-full py-8 px-4 sm:py-14 sm:px-6 md:py-20 md:px-8 lg:px-10 overflow-hidden"
+      variants={page}
+      initial="hidden"
+      whileInView="enter"
+      viewport={{ once: true, amount: 0.12 }}
+      exit="exit"
+      aria-busy={!imgLoaded}
+      style={{ willChange: "transform" }}
+    >
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <motion.div
+          className="absolute top-0 left-1/4 w-96 h-96 rounded-full bg-gradient-to-r from-cyan-500/10 to-blue-500/10 blur-3xl"
+          variants={orbsVariants}
+          animate="animate"
+          style={{ willChange: "transform" }}
+        />
+        <motion.div
+          className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full bg-gradient-to-r from-blue-500/10 to-purple-500/10 blur-3xl"
+          variants={orbsVariants}
+          animate="animate"
+          style={{ animationDelay: "2s", willChange: "transform" }}
+        />
+        <motion.div
+          className="absolute top-1/2 left-1/3 w-72 h-72 rounded-full bg-gradient-to-r from-purple-500/10 to-cyan-500/10 blur-3xl"
+          variants={orbsVariants}
+          animate="animate"
+          style={{ animationDelay: "4s", willChange: "transform" }}
+        />
+      </div>
+
+      <InjectStyles />
+
+      <AnimatePresence mode="wait">
+        {!introDone && (
           <motion.div
-            className="flex justify-center md:justify-start gap-4 md:gap-6 pt-4 md:pt-6"
-            variants={{
-              hidden: { opacity: 0, y: 20 },
-              visible: { opacity: 1, y: 0 },
-            }}
-            transition={{ duration: 0.8 }}
-          >
-            <a
-              href="#projects"
-              onClick={(e) => {
-                e.preventDefault();
-                document.getElementById("projects")?.scrollIntoView({ behavior: "smooth" });
-              }}
-              className="px-6 md:px-8 py-3 md:py-4 bg-cyansoft text-black font-bold rounded-xl shadow-md hover:scale-105 transition-transform duration-300"
-            >
-              🚀 See Projects
-            </a>
-            <a
-              href="#contact"
-              onClick={(e) => {
-                e.preventDefault();
-                document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
-              }}
-              className="px-6 md:px-8 py-3 md:py-4 border border-white/20 text-white/80 font-medium rounded-xl hover:bg-white/10 hover:scale-105 transition-transform duration-300"
-            >
-              ✨ Get in Touch
-            </a>
-          </motion.div>
+            initial={{ x: 0, opacity: 1 }}
+            animate={{ x: "110%", opacity: 0 }}
+            exit={{ x: "110%", opacity: 0 }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            className="absolute inset-0 z-40 pointer-events-none"
+            style={{ background: "linear-gradient(90deg, rgba(0,0,0,0.86) 0%, rgba(0,0,0,0.6) 30%, rgba(0,229,255,0.06) 100%)" }}
+          />
+        )}
+      </AnimatePresence>
+      <div className="mx-auto max-w-6xl relative z-10">
+        {/* 🎯 TITLE SECTION - MATCHING PROJECTS STYLE */}
+        <motion.div
+          className="relative z-10 text-center mb-14"
+          initial={{ opacity: 0, y: -30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7 }}
+        >
+          <h2 className="text-5xl sm:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 animate-gradient">
+            About Me
+          </h2>
+          <p className="text-white/70 mt-3 text-sm sm:text-base">
+            Exploring my journey, skills, and passion for building impactful solutions
+          </p>
         </motion.div>
-      </motion.div>
-    </section>
+
+        {/* ERROR SECTION */}
+        <AnimatePresence mode="wait">
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="text-xs sm:text-sm text-red-400 bg-red-500/10 px-3 py-2 rounded-lg border border-red-500/20 max-w-md mx-auto mb-8"
+            >
+              ⚠️ Failed to load data.{" "}
+              <button onClick={refetch} className="underline hover:text-red-300">
+                Retry
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        
+        {/* CONTENT RENDERING */}
+        <AnimatePresence mode="wait" initial={false}>
+          {mode === "mosaic" ? (
+            <motion.div
+              key="mosaic"
+              variants={staggerContainer}
+              initial="hidden"
+              animate="enter"
+              exit="exit"
+              className={`${isMobile ? "grid grid-cols-1 gap-3" : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"}`}
+            >
+              {isMobile ? (
+                <div className="col-span-3">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleModeToggle}
+                    className="mb-4 flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 text-cyan-300 text-sm font-medium hover:from-cyan-500/30 hover:to-blue-500/30 transition-all"
+                    style={{ willChange: "transform" }}
+                  >
+                    ← Back to Holo
+                  </motion.button>
+
+                  <motion.div className="flex flex-col gap-4 px-4 py-3" variants={staggerContainer} initial="hidden" animate="enter">
+                    {cards.map((c, i) => (
+                      <motion.article
+                        key={c.id}
+                        custom={i}
+                        variants={cardVariants}
+                        onPointerEnter={() => handleHovered(c.id)}
+                        onPointerLeave={handleHoveredLeave}
+                        whileTap={{ scale: 0.98 }}
+                        className="fancy-border inner-glass pulse-hover w-full rounded-2xl p-5 backdrop-blur-xl transform-gpu"
+                        onClick={() => handleCardExpand(c.id)}
+                        aria-expanded={expandedCard === c.id}
+                        style={{ willChange: "transform" }}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="p-2 rounded-lg bg-white/5 border border-white/6 text-cyan-200">{iconMap[c.icon]}</div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-base font-semibold text-white">{c.title}</h3>
+                            <p className="text-xs text-white/70 mt-1">{c.short}</p>
+                          </div>
+                          <div className="ml-2 self-start text-white/70">{expandedCard === c.id ? <FaChevronUp /> : <FaChevronDown />}</div>
+                        </div>
+                        <AnimatePresence mode="wait">
+                          {expandedCard === c.id && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto", marginTop: 10 }}
+                              exit={{ opacity: 0, height: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="text-sm text-white/80 overflow-hidden mt-2"
+                            >
+                              <p>{c.long}</p>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </motion.article>
+                    ))}
+                  </motion.div>
+                </div>
+              ) : (
+                <>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleModeToggle}
+                    className="col-span-3 mb-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 text-cyan-300 text-sm font-medium hover:from-cyan-500/30 hover:to-blue-500/30 transition-all w-fit"
+                    style={{ willChange: "transform" }}
+                  >
+                    ← Back to Holo
+                  </motion.button>
+
+                  <motion.div variants={staggerContainer} initial="hidden" animate="enter" className="col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+                    {cards.map((c, i) => (
+                      <motion.article
+                        key={c.id}
+                        custom={i}
+                        variants={cardVariants}
+                        onPointerEnter={() => handleHovered(c.id)}
+                        onPointerLeave={handleHoveredLeave}
+                        whileHover={{ scale: 1.02, y: -4 }}
+                        whileTap={{ scale: 0.995 }}
+                        className="fancy-border inner-glass pulse-hover relative rounded-2xl p-5 min-h-[140px] transform transition-all duration-200 overflow-hidden"
+                        style={{ willChange: "transform" }}
+                      >
+                        <div className="flex items-start gap-3 relative z-10">
+                          <div className="p-2 rounded-lg bg-white/5 border border-white/6 text-cyan-200">{iconMap[c.icon]}</div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-base md:text-lg font-semibold text-white">{c.title}</h3>
+                            <p className="text-xs md:text-sm text-white/70 mt-1">{c.short}</p>
+                          </div>
+                        </div>
+                        <motion.div
+                          layout
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={hovered === c.id ? { opacity: 1, height: "auto", marginTop: 10 } : { opacity: 0, height: 0, marginTop: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="mt-3 text-sm text-white/80 overflow-hidden relative z-10"
+                        >
+                          <p>{c.long}</p>
+                        </motion.div>
+                      </motion.article>
+                    ))}
+                  </motion.div>
+                </>
+              )}
+            </motion.div>
+          ) : (
+            /* HOLO LAYOUT */
+            <motion.div
+              key={`holo-${modeKey}`}
+              variants={staggerContainer}
+              initial="hidden"
+              animate="enter"
+              exit="exit"
+              className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 items-stretch mx-auto max-w-[95%] sm:max-w-[90%] md:max-w-none"
+            >
+              {/* PROFILE CARD */}
+              <motion.div
+                layout
+                key="profile-card"
+                custom={0}
+                variants={cardVariants}
+                whileHover="hover"
+                whileTap="tap"
+                className="md:col-span-1 flex items-stretch w-full transform-gpu perspective-1000"
+                style={{ willChange: "transform" }}
+              >
+                <div className="relative rounded-2xl p-4 sm:p-5 md:p-6 border border-white/8 bg-gradient-to-br from-white/3 to-white/6 backdrop-blur-xl shadow-lg w-full flex flex-col h-full overflow-hidden fancy-border inner-glass">
+                  <motion.div
+                    aria-hidden
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.6 }}
+                    className="absolute -left-1/4 -top-1/4 w-[150%] h-[150%] rounded-full blur-3xl bg-gradient-to-r from-cyan-500/15 via-blue-500/10 to-indigo-600/5 pointer-events-none transform -rotate-12"
+                    style={{ willChange: "opacity" }}
+                  />
+
+                  <div className="flex flex-col items-center flex-1 min-h-0">
+                    <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4 }} className="relative rounded-2xl overflow-hidden border-2 border-cyan-400 shadow-[0_0_28px_rgba(0,229,255,0.10)]">
+                      <motion.div
+                        variants={variantsForImg}
+                        initial="idle"
+                        animate={rightExpanded ? "float" : "idle"}
+                        transition={reduceMotion ? { duration: 0 } : { duration: 3.2, repeat: Infinity, repeatType: "loop", ease: "easeInOut" }}
+                        style={{ width: imgSize.width, height: imgSize.height, willChange: "transform" }}
+                        className="rounded-2xl overflow-hidden bg-black relative"
+                      >
+                        {!imgLoaded && (
+                          <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/30">
+                            <svg className="w-10 h-10 animate-spin text-white/90" viewBox="0 0 50 50" aria-hidden="true">
+                              <circle className="opacity-25" cx="25" cy="25" r="20" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                              <path
+                                className="opacity-90"
+                                fill="currentColor"
+                                d="M43.94 25c0-10.41-8.43-18.85-18.85-18.85-10.41 0-18.85 8.44-18.85 18.85h4.07c0-8.16 6.62-14.78 14.78-14.78 8.16 0 14.78 6.62 14.78 14.78H43.94z"
+                              ></path>
+                            </svg>
+                          </div>
+                        )}
+
+                        {!imgFailed && imgSrc ? (
+                          <img
+                            src={imgSrc}
+                            alt="Profile"
+                            loading="lazy"
+                            onError={onImgError}
+                            onLoad={onImgLoad}
+                            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                          />
+                        ) : iframeFallback ? (
+                          <iframe
+                            src={iframeFallback}
+                            className="w-full h-full border-0"
+                            title="OneDrive Profile"
+                            sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+                            style={{ display: "block", minHeight: "100%", minWidth: "100%" }}
+                            onLoad={onImgLoad}
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-black/60 text-white/80">No image</div>
+                        )}
+
+                        <AnimatePresence mode="wait">
+                          {rightExpanded && imgLoaded && !reduceMotion && (
+                            <motion.div
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                              transition={{ duration: 0.25 }}
+                              className="absolute inset-0 pointer-events-none rounded-2xl"
+                              style={{ boxShadow: "inset 0 0 40px rgba(0,229,255,0.08), 0 18px 60px rgba(0,229,255,0.05)" }}
+                            />
+                          )}
+                        </AnimatePresence>
+
+                        <div className="absolute inset-0 pointer-events-none opacity-0 hover:opacity-60 transition-opacity duration-500">
+                          <Shimmer />
+                        </div>
+                      </motion.div>
+                    </motion.div>
+
+                    <h3 className="mt-5 text-xl md:text-2xl font-bold text-white tracking-wide">Deepak</h3>
+                    <p className="text-sm md:text-base text-white/80 mt-1.5">Pre-final year — AI & DS</p>
+
+                    <div ref={countersRef} className="mt-6 flex gap-8 justify-center w-full">
+                      {counterData && counterData.length > 0
+                        ? counterData.map((c, idx) => (
+                            <motion.div
+                              key={`${c.id}-${modeKey}`}
+                              initial={{ opacity: 0, y: 8 }}
+                              whileInView={{ opacity: 1, y: 0 }}
+                              viewport={{ once: true, amount: 0.6 }}
+                              transition={{ delay: idx * 0.1, duration: 0.3 }}
+                              className="text-center min-w-0"
+                              style={{ willChange: "transform, opacity" }}
+                            >
+                             <Counter itemKey={`${c.id}-${modeKey}`} to={Number(c.value) || 0} play={countersVisible} ms={1000} />
+                              <span className="text-sm md:text-base text-white/70">{c.label}</span>
+                            </motion.div>
+                          ))
+                        : null}
+                    </div>
+
+                    <AnimatePresence initial={false} mode="wait">
+                      {rightExpanded && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0, marginTop: 8 }}
+                          animate={{ opacity: 1, height: "auto", marginTop: isMobile ? 12 : 16 }}
+                          exit={{ opacity: 0, height: 0, marginTop: 8 }}
+                          transition={{ duration: 0.25 }}
+                          className="w-full mt-4"
+                        >
+                          <div className={`${isMobile ? "p-3" : "p-4"} rounded-xl bg-black/50 border border-white/8 backdrop-blur-md text-white/90`}>
+                            <div className="flex flex-col gap-3 min-w-0">
+                              <div className="flex items-start gap-3 text-sm md:text-base">
+                                <FaMapMarkerAlt className="text-cyan-200 shrink-0 mt-0.5" />
+                                <div className="min-w-0">
+                                  <div className="leading-tight">Chennai, India</div>
+                                </div>
+                              </div>
+                              <div className="flex items-start gap-3 text-sm md:text-base">
+                                <FaEnvelope className="text-cyan-200 shrink-0 mt-0.5" />
+                                <div className="min-w-0">
+                                  <a className="underline text-white/90 break-words" href="mailto:deepakofficial0103@gmail.com">
+                                    deepakofficial0103@gmail.com
+                                  </a>
+                                </div>
+                              </div>
+                              <div className="flex items-start gap-3 text-sm md:text-base">
+                                <FaCalendarAlt className="text-cyan-200 shrink-0 mt-0.5" />
+                                <div className="min-w-0">
+                                  <div className="whitespace-nowrap">4+ years experience</div>
+                                </div>
+                              </div>
+                              <motion.div className={`text-sm md:text-base text-white/75 leading-relaxed ${isMobile ? "overflow-hidden" : ""}`}>
+                                I focus on projects that deliver measurable public impact and scale reliably for actual users.
+                              </motion.div>
+                              <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                <div className="text-sm md:text-base text-white/80 flex items-center gap-2.5">
+                                  <FaBolt className="text-yellow-300 text-lg" />
+                                  <span>Open to freelance & internships</span>
+                                </div>
+                                <div className="flex gap-2">
+                                  <motion.button
+                                    onClick={() => smoothScroll("projects")}
+                                    className="px-3 py-1 rounded-md bg-cyan-400 text-black text-sm font-medium hover:bg-cyan-300 transition-colors"
+                                  >
+                                    Projects
+                                  </motion.button>
+                                  <motion.button
+                                    onClick={() => smoothScroll("contact")}
+                                    className="px-3 py-1 rounded-md border border-white/10 text-sm hover:bg-white/10 transition-colors"
+                                  >
+                                    Contact
+                                  </motion.button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* RIGHT STACK - BIO + INTERESTS + LEARNING */}
+              <motion.div layout key="right-stack" variants={staggerContainer} className="md:col-span-2 flex flex-col gap-6">
+                <motion.div custom={1} variants={cardVariants} whileHover="hover" whileTap="tap" className="transform-gpu perspective-1000" style={{ willChange: "transform" }}>
+                  <CompactBio
+                    data={cfg.bio}
+                    onExpandedChange={(isOpen) => setRightExpanded(Boolean(isOpen))}
+                    isMobile={isMobile}
+                    isExpanded={isMobile ? contentExpanded : rightExpanded}
+                  />
+                </motion.div>
+                <motion.div custom={2} variants={cardVariants} whileHover="hover" whileTap="tap" className="transform-gpu perspective-1000" style={{ willChange: "transform" }}>
+                  <RevealSegment
+                    title="Interests"
+                    content={cfg.holoSections?.find((s) => s.type === "interests")?.content || "Computer Vision, NLP, Cloud AI, MLOps"}
+                  />
+                </motion.div>
+                <motion.div custom={3} variants={cardVariants} whileHover="hover" whileTap="tap" className="transform-gpu perspective-1000" style={{ willChange: "transform" }}>
+                  <RevealSegment
+                    title="Currently Learning"
+                    content={cfg.holoSections?.find((s) => s.type === "learning")?.content || "Kubernetes for ML, transformer optimization, distributed training"}
+                  />
+                </motion.div>
+
+                <div className="mt-2 md:mt-0 p-5 rounded-2xl border border-white/6 bg-gradient-to-br from-white/3 to-white/6 backdrop-blur-md">
+                  <div className="flex flex-col gap-4">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={handleModeToggle}
+                      className="w-full px-4 py-3 rounded-lg text-sm md:text-base font-bold bg-gradient-to-r from-cyan-500 to-cyan-400 text-black shadow-lg hover:shadow-cyan-500/40 transition-all duration-300 transform"
+                      style={{ willChange: "transform" }}
+                    >
+                      ⊞ View Mosaic Layout
+                    </motion.button>
+
+                    {isMobile && (
+                      <motion.button
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => {
+                          setContentExpanded(!contentExpanded);
+                          setRightExpanded(!contentExpanded);
+                        }}
+                        className={`w-full px-4 py-3 rounded-xl text-sm font-medium bg-gradient-to-r from-cyan-500/20 via-blue-500/15 to-cyan-400/20 border border-cyan-500/20 backdrop-blur-sm transition-all duration-300 transform ${
+                          contentExpanded ? "text-cyan-300 shadow-lg shadow-cyan-500/20" : "text-white/90"
+                        }`}
+                        style={{ willChange: "transform" }}
+                      >
+                        <div className="flex items-center justify-center gap-2">
+                          <span>{contentExpanded ? "Show Less" : "Read More"}</span>
+                          <motion.div animate={{ rotate: contentExpanded ? 180 : 0, y: contentExpanded ? -1 : 1 }} transition={{ duration: 0.2 }} style={{ willChange: "transform" }}>
+                            {contentExpanded ? <FaChevronUp /> : <FaChevronDown />}
+                          </motion.div>
+                        </div>
+                      </motion.button>
+                    )}
+
+                    <div className="flex flex-col sm:flex-row gap-3">
+                     <motion.button
+                        whileHover={{ y: -3 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => smoothScroll("projects")}
+                        className="px-5 py-2 rounded-md bg-cyan-400/20 border border-cyan-400/40 text-cyan-300 text-sm md:text-base font-medium text-center hover:bg-cyan-400/30 transition-all"
+                        style={{ willChange: "transform" }}
+                      >
+                        View Projects
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ y: -3 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => smoothScroll("contact")}
+                        className="px-5 py-2 rounded-md border border-white/10 hover:bg-white/6 text-sm md:text-base text-center transition-all"
+                        style={{ willChange: "transform" }}
+                      >
+                        Contact
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ y: -3 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => smoothScroll("resume")}
+                        className="px-5 py-2 rounded-md border border-white/10 hover:bg-white/6 text-sm md:text-base text-center transition-all"
+                        style={{ willChange: "transform" }}
+                      >
+                        Resume
+                      </motion.button>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </motion.section>
   );
 }
