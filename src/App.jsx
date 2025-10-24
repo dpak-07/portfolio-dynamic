@@ -11,7 +11,7 @@ import TechStack from "./components/TechStack";
 import Projects from "./components/Projects";
 import Resume from "./components/Resume";
 import Contact from "./components/Contact";
-import Certifications from "./components/Certifications";
+import Certifications from "./components/certifications";
 import TimelineSection from "./components/timeline";
 import Footer from "./components/Footer";
 import LoadingScreen from "./components/LoadingScreen";
