@@ -114,6 +114,24 @@ export default function AdminDashboard() {
       color: "from-sky-500 to-indigo-500",
       icon: "📄"
     },
+    { 
+      name: "Certifications Editor", 
+      path: "/admin/certifications", 
+      color: "from-rose-500 to-pink-500",
+      icon: "🏆"
+    },
+    { 
+      name: "Timeline Editor", 
+      path: "/admin/timeline", 
+      color: "from-violet-500 to-purple-500",
+      icon: "⏰"
+    },
+    { 
+      name: "Analytics Dashboard", 
+      path: "/admin/analysis", 
+      color: "from-emerald-500 to-cyan-500",
+      icon: "📊"
+    },
   ];
 
   // Animation variants
@@ -179,7 +197,7 @@ export default function AdminDashboard() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl w-full mb-16"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl w-full mb-16"
       >
         {routes.map((route) => (
           <motion.div
@@ -261,7 +279,7 @@ export default function AdminDashboard() {
                   disabled={updating}
                   className="sr-only peer"
                 />
-                <div className="w-12 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-6 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all after:shadow-lg"></div>
+                <div className="w-12 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-6 peer-checked:bg-cyan-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all after:shadow-lg"></div>
               </motion.label>
             </motion.div>
           ))}

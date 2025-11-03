@@ -1,70 +1,97 @@
-"use client"
-import { useState, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { Eye, Download, Calendar, User, ChevronDown, ChevronUp } from "lucide-react"
-import { useFirestoreData } from "@/hooks/useFirestoreData"
+"use client";
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence, useInView } from "framer-motion";
+import {
+  Eye,
+  Download,
+  Calendar,
+  User,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
+import { useFirestoreData } from "@/hooks/useFirestoreData";
+import { logSectionView, logLinkClick, logDownload, logResumeOpen } from "../utils/analytics"; // ✅ Check this path
 
 export default function Resume() {
-  const [isOpen, setIsOpen] = useState(false)
-  const [isExpanded, setIsExpanded] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
+  const [isOpen, setIsOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  const sectionRef = useRef(null);
+  const sectionInView = useInView(sectionRef, { once: true, amount: 0.3 });
+
+  // ✅ Track when resume section is visible - FIXED
+  useEffect(() => {
+    if (sectionInView) {
+      console.log("🔍 Resume section in view - logging...");
+      logSectionView("resume");
+    }
+  }, [sectionInView]);
 
   // Fetch resume data directly from Firestore
-  const { data: resumeData, loading, error } = useFirestoreData("resume", "data")
+  const { data: resumeData, loading, error } = useFirestoreData("resume", "data");
 
-  // Check if mobile on mount and resize
+  // Detect mobile view
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 640)
-    }
-    
-    // Check initially
-    checkMobile()
-    
-    // Add event listener
-    window.addEventListener('resize', checkMobile)
-    
-    // Cleanup
-    return () => window.removeEventListener('resize', checkMobile)
-  }, [])
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
-  // Reset expanded state when mobile changes
-  useEffect(() => {
-    setIsExpanded(false)
-  }, [isMobile])
+  // Reset expanded state when switching devices
+  useEffect(() => setIsExpanded(false), [isMobile]);
 
-  // Convert timestamp format for display
+  // Convert timestamps
   const formatDate = (dateString) => {
-    if (!dateString) return "Unknown"
+    if (!dateString) return "Unknown";
     try {
-      const date = new Date(dateString.replace?.(" ", "T") || dateString)
+      const date = new Date(dateString.replace?.(" ", "T") || dateString);
       return date.toLocaleDateString("en-US", {
         year: "numeric",
         month: "long",
         day: "numeric",
         hour: "2-digit",
         minute: "2-digit",
-      })
+      });
     } catch (err) {
-      return dateString
+      return dateString;
     }
-  }
+  };
 
-  // Trim description for mobile
-  const MAX_LENGTH = 120
-  const shouldTruncate = isMobile && resumeData?.description?.length > MAX_LENGTH
-  const displayDescription = shouldTruncate && !isExpanded 
-    ? `${resumeData.description.substring(0, MAX_LENGTH)}...`
-    : resumeData?.description
+  // ✂️ Truncate description for mobile
+  const MAX_LENGTH = 120;
+  const shouldTruncate =
+    isMobile && resumeData?.description?.length > MAX_LENGTH;
+  const displayDescription =
+    shouldTruncate && !isExpanded
+      ? `${resumeData.description.substring(0, MAX_LENGTH)}...`
+      : resumeData?.description;
 
-  // 🧠 Extract Drive ID and generate preview/download links
-  const fileId = resumeData?.resumeDriveLink?.match(/\/d\/(.*?)\//)?.[1] || null
+  // 🧩 Extract Drive ID and build preview/download URLs
+  const fileId =
+    resumeData?.resumeDriveLink?.match(/\/d\/(.*?)\//)?.[1] || null;
   const embedLink = fileId
     ? `https://drive.google.com/file/d/${fileId}/preview`
-    : null
+    : null;
   const downloadLink = fileId
     ? `https://drive.google.com/uc?export=download&id=${fileId}`
-    : null
+    : null;
+
+  // ✅ Handle View Resume (Track Resume Open)
+  const handleViewResume = () => {
+    console.log("👁️ View Resume clicked");
+    setIsOpen(true);
+    logResumeOpen(); // ✅ Track resume opens
+    logLinkClick("view_resume"); // ✅ Track as link click too
+  };
+
+  // ✅ Handle Download (Track Download)
+  const handleDownload = () => {
+    console.log("📥 Download clicked");
+    logDownload("resume"); // ✅ Track downloads
+    logLinkClick("download_resume"); // ✅ Track as link click too
+  };
 
   if (loading) {
     return (
@@ -85,7 +112,7 @@ export default function Resume() {
           </div>
         </div>
       </section>
-    )
+    );
   }
 
   if (error || !resumeData) {
@@ -101,12 +128,13 @@ export default function Resume() {
           </div>
         </div>
       </section>
-    )
+    );
   }
 
   return (
     <section
       id="resume"
+      ref={sectionRef}
       className="relative bg-[#030712] py-16 sm:py-28 px-4 sm:px-8 text-white overflow-hidden"
     >
       {/* ⚡ Resume Card */}
@@ -120,44 +148,36 @@ export default function Resume() {
         {/* 💡 Glow overlay */}
         <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(0,255,255,0.15),rgba(255,0,255,0.15))] opacity-10 pointer-events-none rounded-3xl" />
 
-        {/* ✨ Header with Updated Info */}
+        {/* ✨ Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center relative z-10 mb-6">
           <div className="w-full sm:w-auto">
             <h2
-              className={`text-2xl sm:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r ${resumeData.header?.gradient || "from-cyan-400 via-blue-400 to-purple-400"} text-center sm:text-left`}
+              className={`text-2xl sm:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r ${
+                resumeData.header?.gradient ||
+                "from-cyan-400 via-blue-400 to-purple-400"
+              } text-center sm:text-left`}
             >
               {resumeData.header?.title || "My Interactive Resume"}
             </h2>
           </div>
-          
-          {/* Update Info */}
+
           <div className="flex flex-col gap-2 text-sm justify-center sm:justify-end">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex items-center justify-center sm:justify-start gap-2 text-cyan-300"
-            >
-              <Calendar className="w-4 h-4 flex-shrink-0" />
+            <div className="flex items-center justify-center sm:justify-start gap-2 text-cyan-300">
+              <Calendar className="w-4 h-4" />
               <span className="text-xs sm:text-sm whitespace-nowrap">
                 Updated: {formatDate(resumeData.lastUpdated)}
               </span>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.1 }}
-              className="flex items-center justify-center sm:justify-start gap-2 text-blue-300"
-            >
-              <User className="w-4 h-4 flex-shrink-0" />
+            </div>
+            <div className="flex items-center justify-center sm:justify-start gap-2 text-blue-300">
+              <User className="w-4 h-4" />
               <span className="text-xs sm:text-sm whitespace-nowrap">
                 By: {resumeData.updatedBy || "admin"}
               </span>
-            </motion.div>
+            </div>
           </div>
         </div>
 
-        {/* 📝 Description with Read More */}
+        {/* 📝 Description */}
         <div className="relative z-10">
           <motion.p
             initial={{ opacity: 0, y: 25 }}
@@ -167,8 +187,7 @@ export default function Resume() {
           >
             {displayDescription}
           </motion.p>
-          
-          {/* Read More/Less Button */}
+
           {shouldTruncate && (
             <motion.button
               initial={{ opacity: 0 }}
@@ -192,34 +211,26 @@ export default function Resume() {
           )}
         </div>
 
-        {/* 🧩 Skills - Optimized Grid */}
+        {/* 🧩 Skills */}
         <div className="flex flex-wrap gap-2 mt-6 sm:mt-10 relative z-10 justify-center sm:justify-start">
-          {resumeData.skills?.slice(0, isMobile && !isExpanded ? 8 : resumeData.skills.length).map((skill, i) => (
-            <motion.span
-              key={i}
-              whileHover={{ scale: 1.05 }}
-              animate={
-                typeof window !== "undefined" && window.innerWidth > 640
-                  ? { y: [0, -3, 0], opacity: [0.9, 1, 0.9] }
-                  : {}
-              }
-              transition={{
-                duration: 3 + i * 0.2,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-              className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gradient-to-r from-white/10 to-white/5 border border-white/20 rounded-lg sm:rounded-xl text-white/90 text-xs hover:border-cyan-400/50 transition flex-shrink-0"
-            >
-              {skill}
-            </motion.span>
-          ))}
-          
-          {/* Show More Skills Indicator */}
+          {resumeData.skills
+            ?.slice(0, isMobile && !isExpanded ? 8 : resumeData.skills.length)
+            .map((skill, i) => (
+              <motion.span
+                key={i}
+                whileHover={{ scale: 1.05 }}
+                transition={{ duration: 3 + i * 0.2, repeat: Infinity }}
+                className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gradient-to-r from-white/10 to-white/5 border border-white/20 rounded-lg sm:rounded-xl text-white/90 text-xs hover:border-cyan-400/50 transition flex-shrink-0"
+              >
+                {skill}
+              </motion.span>
+            ))}
+
           {isMobile && !isExpanded && resumeData.skills?.length > 8 && (
             <motion.button
               whileHover={{ scale: 1.05 }}
               onClick={() => setIsExpanded(true)}
-              className="px-3 py-1.5 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-400/30 rounded-lg text-cyan-300 text-xs hover:border-cyan-400/50 transition flex-shrink-0 cursor-pointer"
+              className="px-3 py-1.5 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-400/30 rounded-lg text-cyan-300 text-xs hover:border-cyan-400/50 transition"
             >
               +{resumeData.skills.length - 8} more
             </motion.button>
@@ -236,11 +247,11 @@ export default function Resume() {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => setIsOpen(true)}
+            onClick={handleViewResume}
             disabled={!embedLink}
             className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-cyan-400 to-blue-500 text-black font-semibold rounded-lg sm:rounded-xl shadow-[0_0_20px_-5px_rgba(0,255,255,0.5)] hover:shadow-[0_0_35px_-5px_rgba(0,255,255,0.6)] transition-all flex justify-center items-center gap-2 disabled:opacity-50"
           >
-            <Eye className="w-4 h-4 sm:w-5 sm:h-5" /> 
+            <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
             <span>View Resume</span>
           </motion.button>
 
@@ -250,25 +261,13 @@ export default function Resume() {
             href={downloadLink || "#"}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={handleDownload}
             className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white font-semibold rounded-lg sm:rounded-xl shadow-[0_0_20px_-5px_rgba(255,0,255,0.5)] hover:shadow-[0_0_35px_-5px_rgba(255,0,255,0.6)] transition-all flex justify-center items-center gap-2"
           >
-            <Download className="w-4 h-4 sm:w-5 sm:h-5" /> 
+            <Download className="w-4 h-4 sm:w-5 sm:h-5" />
             <span>Download</span>
           </motion.a>
         </motion.div>
-
-        {/* Show Less Button for Skills */}
-        {isMobile && isExpanded && resumeData.skills?.length > 8 && (
-          <motion.button
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            onClick={() => setIsExpanded(false)}
-            className="flex items-center gap-1 mx-auto mt-4 text-cyan-400 hover:text-cyan-300 transition-colors text-sm font-medium"
-          >
-            <span>Show Less</span>
-            <ChevronUp className="w-4 h-4" />
-          </motion.button>
-        )}
       </motion.div>
 
       {/* 📄 Resume Modal */}
@@ -303,5 +302,5 @@ export default function Resume() {
         )}
       </AnimatePresence>
     </section>
-  )
+  );
 }

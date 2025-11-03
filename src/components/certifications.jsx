@@ -17,6 +17,8 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { useFirestoreData } from "@/hooks/useFirestoreData";
+import { useInView } from "framer-motion";
+import { logSectionView, logLinkClick, logDownload } from "../utils/analytics";
 
 // Icon mapping
 const iconComponents = {
@@ -228,6 +230,14 @@ export default function CertificationsSection() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const sectionRef = useRef(null);
+  const sectionInView = useInView(sectionRef, { once: true, amount: 0.25 });
+
+useEffect(() => {
+  if (sectionInView) {
+    logSectionView("certifications");
+  }
+}, [sectionInView]);
+
   const scrollRef = useRef(null);
   const progressControls = useAnimation();
   const dropdownRef = useRef(null);

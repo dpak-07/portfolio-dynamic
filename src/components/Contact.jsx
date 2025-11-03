@@ -1,20 +1,34 @@
-"use client"
-import { useState } from "react"
-import emailjs from "@emailjs/browser"
-import { motion, AnimatePresence } from "framer-motion"
-import { SendHorizonal, Loader2 } from "lucide-react"
+"use client";
+import { useState, useEffect, useRef } from "react";
+import emailjs from "@emailjs/browser";
+import { motion, AnimatePresence, useInView } from "framer-motion";
+import { SendHorizonal, Loader2 } from "lucide-react";
+import { logSectionView, logLinkClick } from "../utils/analytics";
 
 export default function Contact() {
-  const [form, setForm] = useState({ name: "", email: "", message: "" })
-  const [status, setStatus] = useState(null)
-  const [loading, setLoading] = useState(false)
+  const [form, setForm] = useState({ name: "", email: "", message: "" });
+  const [status, setStatus] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  const update = (key) => (e) => setForm((s) => ({ ...s, [key]: e.target.value }))
+  // ✅ Section tracking
+  const sectionRef = useRef(null);
+  const sectionInView = useInView(sectionRef, { once: true, amount: 0.3 });
 
+  useEffect(() => {
+    if (sectionInView) {
+      logSectionView("contact");
+    }
+  }, [sectionInView]);
+
+  // ✅ Handle form updates
+  const update = (key) => (e) =>
+    setForm((s) => ({ ...s, [key]: e.target.value }));
+
+  // ✅ Handle form submission
   const submit = async (e) => {
-    e.preventDefault()
-    setStatus(null)
-    setLoading(true)
+    e.preventDefault();
+    setStatus(null);
+    setLoading(true);
 
     try {
       const res = await emailjs.send(
@@ -26,21 +40,30 @@ export default function Contact() {
           message: form.message,
         },
         import.meta.env.VITE_EMAILJS_PUBLIC_KEY
-      )
+      );
 
-      console.log("✅ EmailJS Response:", res)
-      setStatus({ type: "success", text: "Message sent successfully 🚀" })
-      setForm({ name: "", email: "", message: "" })
+      console.log("✅ EmailJS Response:", res);
+      setStatus({ type: "success", text: "Message sent successfully 🚀" });
+      logLinkClick("contact"); // ✅ Log success message send
+
+      setForm({ name: "", email: "", message: "" });
     } catch (err) {
-      console.error("❌ EmailJS Error:", err)
-      setStatus({ type: "error", text: "Failed to send. Please try again later." })
+      console.error("❌ EmailJS Error:", err);
+      setStatus({
+        type: "error",
+        text: "Failed to send. Please try again later.",
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <section id="contact" className="relative py-16 px-6 overflow-hidden">
+    <section
+      id="contact"
+      ref={sectionRef}
+      className="relative py-16 px-6 overflow-hidden"
+    >
       {/* ✨ Background Glow */}
       <div className="absolute inset-0 bg-gradient-to-b from-cyan-900/10 to-black" />
       <div className="absolute -top-40 -left-40 w-96 h-96 bg-cyan-500/20 rounded-full blur-3xl animate-pulse" />
@@ -53,6 +76,7 @@ export default function Contact() {
         viewport={{ once: true }}
         className="relative max-w-2xl mx-auto bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-8"
       >
+        {/* 🧠 Header */}
         <motion.h2
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -61,9 +85,11 @@ export default function Contact() {
           Let’s Connect 💬
         </motion.h2>
         <p className="text-white/70 text-center mb-8 text-sm md:text-base">
-          Have an idea, collaboration, or project in mind? Drop a quick message — I’d love to hear from you.
+          Have an idea, collaboration, or project in mind? Drop a quick message
+          — I’d love to hear from you.
         </p>
 
+        {/* 📬 Form */}
         <form onSubmit={submit} className="grid grid-cols-1 gap-5">
           <motion.input
             whileFocus={{ scale: 1.03, borderColor: "#22d3ee" }}
@@ -116,6 +142,7 @@ export default function Contact() {
               )}
             </motion.button>
 
+            {/* ✅ Status Message */}
             <AnimatePresence>
               {status && (
                 <motion.div
@@ -124,7 +151,9 @@ export default function Contact() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   className={`text-sm font-medium ${
-                    status.type === "success" ? "text-green-400" : "text-red-400"
+                    status.type === "success"
+                      ? "text-green-400"
+                      : "text-red-400"
                   }`}
                 >
                   {status.text}
@@ -135,5 +164,5 @@ export default function Contact() {
         </form>
       </motion.div>
     </section>
-  )
+  );
 }

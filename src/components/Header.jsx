@@ -16,6 +16,9 @@ import {
 } from "react-icons/fa";
 import { useRef, useState, useEffect, useMemo } from "react";
 import { useFirestoreData } from "@/hooks/useFirestoreData";
+import { useInView } from "framer-motion";
+import { logSectionView, logLinkClick, logDownload } from "../utils/analytics";
+
 
 // ✅ Helper — Converts Google Drive URL → Preview & Download URLs
 const getDriveLinks = (url) => {
@@ -39,6 +42,15 @@ export default function Header() {
   const [visible, setVisible] = useState(true);
   const [showResume, setShowResume] = useState(false);
   const sectionRef = useRef(null);
+const sectionInView = useInView(sectionRef, { once: true, amount: 0.3 });
+const loggedOnce = useRef(false);
+useEffect(() => { 
+    if (!loggedOnce.current) {
+      logSectionView("home");
+      loggedOnce.current = true;
+    }
+}, []);
+
 
   // ✅ Update profile data from Firestore
   useEffect(() => {
@@ -274,19 +286,25 @@ export default function Header() {
           </a>
 
           <button
-            onClick={() => setShowResume(true)}
+            onClick={() => {
+  logLinkClick("resume");
+  setShowResume(true);
+}}
+
             className="w-full sm:w-auto flex items-center justify-center gap-2 bg-cyansoft text-black px-6 py-3 rounded-full font-semibold shadow-lg hover:bg-cyan-300 hover:scale-105 transition-all min-w-[140px]"
           >
             <FaFileAlt className="w-4 h-4" /> Open Resume
           </button>
 
           <a
-            href={download}
-            download
-            className="w-full sm:w-auto flex items-center justify-center gap-2 border border-white/20 text-white/90 px-6 py-3 rounded-full font-medium hover:border-cyansoft hover:bg-white/10 transition-all min-w-[140px]"
-          >
-            <FaDownload className="w-4 h-4" /> Download
-          </a>
+  href={download}
+  download
+  onClick={() => logDownload("resume")}
+  className="w-full sm:w-auto flex items-center justify-center gap-2 border border-white/20 text-white/90 px-6 py-3 rounded-full font-medium hover:border-cyansoft hover:bg-white/10 transition-all min-w-[140px]"
+>
+  <FaDownload className="w-4 h-4" /> Download
+</a>
+
         </motion.div>
 
         {/* ===== Social Icons ===== */}
@@ -298,14 +316,16 @@ export default function Header() {
             const Icon = iconMap[key] || FaGlobe;
             return (
               <a
-                key={idx}
-                href={url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-white/80 hover:text-cyansoft transition-all transform hover:scale-110"
-              >
-                <Icon className="w-6 h-6" />
-              </a>
+  key={idx}
+  href={url}
+  target="_blank"
+  rel="noopener noreferrer"
+  onClick={() => logLinkClick(key)}
+  className="text-white/80 hover:text-cyansoft transition-all transform hover:scale-110"
+>
+  <Icon className="w-6 h-6" />
+</a>
+
             );
           })}
         </motion.div>

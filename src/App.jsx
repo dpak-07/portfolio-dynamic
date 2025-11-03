@@ -27,6 +27,7 @@ import ProjectsEditor from "./components/admin/projectadmin";
 import ResumeEditor from "./components/admin/resumeadmin";
 import CertificationsEditor from "./components/admin/certificationsadmin";
 import TimelineEditor from "./components/admin/timelineadmin";
+import AnalysisDashboard from "./components/admin/AnalysisDashboard"; // ✅ NEW
 
 // Blog page
 import MassiveAnimatedBlogPage from "./components/blogpage";
@@ -50,7 +51,6 @@ function SectionsConfigLoader({ children }) {
     blog: true,
   };
 
-  // Instead of directly returning a loader, pass both values
   return children(sectionsConfig, sectionsLoading);
 }
 
@@ -73,6 +73,7 @@ function AdminNavbar() {
     { name: "Resume", path: "/admin/resume" },
     { name: "Certifications", path: "/admin/certifications" },
     { name: "Timeline", path: "/admin/timeline" },
+    { name: "Analysis", path: "/admin/analysis" }, // ✅ Added
   ];
 
   return (
@@ -163,16 +164,13 @@ function App() {
   }, []);
 
   // 🚨 If offline, show offline page
-  if (isOffline) {
-    return <OfflinePage />;
-  }
+  if (isOffline) return <OfflinePage />;
 
   return (
     <SectionsConfigLoader>
       {(sectionsConfig, sectionsLoading) => {
         const stillLoading = !minTimePassed || sectionsLoading;
 
-        // 🔥 Smooth fade-out animation for loader
         useEffect(() => {
           if (!stillLoading) {
             setFadeOut(true);
@@ -248,6 +246,7 @@ function App() {
                       ["resume", ResumeEditor],
                       ["certifications", CertificationsEditor],
                       ["timeline", TimelineEditor],
+                      ["analysis", AnalysisDashboard], // ✅ Added Analytics Route
                     ].map(([path, Component]) => (
                       <Route
                         key={path}

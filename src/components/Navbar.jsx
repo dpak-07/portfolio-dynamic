@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useFirestoreData } from "@/hooks/useFirestoreData";
 import { FaBars, FaTimes } from "react-icons/fa";
+import { logLinkClick } from "../utils/analytics"; // ✅ ADD: analytics import
 
 export default function Navbar() {
   const { data: firestoreSectionsData } = useFirestoreData("sections", "visibility");
@@ -46,7 +47,7 @@ export default function Navbar() {
   const [scrollProgress, setScrollProgress] = useState(0);
   const buttonsRef = useRef({});
 
-  // 🌈 Scroll progress + visibility
+  // 🌈 Scroll progress + navbar visibility
   useEffect(() => {
     let ticking = false;
     const handleScroll = () => {
@@ -92,20 +93,25 @@ export default function Navbar() {
     }
   }, [active]);
 
-  // ✨ Smooth scroll
+  // ✨ Smooth scroll with analytics logging
   const scrollTo = (id) => {
     if (!sectionsConfig[id]) return;
     const el = document.getElementById(id);
     const nav = document.querySelector("header");
+
     if (el && nav) {
       const navH = nav.offsetHeight;
       const y = el.getBoundingClientRect().top + window.scrollY - navH + 5;
       window.scrollTo({ top: y, behavior: "smooth" });
     }
+
+    // ✅ Log navigation click
+    logLinkClick(`nav_${id}`);
+
     setOpen(false);
   };
 
-  // 🚫 Prevent background scroll when menu open
+  // 🚫 Prevent background scroll when mobile menu open
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "auto";
   }, [open]);
@@ -263,14 +269,12 @@ export default function Navbar() {
           animation: ripple 0.8s ease-out;
         }
 
-        /* 🧠 Responsive optimization for ultra-wide */
         @media (min-width: 1600px) {
           nav {
             max-width: 1400px !important;
           }
         }
 
-        /* 💡 Reduce heavy glow on small screens */
         @media (max-width: 480px) {
           .shadow-[0_0_20px_rgba(0,255,255,0.15)] {
             box-shadow: 0 0 10px rgba(0, 255, 255, 0.1) !important;

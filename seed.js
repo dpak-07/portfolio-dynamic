@@ -461,41 +461,83 @@ const certificationsData = {
     },
   ],
 };
+// ✅ src/utils/analyticsSeed.js
+// Production baseline analytics seed — all counters start from 0
 
+export const analyticsSeed = {
+  totals: {
+    totalViews: 0,
+    totalClicks: 0,
+    totalDownloads: 0,
+    totalResumeOpens: 0, // tracks when users open your resume
+  },
+
+  sections: {
+    home: 0,
+    about: 0,
+    "tech-stack": 0,
+    projects: 0,
+    resume: 0,
+    certifications: 0,
+    timeline: 0,
+    contact: 0,
+    blog: 0,
+  },
+
+  links: {
+    github: 0,
+    linkedin: 0,
+    email: 0,
+    instagram: 0,
+    twitter: 0,
+    website: 0,
+  },
+
+  daily: {},
+};
+
+
+export default analyticsSeed;
+
+// Store analytics documents
+await setDoc(doc(db, "analytics", "totals"), analyticsSeed.totals);
+await setDoc(doc(db, "analytics", "sections"), analyticsSeed.sections);
+await setDoc(doc(db, "analytics", "links"), analyticsSeed.links);
+await setDoc(doc(db, "analytics", "daily"), analyticsSeed.daily);
 /* -------------------------------------------------------
    🚀 Firestore Seeder
 ------------------------------------------------------- */
 async function seed() {
   try {
     // Admin credentials
-    await setDoc(doc(db, "admin", "credentials"), adminData);
+    // await setDoc(doc(db, "admin", "credentials"), adminData);
     
-    // Sections visibility
-    await setDoc(doc(db, "sections", "visibility"), sectionsData);
+    // // Sections visibility
+    // await setDoc(doc(db, "sections", "visibility"), sectionsData);
     
-    // Profile data
-    await setDoc(doc(db, "portfolio", "profile"), profileData);
+    // // Profile data
+    // await setDoc(doc(db, "portfolio", "profile"), profileData);
     
-    // Resume data
-    await setDoc(doc(db, "resume", "data"), resumeData);
+    // // Resume data
+    // await setDoc(doc(db, "resume", "data"), resumeData);
     
-    // About page
-    await setDoc(doc(db, "aboutpage", "main"), aboutpageconfig);
+    // // About page
+    // await setDoc(doc(db, "aboutpage", "main"), aboutpageconfig);
     
-    // Tech stack
-    await setDoc(doc(db, "techStack", "categories"), { techStackData });
+    // // Tech stack
+    // await setDoc(doc(db, "techStack", "categories"), { techStackData });
     
-    // Footer
-    await setDoc(doc(db, "footer", "details"), { footerData });
+    // // Footer
+    // await setDoc(doc(db, "footer", "details"), { footerData });
     
-    // Projects data
-    await setDoc(doc(db, "projects", "data"), projectsData);
+    // // Projects data
+    // await setDoc(doc(db, "projects", "data"), projectsData);
     
-    // Certifications
-    await setDoc(doc(db, "certifications", "data"), certificationsData);
+    // // Certifications
+    // await setDoc(doc(db, "certifications", "data"), certificationsData);
     
-    // Config
-    await setDoc(doc(db, "config", "portfolio"), { theme: "holo" });
+    // // Config
+    // await setDoc(doc(db, "config", "portfolio"), { theme: "holo" });
 
     console.log("✅ All collections seeded successfully!");
     console.log("📦 Collections created:");

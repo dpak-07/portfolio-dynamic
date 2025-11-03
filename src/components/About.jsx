@@ -17,6 +17,7 @@ import {
   FaBolt,
 } from "react-icons/fa";
 import { useFirestoreData } from "@/hooks/useFirestoreData";
+import { logSectionView, logLinkClick } from "../utils/analytics";
 
 /* ============================================================================
    UTILITY FUNCTIONS
@@ -555,7 +556,12 @@ export default function AboutWithDriveImage({ overrideConfig }) {
 
   const countersRef = useRef(null);
   const sectionRef = useRef(null);
-  const sectionInView = useInView(sectionRef, { once: true, amount: 0.14 });
+  const sectionInView = useInView(sectionRef, { once: true, amount: 0.1 });
+ useEffect(() => {
+  if (sectionInView) {
+    logSectionView("about");
+  }
+}, [sectionInView]);
 
   useEffect(() => {
     if (cfg?.image?.url) {
@@ -1014,7 +1020,7 @@ export default function AboutWithDriveImage({ overrideConfig }) {
                               <div className="flex items-start gap-3 text-sm md:text-base">
                                 <FaEnvelope className="text-cyan-200 shrink-0 mt-0.5" />
                                 <div className="min-w-0">
-                                  <a className="underline text-white/90 break-words" href="mailto:deepakofficial0103@gmail.com">
+                                  <a className="underline text-white/90 break-words"href="mailto:deepakofficial0103@gmail.com"onClick={() => logLinkClick("email")}>
                                     deepakofficial0103@gmail.com
                                   </a>
                                 </div>
@@ -1114,33 +1120,45 @@ export default function AboutWithDriveImage({ overrideConfig }) {
                     )}
 
                     <div className="flex flex-col sm:flex-row gap-3">
-                     <motion.button
-                        whileHover={{ y: -3 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => smoothScroll("projects")}
-                        className="px-5 py-2 rounded-md bg-cyan-400/20 border border-cyan-400/40 text-cyan-300 text-sm md:text-base font-medium text-center hover:bg-cyan-400/30 transition-all"
-                        style={{ willChange: "transform" }}
-                      >
-                        View Projects
-                      </motion.button>
-                      <motion.button
-                        whileHover={{ y: -3 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => smoothScroll("contact")}
-                        className="px-5 py-2 rounded-md border border-white/10 hover:bg-white/6 text-sm md:text-base text-center transition-all"
-                        style={{ willChange: "transform" }}
-                      >
-                        Contact
-                      </motion.button>
-                      <motion.button
-                        whileHover={{ y: -3 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => smoothScroll("resume")}
-                        className="px-5 py-2 rounded-md border border-white/10 hover:bg-white/6 text-sm md:text-base text-center transition-all"
-                        style={{ willChange: "transform" }}
-                      >
-                        Resume
-                      </motion.button>
+                                              <motion.button
+                            whileHover={{ y: -3 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => {
+                              logLinkClick("projects");
+                              smoothScroll("projects");
+                            }}
+                            className="px-5 py-2 rounded-md bg-cyan-400/20 border border-cyan-400/40 text-cyan-300 text-sm md:text-base font-medium text-center hover:bg-cyan-400/30 transition-all"
+                            style={{ willChange: "transform" }}
+                          >
+                            View Projects
+                          </motion.button>
+
+                          <motion.button
+                            whileHover={{ y: -3 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => {
+                              logLinkClick("contact");
+                              smoothScroll("contact");
+                            }}
+                            className="px-5 py-2 rounded-md border border-white/10 hover:bg-white/6 text-sm md:text-base text-center transition-all"
+                            style={{ willChange: "transform" }}
+                          >
+                            Contact
+                          </motion.button>
+
+                          <motion.button
+                            whileHover={{ y: -3 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => {
+                              logLinkClick("resume");
+                              smoothScroll("resume");
+                            }}
+                            className="px-5 py-2 rounded-md border border-white/10 hover:bg-white/6 text-sm md:text-base text-center transition-all"
+                            style={{ willChange: "transform" }}
+                          >
+                            Resume
+                          </motion.button>
+
                     </div>
                   </div>
                 </div>
