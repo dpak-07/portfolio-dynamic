@@ -1,8 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { db } from "../../firebase"; // Adjust path to your Firebase config
+import { db } from "../../firebase";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -12,12 +12,78 @@ export default function AdminDashboard() {
     "tech-stack": true,
     projects: true,
     resume: true,
-    contact: true, 
+    contact: true,
   });
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [terminalText, setTerminalText] = useState("");
 
-  // ✅ Load section visibility from Firestore
+  // Matrix rain effect
+  const MatrixRain = () => {
+    const columns = 40;
+    const characters = "01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン";
+    
+    return (
+      <div className="fixed inset-0 overflow-hidden pointer-events-none opacity-5">
+        {[...Array(columns)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute top-0 text-green-400 font-mono text-xs"
+            style={{ left: `${(i / columns) * 100}%` }}
+            animate={{
+              y: ["0vh", "100vh"],
+              opacity: [0, 1, 0],
+            }}
+            transition={{
+              duration: Math.random() * 3 + 2,
+              repeat: Infinity,
+              delay: Math.random() * 2,
+              ease: "linear",
+            }}
+          >
+            {characters.charAt(Math.floor(Math.random() * characters.length))}
+          </motion.div>
+        ))}
+      </div>
+    );
+  };
+
+  // Terminal typing effect
+  useEffect(() => {
+    const messages = [
+      "SYSTEM INITIALIZED...",
+      "LOADING ADMIN PANEL...",
+      "ACCESS GRANTED...",
+      "WELCOME DEEPAK..."
+    ];
+    let currentIndex = 0;
+    let charIndex = 0;
+    
+    const typewriter = setInterval(() => {
+      if (currentIndex < messages.length) {
+        if (charIndex < messages[currentIndex].length) {
+          setTerminalText(prev => prev + messages[currentIndex][charIndex]);
+          charIndex++;
+        } else {
+          setTerminalText(prev => prev + "\n");
+          currentIndex++;
+          charIndex = 0;
+        }
+      } else {
+        clearInterval(typewriter);
+      }
+    }, 30);
+
+    return () => clearInterval(typewriter);
+  }, []);
+
+  // Update clock
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   useEffect(() => {
     const checkAuthAndLoadSections = async () => {
       const isAdmin = localStorage.getItem("isAdmin") === "1";
@@ -42,292 +108,346 @@ export default function AdminDashboard() {
     checkAuthAndLoadSections();
   }, [navigate]);
 
-  // ✅ Save visibility to Firestore
   const toggleSection = async (key) => {
     try {
       setUpdating(true);
       const updated = { ...sections, [key]: !sections[key] };
       setSections(updated);
-      
       await updateDoc(doc(db, "sections", "visibility"), updated);
-      
-      // Show success feedback
-      const event = new CustomEvent('showToast', {
-        detail: {
-          message: `${key} section ${!sections[key] ? 'enabled' : 'disabled'}`,
-          type: 'success'
-        }
-      });
-      window.dispatchEvent(event);
     } catch (error) {
       console.error("Error updating section:", error);
-      // Revert on error
       setSections(sections);
-      
-      const event = new CustomEvent('showToast', {
-        detail: {
-          message: 'Failed to update section',
-          type: 'error'
-        }
-      });
-      window.dispatchEvent(event);
     } finally {
       setUpdating(false);
     }
   };
 
-  // ✅ Logout admin
   const logout = () => {
     localStorage.removeItem("isAdmin");
     navigate("/admin/login");
   };
 
-  // ✅ Editor links with icons
   const routes = [
-    { 
-      name: "Header Editor", 
-      path: "/admin/header", 
-      color: "from-cyan-500 to-blue-500",
-      icon: "🚀"
-    },
-    { 
-      name: "About Editor", 
-      path: "/admin/about", 
-      color: "from-purple-500 to-pink-500",
-      icon: "👤"
-    },
-    { 
-      name: "Tech Stack Editor", 
-      path: "/admin/techadmin", 
-      color: "from-green-500 to-emerald-500",
-      icon: "⚙️"
-    },
-    { 
-      name: "Projects Editor", 
-      path: "/admin/projects", 
-      color: "from-orange-500 to-amber-500",
-      icon: "💼"
-    },
-    { 
-      name: "Resume Editor", 
-      path: "/admin/resume", 
-      color: "from-sky-500 to-indigo-500",
-      icon: "📄"
-    },
-    { 
-      name: "Certifications Editor", 
-      path: "/admin/certifications", 
-      color: "from-rose-500 to-pink-500",
-      icon: "🏆"
-    },
-    { 
-      name: "Timeline Editor", 
-      path: "/admin/timeline", 
-      color: "from-violet-500 to-purple-500",
-      icon: "⏰"
-    },
-    { 
-      name: "Analytics Dashboard", 
-      path: "/admin/analysis", 
-      color: "from-emerald-500 to-cyan-500",
-      icon: "📊"
-    },
+    { name: "HEADER", path: "/admin/header", code: "0x01", icon: "▲" },
+    { name: "ABOUT", path: "/admin/about", code: "0x02", icon: "◆" },
+    { name: "TECH.STACK", path: "/admin/techadmin", code: "0x03", icon: "⬢" },
+    { name: "PROJECTS", path: "/admin/projects", code: "0x04", icon: "■" },
+    { name: "RESUME", path: "/admin/resume", code: "0x05", icon: "▼" },
+    { name: "CERTS", path: "/admin/certifications", code: "0x06", icon: "◉" },
+    { name: "TIMELINE", path: "/admin/timeline", code: "0x07", icon: "◈" },
+    { name: "ANALYTICS", path: "/admin/analysis", code: "0x08", icon: "◎" },
   ];
-
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: {
-        type: "spring",
-        stiffness: 100
-      }
-    }
-  };
-
-  const toggleVariants = {
-    off: { scale: 1, backgroundColor: "#4B5563" },
-    on: { scale: 1.05, backgroundColor: "#06B6D4" }
-  };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 to-black flex items-center justify-center">
+      <div className="h-screen bg-black flex items-center justify-center relative overflow-hidden">
+        <MatrixRain />
         <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="relative z-10 text-center"
         >
-          <div className="w-16 h-16 border-4 border-cyansoft border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-cyansoft text-lg">Loading Dashboard...</p>
+          <motion.div
+            animate={{ 
+              boxShadow: [
+                "0 0 20px #00ff00",
+                "0 0 40px #00ff00",
+                "0 0 20px #00ff00"
+              ]
+            }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="w-20 h-20 border-4 border-green-500 rounded-lg mx-auto mb-4 flex items-center justify-center"
+          >
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+              className="text-green-500 text-3xl"
+            >
+              ◎
+            </motion.div>
+          </motion.div>
+          <pre className="text-green-400 font-mono text-xs whitespace-pre-wrap max-w-md">
+            {terminalText}
+          </pre>
         </motion.div>
       </div>
     );
   }
 
+  const activeSections = Object.values(sections).filter(Boolean).length;
+  const totalSections = Object.keys(sections).length;
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 to-black text-white flex flex-col items-center py-12 px-4">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="text-center mb-12"
-      >
-        <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-          Admin Dashboard
-        </h1>
-        <p className="text-gray-400 text-lg">Manage your portfolio content and visibility</p>
-      </motion.div>
+    <div className="h-screen bg-black text-green-400 relative overflow-hidden flex flex-col">
+      <MatrixRain />
 
-      {/* 🔗 Editor Links */}
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl w-full mb-16"
-      >
-        {routes.map((route) => (
-          <motion.div
-            key={route.path}
-            variants={itemVariants}
-            whileHover={{ 
-              scale: 1.05,
-              y: -5,
-              transition: { type: "spring", stiffness: 300 }
-            }}
-            whileTap={{ scale: 0.95 }}
-            className={`bg-gradient-to-r ${route.color} p-[1px] rounded-2xl shadow-2xl hover:shadow-cyan-500/20 transition-all duration-300`}
-          >
-            <div className="bg-gray-900/90 backdrop-blur-sm p-6 rounded-2xl h-full flex flex-col">
-              <div className="text-3xl mb-3">{route.icon}</div>
-              <h3 className="text-xl font-semibold mb-4 text-white">{route.name}</h3>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => navigate(route.path)}
-                className="mt-auto px-6 py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl font-medium transition-all duration-300 text-white hover:text-cyan-300"
-              >
-                Open Editor
-              </motion.button>
-            </div>
-          </motion.div>
-        ))}
-      </motion.div>
-
-      {/* 🧩 Section Visibility */}
-      <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4, duration: 0.6 }}
-        className="w-full max-w-4xl bg-gray-900/50 backdrop-blur-sm rounded-3xl p-8 border border-cyan-500/20 shadow-2xl"
-      >
+      {/* Scanline effect */}
+      <div className="fixed inset-0 pointer-events-none z-50 opacity-30">
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          className="text-center mb-8"
-        >
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent mb-2">
-            Section Visibility
-          </h2>
-          <p className="text-gray-400">Toggle sections on/off for your portfolio</p>
-        </motion.div>
+          animate={{ y: ["0%", "100%"] }}
+          transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+          className="h-1 w-full bg-gradient-to-b from-transparent via-green-500/30 to-transparent"
+        />
+      </div>
 
+      {/* Grid background */}
+      <div className="fixed inset-0 opacity-5 pointer-events-none"
+        style={{
+          backgroundImage: `
+            linear-gradient(0deg, transparent 24%, rgba(0, 255, 0, 0.05) 25%, rgba(0, 255, 0, 0.05) 26%, transparent 27%, transparent 74%, rgba(0, 255, 0, 0.05) 75%, rgba(0, 255, 0, 0.05) 76%, transparent 77%, transparent),
+            linear-gradient(90deg, transparent 24%, rgba(0, 255, 0, 0.05) 25%, rgba(0, 255, 0, 0.05) 26%, transparent 27%, transparent 74%, rgba(0, 255, 0, 0.05) 75%, rgba(0, 255, 0, 0.05) 76%, transparent 77%, transparent)
+          `,
+          backgroundSize: "40px 40px"
+        }}
+      />
+
+      <div className="relative z-10 flex flex-col h-full">
+        {/* Compact Top Bar */}
         <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+          initial={{ y: -50 }}
+          animate={{ y: 0 }}
+          className="border-b border-green-500/30 bg-black/90 backdrop-blur-sm"
         >
-          {Object.entries(sections).map(([key, value]) => (
-            <motion.div
-              key={key}
-              variants={itemVariants}
-              whileHover={{ scale: 1.02 }}
-              className="flex items-center justify-between bg-black/40 px-5 py-4 rounded-xl border border-cyan-500/20 hover:border-cyan-500/40 transition-all duration-300"
-            >
-              <div className="flex items-center space-x-3">
-                <div className={`w-3 h-3 rounded-full ${value ? 'bg-green-400' : 'bg-red-400'} animate-pulse`}></div>
-                <span className="capitalize text-sm font-medium text-white/90">
-                  {key.replace('-', ' ')}
-                </span>
+          <div className="px-4 py-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <motion.div
+                  animate={{ 
+                    boxShadow: [
+                      "0 0 8px #00ff00",
+                      "0 0 15px #00ff00",
+                      "0 0 8px #00ff00"
+                    ]
+                  }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className="text-xl border border-green-500 rounded p-1.5"
+                >
+                  ◎
+                </motion.div>
+                <div>
+                  <div className="flex items-center gap-2 font-mono text-sm">
+                    <span className="text-green-500">[ROOT@ADMIN]</span>
+                    <span className="text-green-600">USER:</span>
+                    <motion.span 
+                      className="text-cyan-400 font-bold"
+                      animate={{
+                        textShadow: [
+                          "0 0 5px #00ffff",
+                          "0 0 12px #00ffff",
+                          "0 0 5px #00ffff"
+                        ]
+                      }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    >
+                      deepak
+                    </motion.span>
+                  </div>
+                </div>
               </div>
 
-              <motion.label
-                className="relative inline-flex items-center cursor-pointer"
-                animate={value ? "on" : "off"}
-                variants={toggleVariants}
-                whileTap={{ scale: 0.9 }}
-              >
-                <input
-                  type="checkbox"
-                  checked={value}
-                  onChange={() => toggleSection(key)}
-                  disabled={updating}
-                  className="sr-only peer"
-                />
-                <div className="w-12 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-6 peer-checked:bg-cyan-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all after:shadow-lg"></div>
-              </motion.label>
-            </motion.div>
-          ))}
+              <div className="flex items-center gap-4">
+                <div className="text-right font-mono text-xs">
+                  <div className="text-green-600">TIME</div>
+                  <div className="text-green-400 font-bold">
+                    {currentTime.toLocaleTimeString()}
+                  </div>
+                </div>
+
+                <motion.button
+                  whileHover={{ 
+                    scale: 1.05,
+                    boxShadow: "0 0 15px #ff0000"
+                  }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={logout}
+                  className="px-3 py-1.5 bg-red-900/30 border border-red-500 text-red-400 font-mono text-xs font-bold hover:bg-red-900/50 transition-all"
+                >
+                  [ EXIT ]
+                </motion.button>
+              </div>
+            </div>
+          </div>
         </motion.div>
 
-        {/* Status Indicator */}
-        <AnimatePresence>
-          {updating && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="flex items-center justify-center mt-6 space-x-2 text-cyan-400"
-            >
-              <div className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-sm">Updating...</span>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
+        {/* Main Content - Single Screen */}
+        <div className="flex-1 px-4 py-3 overflow-hidden">
+          <div className="h-full grid grid-cols-12 gap-3">
+            {/* Left Column - Stats & Sections */}
+            <div className="col-span-3 flex flex-col gap-3">
+              {/* Stats */}
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="bg-black/60 border border-green-500/30 backdrop-blur-sm p-3"
+              >
+                <div className="font-mono text-xs">
+                  <div className="text-green-400 font-bold mb-2">{'>'} SYSTEM.STATUS</div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-green-600">SECTIONS:</span>
+                      <span className="text-green-400 font-bold">{activeSections}/{totalSections}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-green-600">MODULES:</span>
+                      <span className="text-green-400 font-bold">{routes.length}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-green-600">HEALTH:</span>
+                      <span className="text-green-400 font-bold">
+                        {((activeSections / totalSections) * 100).toFixed(0)}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-green-600">STATUS:</span>
+                      <motion.span 
+                        className="text-green-400 font-bold"
+                        animate={{ 
+                          textShadow: [
+                            "0 0 5px #00ff00",
+                            "0 0 10px #00ff00",
+                            "0 0 5px #00ff00"
+                          ]
+                        }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      >
+                        ONLINE
+                      </motion.span>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
 
-      {/* 🚪 Logout Button */}
-      <motion.button
-        onClick={logout}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.8, duration: 0.6 }}
-        whileHover={{ 
-          scale: 1.05,
-          backgroundColor: "#DC2626",
-          transition: { type: "spring", stiffness: 300 }
-        }}
-        whileTap={{ scale: 0.95 }}
-        className="mt-12 bg-red-600 hover:bg-red-700 px-8 py-3 rounded-2xl font-semibold transition-all duration-300 border border-red-500/20 shadow-lg flex items-center space-x-2"
-      >
-        <span>🚪</span>
-        <span>Logout</span>
-      </motion.button>
+              {/* Section Visibility */}
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 }}
+                className="flex-1 bg-black/60 border border-green-500/30 backdrop-blur-sm p-3 overflow-y-auto"
+              >
+                <div className="font-mono text-xs mb-2 text-green-400 font-bold flex items-center justify-between">
+                  <span>{'>'} SECTIONS</span>
+                  {updating && (
+                    <motion.span
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      className="text-green-500"
+                    >
+                      ◎
+                    </motion.span>
+                  )}
+                </div>
+                <div className="space-y-1.5">
+                  {Object.entries(sections).map(([key, value]) => (
+                    <div
+                      key={key}
+                      className={`border p-2 transition-all ${
+                        value
+                          ? "border-green-500/50 bg-green-900/20"
+                          : "border-green-500/20 bg-black/40"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <motion.div
+                            animate={value ? {
+                              boxShadow: [
+                                "0 0 3px #00ff00",
+                                "0 0 6px #00ff00",
+                                "0 0 3px #00ff00"
+                              ]
+                            } : {}}
+                            transition={{ duration: 1.5, repeat: Infinity }}
+                            className={`w-2 h-2 rounded-full ${value ? "bg-green-400" : "bg-gray-600"}`}
+                          />
+                          <span className="uppercase text-[10px] text-green-400">
+                            {key.replace("-", "_")}
+                          </span>
+                        </div>
+                        <motion.button
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => toggleSection(key)}
+                          disabled={updating}
+                          className={`px-2 py-0.5 border text-[9px] font-bold ${
+                            value
+                              ? "border-green-500 text-green-400 bg-green-900/30"
+                              : "border-gray-600 text-gray-500 bg-gray-900/30"
+                          }`}
+                        >
+                          {value ? "ON" : "OFF"}
+                        </motion.button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            </div>
 
-      {/* Quick Stats */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1 }}
-        className="mt-8 text-center text-gray-500 text-sm"
-      >
-        <p>{Object.values(sections).filter(Boolean).length} of {Object.keys(sections).length} sections active</p>
-      </motion.div>
+            {/* Right Column - Control Modules */}
+            <div className="col-span-9">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="h-full bg-black/60 border border-green-500/30 backdrop-blur-sm p-4"
+              >
+                <div className="font-mono text-sm mb-3 text-green-400 font-bold">
+                  {'>'} CONTROL.MODULES <span className="text-green-600 text-xs ml-2">[{routes.length}]</span>
+                </div>
+
+                <div className="grid grid-cols-4 gap-3 h-[calc(100%-2rem)]">
+                  {routes.map((route, index) => (
+                    <motion.button
+                      key={route.path}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.3 + index * 0.03 }}
+                      whileHover={{ 
+                        scale: 1.03,
+                        boxShadow: "0 0 15px #00ff00",
+                        borderColor: "#00ff00"
+                      }}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() => navigate(route.path)}
+                      className="bg-black/60 border border-green-500/30 backdrop-blur-sm p-3 text-left font-mono relative overflow-hidden group hover:bg-green-900/20 transition-all flex flex-col justify-between"
+                    >
+                      <motion.div
+                        className="absolute inset-0 bg-green-500/10"
+                        initial={{ x: "-100%" }}
+                        whileHover={{ x: "100%" }}
+                        transition={{ duration: 0.5 }}
+                      />
+                      
+                      <div className="relative z-10">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-2xl text-green-500">{route.icon}</span>
+                          <span className="text-[10px] text-green-600">{route.code}</span>
+                        </div>
+                        <div className="text-green-400 font-bold text-xs mb-1">{route.name}</div>
+                        <div className="text-[10px] text-green-600">
+                          {'>'} ACCESS
+                        </div>
+                      </div>
+
+                      {/* Corner brackets */}
+                      <div className="absolute top-0 left-0 w-3 h-3 border-t border-l border-green-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="absolute top-0 right-0 w-3 h-3 border-t border-r border-green-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="absolute bottom-0 left-0 w-3 h-3 border-b border-l border-green-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-green-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </motion.button>
+                  ))}
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="border-t border-green-500/30 bg-black/90 px-4 py-1.5">
+          <p className="text-center font-mono text-[10px] text-green-600">
+            {'>'} SYSTEM © 2025 | v2.0.1 | NODE: ACTIVE_
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

@@ -93,14 +93,13 @@ LoadingSpinner.displayName = "LoadingSpinner";
    COUNTER COMPONENT - FIXED WITH KEY RESET
 ============================================================================ */
 const Counter = memo(function Counter({ to = 0, ms = 1200, play = false, itemKey }) {
-
   const [val, setVal] = useState(0);
   const hasAnimatedRef = useRef(false);
 
   useEffect(() => {
     // Reset animation flag when key changes
     hasAnimatedRef.current = false;
-  },[itemKey]);
+  }, [itemKey]);
 
   useEffect(() => {
     if (!play || hasAnimatedRef.current) return;
@@ -289,7 +288,7 @@ const Badge = memo(({ children, isMobile }) => {
       } border-cyan-500/20 ${isMobile ? "rounded-md" : "rounded-lg"} text-cyan-100 font-medium tracking-wide ${isMobile ? "shadow-sm" : "shadow-lg"} backdrop-blur-sm transition-all duration-300 transform hover:shadow-cyan-500/25 overflow-hidden ${
         isMobile ? "active:scale-95" : ""
       }`}
-      style={{ will: "change" }}
+      style={{ willChange: "transform" }}
     >
       <motion.div
         className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-cyan-400/20"
@@ -526,7 +525,7 @@ const CompactBio = memo(({ data, onExpandedChange, isMobile, isExpanded }) => {
 CompactBio.displayName = "CompactBio";
 
 /* ============================================================================
-   MAIN COMPONENT - FULLY OPTIMIZED
+   MAIN COMPONENT - FULLY OPTIMIZED WITH SCROLL FIX
 ============================================================================ */
 export default function AboutWithDriveImage({ overrideConfig }) {
   const { data: firestoreData, loading, error, refetch } = useFirestoreData("aboutpage", "main");
@@ -552,16 +551,17 @@ export default function AboutWithDriveImage({ overrideConfig }) {
   const [reduceMotion, setReduceMotion] = useState(false);
   const [countersVisible, setCountersVisible] = useState(false);
   const [introDone, setIntroDone] = useState(false);
-  const [modeKey, setModeKey] = useState(0); // NEW: Track mode changes to reset counters
+  const [modeKey, setModeKey] = useState(0);
 
   const countersRef = useRef(null);
   const sectionRef = useRef(null);
   const sectionInView = useInView(sectionRef, { once: true, amount: 0.1 });
- useEffect(() => {
-  if (sectionInView) {
-    logSectionView("about");
-  }
-}, [sectionInView]);
+
+  useEffect(() => {
+    if (sectionInView) {
+      logSectionView("about");
+    }
+  }, [sectionInView]);
 
   useEffect(() => {
     if (cfg?.image?.url) {
@@ -639,14 +639,14 @@ export default function AboutWithDriveImage({ overrideConfig }) {
     setImgFailed(false);
   }, []);
 
- const handleModeToggle = useCallback(() => {
+  const handleModeToggle = useCallback(() => {
     setMode((prev) => (prev === "holo" ? "mosaic" : "holo"));
-    setModeKey((prev) => prev + 1); // NEW: Force counter reset on mode change
-    // Scroll to top of About section
+    setModeKey((prev) => prev + 1);
     setTimeout(() => {
       smoothScroll("about");
     }, 100);
   }, []);
+
   const handleCardExpand = useCallback((id) => {
     setExpandedCard((prev) => (prev === id ? null : id));
   }, []);
@@ -661,7 +661,11 @@ export default function AboutWithDriveImage({ overrideConfig }) {
 
   if (!cfg || loading) {
     return (
-      <motion.section id="about" className="relative w-full py-8 px-4 sm:py-14 sm:px-6 md:py-20 md:px-8 lg:px-10 overflow-hidden">
+      <motion.section 
+        id="about" 
+        ref={sectionRef}
+        className="relative w-full py-8 px-4 sm:py-14 sm:px-6 md:py-20 md:px-8 lg:px-10 overflow-hidden scroll-mt-20"
+      >
         <InjectStyles />
         <div className="mx-auto max-w-6xl">
           <motion.h2
@@ -696,7 +700,7 @@ export default function AboutWithDriveImage({ overrideConfig }) {
     <motion.section
       id="about"
       ref={sectionRef}
-      className="relative w-full py-8 px-4 sm:py-14 sm:px-6 md:py-20 md:px-8 lg:px-10 overflow-hidden"
+      className="relative w-full py-8 px-4 sm:py-14 sm:px-6 md:py-20 md:px-8 lg:px-10 overflow-hidden scroll-mt-20"
       variants={page}
       initial="hidden"
       whileInView="enter"
@@ -740,8 +744,9 @@ export default function AboutWithDriveImage({ overrideConfig }) {
           />
         )}
       </AnimatePresence>
+
       <div className="mx-auto max-w-6xl relative z-10">
-        {/* 🎯 TITLE SECTION - MATCHING PROJECTS STYLE */}
+        {/* 🎯 TITLE SECTION */}
         <motion.div
           className="relative z-10 text-center mb-14"
           initial={{ opacity: 0, y: -30 }}
@@ -773,7 +778,7 @@ export default function AboutWithDriveImage({ overrideConfig }) {
             </motion.div>
           )}
         </AnimatePresence>
-        
+
         {/* CONTENT RENDERING */}
         <AnimatePresence mode="wait" initial={false}>
           {mode === "mosaic" ? (
@@ -993,7 +998,7 @@ export default function AboutWithDriveImage({ overrideConfig }) {
                               className="text-center min-w-0"
                               style={{ willChange: "transform, opacity" }}
                             >
-                             <Counter itemKey={`${c.id}-${modeKey}`} to={Number(c.value) || 0} play={countersVisible} ms={1000} />
+                              <Counter itemKey={`${c.id}-${modeKey}`} to={Number(c.value) || 0} play={countersVisible} ms={1000} />
                               <span className="text-sm md:text-base text-white/70">{c.label}</span>
                             </motion.div>
                           ))
@@ -1020,7 +1025,11 @@ export default function AboutWithDriveImage({ overrideConfig }) {
                               <div className="flex items-start gap-3 text-sm md:text-base">
                                 <FaEnvelope className="text-cyan-200 shrink-0 mt-0.5" />
                                 <div className="min-w-0">
-                                  <a className="underline text-white/90 break-words"href="mailto:deepakofficial0103@gmail.com"onClick={() => logLinkClick("email")}>
+                                  <a
+                                    className="underline text-white/90 break-words"
+                                    href="mailto:deepakofficial0103@gmail.com"
+                                    onClick={() => logLinkClick("email")}
+                                  >
                                     deepakofficial0103@gmail.com
                                   </a>
                                 </div>
@@ -1111,7 +1120,7 @@ export default function AboutWithDriveImage({ overrideConfig }) {
                         style={{ willChange: "transform" }}
                       >
                         <div className="flex items-center justify-center gap-2">
-                          <span>{contentExpanded ? "Show Less" : "Read More"}</span>
+                                                    <span>{contentExpanded ? "Show Less" : "Read More"}</span>
                           <motion.div animate={{ rotate: contentExpanded ? 180 : 0, y: contentExpanded ? -1 : 1 }} transition={{ duration: 0.2 }} style={{ willChange: "transform" }}>
                             {contentExpanded ? <FaChevronUp /> : <FaChevronDown />}
                           </motion.div>
@@ -1120,45 +1129,44 @@ export default function AboutWithDriveImage({ overrideConfig }) {
                     )}
 
                     <div className="flex flex-col sm:flex-row gap-3">
-                                              <motion.button
-                            whileHover={{ y: -3 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={() => {
-                              logLinkClick("projects");
-                              smoothScroll("projects");
-                            }}
-                            className="px-5 py-2 rounded-md bg-cyan-400/20 border border-cyan-400/40 text-cyan-300 text-sm md:text-base font-medium text-center hover:bg-cyan-400/30 transition-all"
-                            style={{ willChange: "transform" }}
-                          >
-                            View Projects
-                          </motion.button>
+                      <motion.button
+                        whileHover={{ y: -3 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => {
+                          logLinkClick("projects");
+                          smoothScroll("projects");
+                        }}
+                        className="px-5 py-2 rounded-md bg-cyan-400/20 border border-cyan-400/40 text-cyan-300 text-sm md:text-base font-medium text-center hover:bg-cyan-400/30 transition-all"
+                        style={{ willChange: "transform" }}
+                      >
+                        View Projects
+                      </motion.button>
 
-                          <motion.button
-                            whileHover={{ y: -3 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={() => {
-                              logLinkClick("contact");
-                              smoothScroll("contact");
-                            }}
-                            className="px-5 py-2 rounded-md border border-white/10 hover:bg-white/6 text-sm md:text-base text-center transition-all"
-                            style={{ willChange: "transform" }}
-                          >
-                            Contact
-                          </motion.button>
+                      <motion.button
+                        whileHover={{ y: -3 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => {
+                          logLinkClick("contact");
+                          smoothScroll("contact");
+                        }}
+                        className="px-5 py-2 rounded-md border border-white/10 hover:bg-white/6 text-sm md:text-base text-center transition-all"
+                        style={{ willChange: "transform" }}
+                      >
+                        Contact
+                      </motion.button>
 
-                          <motion.button
-                            whileHover={{ y: -3 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={() => {
-                              logLinkClick("resume");
-                              smoothScroll("resume");
-                            }}
-                            className="px-5 py-2 rounded-md border border-white/10 hover:bg-white/6 text-sm md:text-base text-center transition-all"
-                            style={{ willChange: "transform" }}
-                          >
-                            Resume
-                          </motion.button>
-
+                      <motion.button
+                        whileHover={{ y: -3 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => {
+                          logLinkClick("resume");
+                          smoothScroll("resume");
+                        }}
+                        className="px-5 py-2 rounded-md border border-white/10 hover:bg-white/6 text-sm md:text-base text-center transition-all"
+                        style={{ willChange: "transform" }}
+                      >
+                        Resume
+                      </motion.button>
                     </div>
                   </div>
                 </div>

@@ -41,15 +41,17 @@ export default function Header() {
   const [error, setError] = useState(null);
   const [visible, setVisible] = useState(true);
   const [showResume, setShowResume] = useState(false);
+  const [showAllRoles, setShowAllRoles] = useState(false);
   const sectionRef = useRef(null);
-const sectionInView = useInView(sectionRef, { once: true, amount: 0.3 });
-const loggedOnce = useRef(false);
-useEffect(() => { 
+  const sectionInView = useInView(sectionRef, { once: true, amount: 0.3 });
+  const loggedOnce = useRef(false);
+  
+  useEffect(() => { 
     if (!loggedOnce.current) {
       logSectionView("home");
       loggedOnce.current = true;
     }
-}, []);
+  }, []);
 
 
   // ✅ Update profile data from Firestore
@@ -80,6 +82,22 @@ useEffect(() => {
     if (sectionRef.current) observer.observe(sectionRef.current);
     return () => observer.disconnect();
   }, []);
+
+  // ✅ Process roles for mobile display
+  const processedRoles = useMemo(() => {
+    if (!profileData?.roles) return { first2: "", remaining: "", hasMore: false };
+    
+    const rolesArray = profileData.roles.split("•").map(role => role.trim()).filter(Boolean);
+    const first2 = rolesArray.slice(0, 2).join(" • ");
+    const remaining = rolesArray.slice(2).join(" • ");
+    
+    return {
+      first2,
+      remaining,
+      hasMore: rolesArray.length > 2,
+      full: profileData.roles
+    };
+  }, [profileData?.roles]);
 
   // ✅ Animation variants
   const containerVariants = {
@@ -141,7 +159,7 @@ useEffect(() => {
     <header
       id="home"
       ref={sectionRef}
-      className={`relative w-full min-h-screen flex flex-col items-center justify-center text-white overflow-hidden px-4 sm:px-6 lg:px-8 transition-opacity duration-700 ${
+      className={`relative w-full min-h-screen flex flex-col items-center justify-center text-white overflow-hidden transition-opacity duration-700 ${
         visible ? "opacity-100" : "opacity-0"
       }`}
     >
@@ -230,13 +248,42 @@ useEffect(() => {
           Hi, I'm {profileData.name}
         </motion.h1>
 
-        {/* Roles */}
-        <motion.p
-          className="text-lg sm:text-xl md:text-2xl text-white/80 mb-4 sm:mb-6 max-w-2xl mx-auto px-4"
+        {/* Roles - Mobile: First 2, Desktop: All */}
+        <motion.div
+          className="mb-4 sm:mb-6 max-w-5xl mx-auto px-4"
           variants={itemVariants}
         >
-          {profileData.roles}
-        </motion.p>
+          {/* Mobile View */}
+          <div className="block sm:hidden">
+            <p className="text-base text-white/80 text-center">
+              {showAllRoles ? processedRoles.full : processedRoles.first2}
+            </p>
+            {processedRoles.hasMore && (
+              <button
+                onClick={() => setShowAllRoles(!showAllRoles)}
+                className="mt-2 text-cyansoft text-sm font-medium hover:text-cyan-300 transition-colors underline"
+              >
+                {showAllRoles ? "Show Less" : "Read More"}
+              </button>
+            )}
+          </div>
+
+          {/* Desktop View */}
+          <p
+            className="hidden sm:block text-base sm:text-lg md:text-xl text-white/80 whitespace-nowrap overflow-x-auto"
+            style={{ 
+              scrollbarWidth: 'none', 
+              msOverflowStyle: 'none',
+            }}
+          >
+            <style jsx="true">{`
+              p::-webkit-scrollbar {
+                display: none;
+              }
+            `}</style>
+            {processedRoles.full}
+          </p>
+        </motion.div>
 
         {/* Typewriter */}
         <motion.div
@@ -256,7 +303,7 @@ useEffect(() => {
 
         {/* ==== Buttons Section ==== */}
         <motion.div
-          className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center w-full max-w-2xl mx-auto mb-6 sm:mb-8 px-4"
+          className="flex flex-col sm:flex-row gap-3 justify-center items-stretch sm:items-center w-full max-w-3xl mx-auto mb-6 sm:mb-8 px-4"
           variants={itemVariants}
         >
           <a
@@ -267,7 +314,7 @@ useEffect(() => {
                 .getElementById("projects")
                 ?.scrollIntoView({ behavior: "smooth" });
             }}
-            className="w-full sm:w-auto bg-cyansoft text-black px-6 py-3 rounded-full font-semibold shadow-lg hover:bg-cyan-300 hover:scale-105 transition-all text-center min-w-[140px]"
+            className="flex-1 sm:flex-none bg-cyansoft text-black px-5 py-2.5 rounded-full font-semibold shadow-lg hover:bg-cyan-300 hover:scale-105 transition-all text-center text-sm sm:text-base whitespace-nowrap"
           >
             View Projects
           </a>
@@ -280,31 +327,29 @@ useEffect(() => {
                 .getElementById("contact")
                 ?.scrollIntoView({ behavior: "smooth" });
             }}
-            className="w-full sm:w-auto border border-white/20 text-white/90 px-6 py-3 rounded-full font-medium hover:border-cyansoft hover:bg-white/10 transition-all text-center min-w-[140px]"
+            className="flex-1 sm:flex-none border border-white/20 text-white/90 px-5 py-2.5 rounded-full font-medium hover:border-cyansoft hover:bg-white/10 transition-all text-center text-sm sm:text-base whitespace-nowrap"
           >
             Contact
           </a>
 
           <button
             onClick={() => {
-  logLinkClick("resume");
-  setShowResume(true);
-}}
-
-            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-cyansoft text-black px-6 py-3 rounded-full font-semibold shadow-lg hover:bg-cyan-300 hover:scale-105 transition-all min-w-[140px]"
+              logLinkClick("resume");
+              setShowResume(true);
+            }}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-cyansoft text-black px-5 py-2.5 rounded-full font-semibold shadow-lg hover:bg-cyan-300 hover:scale-105 transition-all text-sm sm:text-base whitespace-nowrap"
           >
-            <FaFileAlt className="w-4 h-4" /> Open Resume
+            <FaFileAlt className="w-3.5 h-3.5" /> Open Resume
           </button>
 
           <a
-  href={download}
-  download
-  onClick={() => logDownload("resume")}
-  className="w-full sm:w-auto flex items-center justify-center gap-2 border border-white/20 text-white/90 px-6 py-3 rounded-full font-medium hover:border-cyansoft hover:bg-white/10 transition-all min-w-[140px]"
->
-  <FaDownload className="w-4 h-4" /> Download
-</a>
-
+            href={download}
+            download
+            onClick={() => logDownload("resume")}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 border border-white/20 text-white/90 px-5 py-2.5 rounded-full font-medium hover:border-cyansoft hover:bg-white/10 transition-all text-sm sm:text-base whitespace-nowrap"
+          >
+            <FaDownload className="w-3.5 h-3.5" /> Download
+          </a>
         </motion.div>
 
         {/* ===== Social Icons ===== */}
@@ -316,41 +361,41 @@ useEffect(() => {
             const Icon = iconMap[key] || FaGlobe;
             return (
               <a
-  key={idx}
-  href={url}
-  target="_blank"
-  rel="noopener noreferrer"
-  onClick={() => logLinkClick(key)}
-  className="text-white/80 hover:text-cyansoft transition-all transform hover:scale-110"
->
-  <Icon className="w-6 h-6" />
-</a>
-
+                key={idx}
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => logLinkClick(key)}
+                className="text-white/80 hover:text-cyansoft transition-all transform hover:scale-110"
+              >
+                <Icon className="w-6 h-6" />
+              </a>
             );
           })}
         </motion.div>
-      </motion.div>
 
-      {/* ===== Explore More Button (Bottom) ===== */}
-      <motion.div
-        className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20"
-        animate={{ y: [0, 10, 0] }}
-        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-      >
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            document
-              .getElementById("about")
-              ?.scrollIntoView({ behavior: "smooth" });
-          }}
-          className="flex flex-col items-center gap-2 text-cyansoft hover:text-cyan-300 transition-colors group"
+        {/* ===== Explore More Button - Now inside main content for better centering ===== */}
+        <motion.div
+          className="mt-12 sm:mt-16 w-full flex justify-center"
+          variants={itemVariants}
+          animate={{ y: [0, 10, 0] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
         >
-          <span className="text-sm font-medium opacity-75 group-hover:opacity-100">
-            Explore More
-          </span>
-          <FaChevronDown className="w-5 h-5 group-hover:scale-125 transition-transform" />
-        </button>
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              document
+                .getElementById("about")
+                ?.scrollIntoView({ behavior: "smooth" });
+            }}
+            className="flex flex-col items-center gap-2 text-cyansoft hover:text-cyan-300 transition-colors group"
+          >
+            <span className="text-sm font-medium opacity-75 group-hover:opacity-100">
+              Explore More
+            </span>
+            <FaChevronDown className="w-5 h-5 group-hover:scale-125 transition-transform" />
+          </button>
+        </motion.div>
       </motion.div>
 
       {/* ===== Resume Modal ===== */}

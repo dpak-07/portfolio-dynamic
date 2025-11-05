@@ -320,7 +320,7 @@ export default function ResumeAdmin() {
       const enrichedConfig = {
         ...config,
         lastUpdated: new Date().toISOString(),
-        updatedBy: "kavshick",
+        updatedBy: "deepak",
         updatedAt: Timestamp.now(),
       }
 
@@ -688,7 +688,7 @@ export default function ResumeAdmin() {
                       <div className="crt-input bg-gray-800/50 cursor-not-allowed opacity-70">
                         {draft.updatedBy || "Not set"}
                       </div>
-                      <p className="text-xs text-cyan-400/70 mt-1">Set to 'kavshick' on save</p>
+                      <p className="text-xs text-cyan-400/70 mt-1">Set to 'deepak' on save</p>
                     </div>
                   </div>
                 </div>
