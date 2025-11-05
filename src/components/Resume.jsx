@@ -10,12 +10,16 @@ import {
   X,
   ChevronRight,
   Briefcase,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { useFirestoreData } from "@/hooks/useFirestoreData";
 import { logSectionView, logLinkClick, logDownload, logResumeOpen } from "../utils/analytics";
 
 export default function Resume() {
   const [isOpen, setIsOpen] = useState(false);
+  const [showAllSkills, setShowAllSkills] = useState(false);
+  const [showFullDescription, setShowFullDescription] = useState(false);
 
   const sectionRef = useRef(null);
   const sectionInView = useInView(sectionRef, { once: true, amount: 0.3 });
@@ -56,6 +60,19 @@ export default function Resume() {
     logDownload("resume");
     logLinkClick("download_resume");
   };
+
+  // Truncate description
+  const MAX_DESCRIPTION_LENGTH = 150;
+  const shouldTruncateDescription = resumeData?.description?.length > MAX_DESCRIPTION_LENGTH;
+  const displayDescription = showFullDescription || !shouldTruncateDescription
+    ? resumeData?.description
+    : `${resumeData?.description?.substring(0, MAX_DESCRIPTION_LENGTH)}...`;
+
+  // Limit skills display
+  const MAX_SKILLS_DISPLAY = 6;
+  const allSkills = resumeData?.skills || [];
+  const displayedSkills = showAllSkills ? allSkills : allSkills.slice(0, MAX_SKILLS_DISPLAY);
+  const hasMoreSkills = allSkills.length > MAX_SKILLS_DISPLAY;
 
   if (loading) {
     return (
@@ -165,9 +182,31 @@ export default function Resume() {
           <h2 className="text-5xl md:text-7xl font-black text-white mb-3 bg-gradient-to-r from-white via-cyan-200 to-cyan-500 bg-clip-text text-transparent">
             Career Overview
           </h2>
-          <p className="text-white/60 text-lg md:text-xl max-w-3xl">
-            {resumeData.description}
-          </p>
+          
+          {/* Description with Show More */}
+          <div className="text-white/60 text-lg md:text-xl max-w-3xl">
+            <p className="mb-2">{displayDescription}</p>
+            {shouldTruncateDescription && (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowFullDescription(!showFullDescription)}
+                className="inline-flex items-center gap-1 text-cyan-400 hover:text-cyan-300 text-sm font-medium transition-colors"
+              >
+                {showFullDescription ? (
+                  <>
+                    <span>Show Less</span>
+                    <ChevronUp className="w-4 h-4" />
+                  </>
+                ) : (
+                  <>
+                    <span>Show More</span>
+                    <ChevronDown className="w-4 h-4" />
+                  </>
+                )}
+              </motion.button>
+            )}
+          </div>
         </motion.div>
 
         {/* Main Content */}
@@ -254,25 +293,53 @@ export default function Resume() {
               <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                 <ChevronRight className="w-5 h-5 text-cyan-400" />
                 Technical Skills
+                <span className="text-sm text-white/40 font-normal ml-2">
+                  ({allSkills.length} {allSkills.length === 1 ? 'skill' : 'skills'})
+                </span>
               </h3>
-              <div className="flex flex-wrap gap-3">
-                {resumeData.skills?.map((skill, i) => (
-                  <motion.span
-                    key={i}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: i * 0.03 }}
-                    viewport={{ once: true }}
-                    whileHover={{ scale: 1.1, y: -3 }}
-                    className="relative group/skill"
-                  >
-                    <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg blur opacity-0 group-hover/skill:opacity-30 transition" />
-                    <span className="relative block px-4 py-2 bg-black/40 border border-white/20 rounded-lg text-white/90 text-sm font-medium hover:border-cyan-400/50 hover:text-cyan-400 transition-all">
-                      {skill}
-                    </span>
-                  </motion.span>
-                ))}
+              
+              <div className="flex flex-wrap gap-3 mb-4">
+                <AnimatePresence mode="popLayout">
+                  {displayedSkills.map((skill, i) => (
+                    <motion.span
+                      key={skill}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      transition={{ delay: i * 0.03 }}
+                      whileHover={{ scale: 1.1, y: -3 }}
+                      className="relative group/skill"
+                    >
+                      <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg blur opacity-0 group-hover/skill:opacity-30 transition" />
+                      <span className="relative block px-4 py-2 bg-black/40 border border-white/20 rounded-lg text-white/90 text-sm font-medium hover:border-cyan-400/50 hover:text-cyan-400 transition-all">
+                        {skill}
+                      </span>
+                    </motion.span>
+                  ))}
+                </AnimatePresence>
               </div>
+
+              {/* Show More/Less Button for Skills */}
+              {hasMoreSkills && (
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setShowAllSkills(!showAllSkills)}
+                  className="w-full mt-2 px-4 py-3 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 hover:from-cyan-500/20 hover:to-purple-500/20 border border-cyan-500/30 hover:border-cyan-500/50 rounded-xl text-cyan-400 hover:text-cyan-300 font-medium text-sm transition-all flex items-center justify-center gap-2"
+                >
+                  {showAllSkills ? (
+                    <>
+                      <span>Show Less Skills</span>
+                      <ChevronUp className="w-4 h-4" />
+                    </>
+                  ) : (
+                    <>
+                      <span>Show {allSkills.length - MAX_SKILLS_DISPLAY} More Skills</span>
+                      <ChevronDown className="w-4 h-4" />
+                    </>
+                  )}
+                </motion.button>
+              )}
             </div>
           </motion.div>
         </div>
