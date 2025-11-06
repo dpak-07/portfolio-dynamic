@@ -19,6 +19,25 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 /* -------------------------------------------------------
+   🎛️ Load Control Flags
+   Set to true to load that collection, false to skip
+------------------------------------------------------- */
+const LOAD_FLAGS = {
+  admin: false,
+  sections: false,
+  profile: false,
+  resume: false,
+  about: false,
+  techStack: false,
+  footer: false,
+  projects: false,
+  certifications: false,
+  timeline: true,        // ✅ NEW: Timeline data
+  analytics: false,
+  config: false,
+};
+
+/* -------------------------------------------------------
    🧩 Admin Data
 ------------------------------------------------------- */
 const adminData = {
@@ -461,17 +480,152 @@ const certificationsData = {
     },
   ],
 };
-// ✅ src/utils/analyticsSeed.js
-// Production baseline analytics seed — all counters start from 0
 
-export const analyticsSeed = {
+/* -------------------------------------------------------
+   🕒 TIMELINE DATA - From Your React Component
+------------------------------------------------------- */
+const timelineData = {
+  events: [
+    {
+      year: "2022",
+      period: "Started Learning",
+      title: "Full-Stack Certification HDHD in (CSC)",
+      icon: "Award",
+      color: "from-blue-400 to-indigo-500",
+      accentColor: "blue",
+      description: "Completed comprehensive Full Stack Web Development course at CSC - HDFC Skill Development Center, mastering C, C++, Java, and modern web technologies with extensive hands-on projects.",
+      achievements: [
+        "Full-stack development certification",
+        "Mastered C, C++, Java",
+        "Built end-to-end web applications",
+      ],
+      skills: ["C", "C++", "Java", "Full-Stack Development", "Web Technologies"],
+    },
+    {
+      year: "2023",
+      period: "AI & Data Science",
+      title: "College - Velammal Engineering",
+      icon: "GraduationCap",
+      color: "from-orange-400 to-red-500",
+      accentColor: "orange",
+      description: "Started B.Tech in AI & Data Science at Velammal Engineering College, Chennai. Specializing in Machine Learning, Deep Learning, and Data Mining.",
+      achievements: [
+        "3rd Year AI & Data Science",
+        "Specialized in ML & Deep Learning",
+        "Applied AI in real-world projects",
+      ],
+      skills: ["Machine Learning", "Deep Learning", "Data Mining", "Python", "TensorFlow", "PyTorch"],
+    },
+    {
+      year: "2024",
+      period: "CodeSoft Internship",
+      title: "Web Development Intern",
+      icon: "Briefcase",
+      color: "from-emerald-400 to-teal-500",
+      accentColor: "emerald",
+      description: "Completed web development internship at CodeSoft, building interactive calculators, responsive landing pages, and portfolio websites using HTML, CSS, and JavaScript.",
+      achievements: [
+        "Built interactive calculator app",
+        "Created responsive landing pages",
+        "Developed professional frontend skills",
+      ],
+      skills: ["HTML", "CSS", "JavaScript", "Frontend Development", "Responsive Design"],
+    },
+    
+    {
+      year: "2024-2025",
+      period: "Leadership & Team Lead",
+      title: "Team Lead - 404 Found US",
+      icon: "Trophy",
+      color: "from-fuchsia-400 to-rose-500",
+      accentColor: "fuchsia",
+      description: "Leading 6-member team '404 Found US' for Smart India Hackathon 2025 with CredsOne project. Managing team coordination, project milestones, and mentoring members in technical domains.",
+      achievements: [
+        "Managing 6-member development team",
+        "SIH 2025 project leadership",
+        "Team coordination & mentorship",
+      ],
+      skills: ["Team Leadership", "Project Management", "Mentoring", "Coordination"],
+    },
+    {
+      year: "2025",
+      period: "Zidio Internship",
+      title: "Backend Developer",
+      icon: "Rocket",
+      color: "from-violet-400 to-purple-600",
+      accentColor: "violet",
+      description: "Developed MERN stack projects with comprehensive admin functionalities and advanced Excel data analysis platform. Gained expertise in backend architecture and database management.",
+      achievements: [
+        "Excel Analysis Platform built",
+        "Advanced data visualization",
+        "Backend architecture expertise",
+      ],
+      skills: ["React", "Node.js", "MongoDB", "Express", "Data Analytics", "Backend Development"],
+    },
+    {
+      year: "2025",
+      period: "AI & Blockchain Focus",
+      title: "Study Spark & CredsOne",
+      icon: "Zap",
+      color: "from-indigo-400 to-blue-600",
+      accentColor: "indigo",
+      description: "Building AI-powered learning platform Study Spark (VECT Hackelite 2025) with Llama 3 integration and CredsOne blockchain credential system for SIH 2025.",
+      achievements: [
+        "Study Spark AI platform developed",
+        "CredsOne blockchain system (SIH 2025)",
+        "Llama 3 AI integration",
+      ],
+      skills: ["AI/ML", "Llama 3", "Blockchain", "React", "Node.js", "Web3"],
+    },
+    {
+      year: "2025",
+      period: "Cloud & Security",
+      title: "Multi-Domain Expertise",
+      icon: "Cloud",
+      color: "from-cyan-400 to-emerald-500",
+      accentColor: "cyan",
+      description: "Working on Phushit security app for fake website detection and Velammal College website as backend & cloud engineer with AWS deployment.",
+      achievements: [
+        "Phushit multi-platform security app",
+        "Velammal website backend & cloud",
+        "AWS & Docker deployment",
+      ],
+      skills: ["AWS EC2", "AWS S3", "Flask", "Security", "Cloud Engineering"],
+    },
+    {
+      year: "2025",
+      period: "UI/UX & Design",
+      title: "Noviteck UI/UX Master Class",
+      icon: "Lightbulb",
+      color: "from-rose-400 to-pink-500",
+      accentColor: "rose",
+      description: "Completed intensive 30-day UI/UX Design Master Class covering Figma, WordPress, and modern design principles with practical project work.",
+      achievements: [
+        "30-day intensive UI/UX training",
+        "Figma & WordPress expertise",
+        "User-centered design skills",
+      ],
+      skills: ["Figma", "WordPress", "UI/UX Design", "Prototyping"],
+    },
+  ],
+  stats: [
+    { label: "Years Active", value: "5", icon: "TrendingUp" },
+    { label: "Projects Built", value: "15", icon: "Target" },
+    { label: "Team Members Led", value: "6", icon: "Users" },
+    { label: "Hackathons", value: "6", icon: "Trophy" },
+  ],
+};
+
+/* -------------------------------------------------------
+   📊 Analytics Data
+------------------------------------------------------- */
+const analyticsSeed = {
   totals: {
     totalViews: 0,
     totalClicks: 0,
     totalDownloads: 0,
-    totalResumeOpens: 0, // tracks when users open your resume
+    totalResumeOpens: 0,
   },
-
   sections: {
     home: 0,
     about: 0,
@@ -483,7 +637,6 @@ export const analyticsSeed = {
     contact: 0,
     blog: 0,
   },
-
   links: {
     github: 0,
     linkedin: 0,
@@ -492,75 +645,106 @@ export const analyticsSeed = {
     twitter: 0,
     website: 0,
   },
-
   daily: {},
 };
 
-
-export default analyticsSeed;
-
-// Store analytics documents
-await setDoc(doc(db, "analytics", "totals"), analyticsSeed.totals);
-await setDoc(doc(db, "analytics", "sections"), analyticsSeed.sections);
-await setDoc(doc(db, "analytics", "links"), analyticsSeed.links);
-await setDoc(doc(db, "analytics", "daily"), analyticsSeed.daily);
 /* -------------------------------------------------------
-   🚀 Firestore Seeder
+   🚀 Firestore Seeder with Load Flags
 ------------------------------------------------------- */
 async function seed() {
   try {
-    // Admin credentials
-    // await setDoc(doc(db, "admin", "credentials"), adminData);
-    
-    // // Sections visibility
-    // await setDoc(doc(db, "sections", "visibility"), sectionsData);
-    
-    // // Profile data
-    // await setDoc(doc(db, "portfolio", "profile"), profileData);
-    
-    // // Resume data
-    // await setDoc(doc(db, "resume", "data"), resumeData);
-    
-    // // About page
-    // await setDoc(doc(db, "aboutpage", "main"), aboutpageconfig);
-    
-    // // Tech stack
-    // await setDoc(doc(db, "techStack", "categories"), { techStackData });
-    
-    // // Footer
-    // await setDoc(doc(db, "footer", "details"), { footerData });
-    
-    // // Projects data
-    // await setDoc(doc(db, "projects", "data"), projectsData);
-    
-    // // Certifications
-    // await setDoc(doc(db, "certifications", "data"), certificationsData);
-    
-    // // Config
-    // await setDoc(doc(db, "config", "portfolio"), { theme: "holo" });
+    let loadedCollections = [];
 
-    console.log("✅ All collections seeded successfully!");
-    console.log("📦 Collections created:");
-    console.log("   - admin/credentials");
-    console.log("   - sections/visibility");
-    console.log("   - portfolio/profile");
-    console.log("   - resume/data");
-    console.log("   - aboutpage/main");
-    console.log("   - techStack/categories");
-    console.log("   - footer/details");
-    console.log("   - projects/data");
-    console.log("   - certifications/data");
-    console.log("   - config/portfolio");
+    // Admin credentials
+    if (LOAD_FLAGS.admin) {
+      await setDoc(doc(db, "admin", "credentials"), adminData);
+      loadedCollections.push("admin/credentials");
+    }
     
-    console.log("\n🎯 Data Highlights:");
-    console.log("   - Leadership: Team Lead for 6-member '404 Found US'");
-    console.log("   - 15+ comprehensive projects across multiple domains");
-    console.log("   - 6+ national hackathon participations with team leadership");
-    console.log("   - 2 professional internships with real-world experience");
-    console.log("   - SIH 2025 project coordination and team management");
-    console.log("   - Comprehensive tech stack with 50+ technologies + leadership skills");
-    console.log("   - Location: Chennai, India | College: Velammal Engineering College");
-    console.log("   - All real project images and certification proofs integrated");
+    // Sections visibility
+    if (LOAD_FLAGS.sections) {
+      await setDoc(doc(db, "sections", "visibility"), sectionsData);
+      loadedCollections.push("sections/visibility");
+    }
+    
+    // Profile data
+    if (LOAD_FLAGS.profile) {
+      await setDoc(doc(db, "portfolio", "profile"), profileData);
+      loadedCollections.push("portfolio/profile");
+    }
+    
+    // Resume data
+    if (LOAD_FLAGS.resume) {
+      await setDoc(doc(db, "resume", "data"), resumeData);
+      loadedCollections.push("resume/data");
+    }
+    
+    // About page
+    if (LOAD_FLAGS.about) {
+      await setDoc(doc(db, "aboutpage", "main"), aboutpageconfig);
+      loadedCollections.push("aboutpage/main");
+    }
+    
+    // Tech stack
+    if (LOAD_FLAGS.techStack) {
+      await setDoc(doc(db, "techStack", "categories"), { techStackData });
+      loadedCollections.push("techStack/categories");
+    }
+    
+    // Footer
+    if (LOAD_FLAGS.footer) {
+      await setDoc(doc(db, "footer", "details"), { footerData });
+      loadedCollections.push("footer/details");
+    }
+    
+    // Projects data
+    if (LOAD_FLAGS.projects) {
+      await setDoc(doc(db, "projects", "data"), projectsData);
+      loadedCollections.push("projects/data");
+    }
+    
+    // Certifications
+    if (LOAD_FLAGS.certifications) {
+      await setDoc(doc(db, "certifications", "data"), certificationsData);
+      loadedCollections.push("certifications/data");
+    }
+
+    // ✅ TIMELINE - NEW
+    if (LOAD_FLAGS.timeline) {
+      await setDoc(doc(db, "timeline", "data"), timelineData);
+      loadedCollections.push("timeline/data");
+    }
+
+    // Analytics
+    if (LOAD_FLAGS.analytics) {
+      await setDoc(doc(db, "analytics", "totals"), analyticsSeed.totals);
+      await setDoc(doc(db, "analytics", "sections"), analyticsSeed.sections);
+      await setDoc(doc(db, "analytics", "links"), analyticsSeed.links);
+      await setDoc(doc(db, "analytics", "daily"), analyticsSeed.daily);
+      loadedCollections.push("analytics/totals", "analytics/sections", "analytics/links", "analytics/daily");
+    }
+    
+    // Config
+    if (LOAD_FLAGS.config) {
+      await setDoc(doc(db, "config", "portfolio"), { theme: "holo" });
+      loadedCollections.push("config/portfolio");
+    }
+
+    console.log("✅ Seeding completed successfully!");
+    console.log("\n📦 Collections LOADED:");
+    loadedCollections.forEach(col => console.log(`   ✓ ${col}`));
+
+    const skippedCollections = Object.keys(LOAD_FLAGS).filter(key => !LOAD_FLAGS[key]);
+    if (skippedCollections.length > 0) {
+      console.log("\n⏭️  Collections SKIPPED:");
+      skippedCollections.forEach(col => console.log(`   ✗ ${col}`));
+    }
+
+    console.log("\n🎯 Timeline Data Summary:");
+    console.log(`   - ${timelineData.events.length} timeline events loaded`);
+    console.log(`   - ${timelineData.stats.length} stats counters configured`);
+    console.log("   - Journey spans from 2021 to 2026+");
+    console.log("   - Covers: Foundation → Web Dev → College → Internships → Leadership → Hackathons → Vision");
     
     process.exit(0);
   } catch (err) {

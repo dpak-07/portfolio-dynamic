@@ -35,23 +35,38 @@ import MassiveAnimatedBlogPage from "./components/blogpage";
 // Firestore hook
 import { useFirestoreData } from "./hooks/useFirestoreData";
 
+/* ✅ FIREBASE TOGGLE CONFIGURATION - Set to true to fetch from Firebase, false to use defaults */
+const SHOULD_FETCH_FROM_FIREBASE = true;
+
+/* ✅ Default sections configuration (used when Firebase fetching is disabled) */
+const DEFAULT_SECTIONS_CONFIG = {
+  home: true,
+  about: true,
+  "tech-stack": true,
+  projects: true,
+  resume: true,
+  certifications: true,
+  timeline: true,
+  contact: true,
+  blog: true,
+};
+
 /* ✅ Fetch Sections Configuration from Firestore */
 function SectionsConfigLoader({ children }) {
-  const { data: sectionsData, loading: sectionsLoading } = useFirestoreData("sections", "visibility");
+  const { data: sectionsData, loading: sectionsLoading } = useFirestoreData(
+    SHOULD_FETCH_FROM_FIREBASE ? "sections" : null,
+    SHOULD_FETCH_FROM_FIREBASE ? "visibility" : null
+  );
 
-  const sectionsConfig = sectionsData || {
-    home: true,
-    about: true,
-    "tech-stack": true,
-    projects: true,
-    resume: true,
-    certifications: true,
-    timeline: true,
-    contact: true,
-    blog: true,
-  };
+  /* ✅ Use Firebase data if fetching is enabled, otherwise use default config */
+  const sectionsConfig = SHOULD_FETCH_FROM_FIREBASE
+    ? sectionsData || DEFAULT_SECTIONS_CONFIG
+    : DEFAULT_SECTIONS_CONFIG;
 
-  return children(sectionsConfig, sectionsLoading);
+  /* ✅ If Firebase is disabled, sections are loaded instantly */
+  const actualLoading = SHOULD_FETCH_FROM_FIREBASE ? sectionsLoading : false;
+
+  return children(sectionsConfig, actualLoading);
 }
 
 /* ✅ AdminRoute — Protect admin pages */
