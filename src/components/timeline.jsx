@@ -1,3 +1,4 @@
+"use client";
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
 import {
@@ -434,6 +435,9 @@ export default function AutoScrollCarouselTimeline() {
   const [isAutoPlay, setIsAutoPlay] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
 
+  // Add a ref for the timeline container and expose an id for easy navigation
+  const timelineRef = useRef(null);
+
   // Fetch timeline data from Firestore
   const { data: timelineData } = useFirestoreData("timeline", "data");
   
@@ -646,8 +650,28 @@ export default function AutoScrollCarouselTimeline() {
     logLinkClick('journey-email-cta');
   };
 
+  // If page navigates to "#timeline" or hash changes, scroll into view
+  useEffect(() => {
+    const maybeScroll = () => {
+      if (timelineRef.current && window.location.hash === "#timeline") {
+        timelineRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    };
+
+    // on mount
+    maybeScroll();
+
+    // listen for future hash changes
+    window.addEventListener("hashchange", maybeScroll);
+    return () => window.removeEventListener("hashchange", maybeScroll);
+  }, []);
+
   return (
-    <div className="relative min-h-screen w-full bg-gradient-to-br from-slate-950 via-black to-slate-900 text-white overflow-hidden">
+    <div
+      id="timeline"
+      ref={timelineRef}
+      className="relative min-h-screen w-full bg-gradient-to-br from-slate-950 via-black to-slate-900 text-white overflow-hidden"
+    >
       {/* Animated background orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div

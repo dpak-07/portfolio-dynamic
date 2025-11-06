@@ -13,9 +13,9 @@ export default function Navbar() {
     "about",
     "tech-stack",
     "projects",
-    "resume",
     "certifications",
     "timeline",
+    "resume",
     "contact",
   ];
 
