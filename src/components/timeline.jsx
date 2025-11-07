@@ -1,5 +1,6 @@
+"use client";
 import React, { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence, useMotionValue, useTransform, useInView } from "framer-motion";
+import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
 import {
   Brain,
   Code,
@@ -77,6 +78,8 @@ const AnimatedCounter = ({ value, duration = 2, isVisible }) => {
 
     let start = 0;
     const end = parseInt(value) || 0;
+    if (end === 0) return;
+    
     const increment = end / (duration * 60);
 
     const timer = setInterval(() => {
@@ -289,6 +292,7 @@ const DetailModal = ({ event, isOpen, onClose }) => {
 };
 
 // Mini card component - Rotation on desktop, smooth on mobile
+// Mini card component - Rotation on desktop, smooth on mobile
 const MiniCard = ({ event, onClick, isVisible, index }) => {
   // Handle icon - convert string to component if needed
   const IconComponent = typeof event.icon === 'string' ? iconMap[event.icon] : event.icon;
@@ -311,13 +315,23 @@ const MiniCard = ({ event, onClick, isVisible, index }) => {
       whileHover={{ scale: 1.15, y: -8 }}
       whileTap={{ scale: 0.95 }}
       className="flex-shrink-0 focus:outline-none touch-manipulation"
-      initial={isMobile ? { opacity: 0, scale: 0.8 } : { opacity: 0, scale: 0.5, rotate: -180 }}
+      initial={
+        isMobile 
+          ? { opacity: 0, scale: 0.8 } 
+          : { opacity: 0, scale: 0.5, rotate: -180 }
+      }
       animate={
         isVisible
-          ? (isMobile ? { opacity: 1, scale: 1 } : { opacity: 1, scale: 1, rotate: 0 })
-          : (isMobile ? { opacity: 0, scale: 0.8 } : { opacity: 0, scale: 0.5, rotate: -180 })
+          ? { opacity: 1, scale: 1, rotate: 0 }
+          : isMobile 
+            ? { opacity: 0, scale: 0.8, rotate: 0 } 
+            : { opacity: 0, scale: 0.5, rotate: -180 }
       }
-      exit={isMobile ? { opacity: 0, scale: 0.8 } : { opacity: 0, scale: 0.5, rotate: 180 }}
+      exit={
+        isMobile 
+          ? { opacity: 0, scale: 0.8 } 
+          : { opacity: 0, scale: 0.5, rotate: 180 }
+      }
       transition={
         isMobile
           ? { duration: 0.4, delay: index * 0.1, ease: "easeOut" }
@@ -365,17 +379,39 @@ const MiniCard = ({ event, onClick, isVisible, index }) => {
   );
 };
 
+// Default stats data
+const defaultStats = [
+  {
+    icon: "TrendingUp",
+    value: "50",
+    label: "Projects Completed"
+  },
+  {
+    icon: "Trophy",
+    value: "15",
+    label: "Hackathons Participated"
+  },
+  {
+    icon: "Users",
+    value: "6",
+    label: "Team Members Led"
+  },
+  {
+    icon: "Code",
+    value: "1000+",
+    label: "Hours of Coding"
+  }
+];
+
 // Stats component
 const StatsSection = () => {
   const [ref, isVisible] = useScrollReveal(0.3);
   
   // Fetch stats data from Firestore
-  const { data: timelineData } = useFirestoreData("timeline", "data");
+  const { data: timelineData, loading } = useFirestoreData("timeline", "data");
   
-  const stats = timelineData?.stats || null;
-
-  // Don't render if no stats available
-  if (!stats || stats.length === 0) return null;
+  // Use default stats if Firestore data is empty or loading
+  const stats = (timelineData?.stats && timelineData.stats.length > 0) ? timelineData.stats : defaultStats;
 
   return (
     <motion.div
@@ -434,25 +470,8 @@ export default function AutoScrollCarouselTimeline() {
   const [isAutoPlay, setIsAutoPlay] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
 
-  // ✅ Section tracking with ref
-  const sectionRef = useRef(null);
-  const hasLoggedView = useRef(false);
-  
-  const sectionInView = useInView(sectionRef, { 
-    once: true, 
-    amount: 0.2,
-    margin: "-100px"
-  });
-
-  // ✅ Log section view once when in view
-  useEffect(() => {
-    if (sectionInView && !hasLoggedView.current) {
-      console.log("✅ Journey Timeline section in view - logging...");
-      logSectionView("journey-timeline");
-      logUniqueUser();
-      hasLoggedView.current = true;
-    }
-  }, [sectionInView]);
+  // Add a ref for the timeline container and expose an id for easy navigation
+  const timelineRef = useRef(null);
 
   // Fetch timeline data from Firestore
   const { data: timelineData } = useFirestoreData("timeline", "data");
@@ -583,6 +602,12 @@ export default function AutoScrollCarouselTimeline() {
 
   const timelineEvents = timelineData?.events || defaultTimelineEvents;
 
+  // Analytics - Log section view and unique user
+  useEffect(() => {
+    logSectionView("journey-timeline");
+    logUniqueUser();
+  }, []);
+
   // Detect mobile
   useEffect(() => {
     const checkMobile = () => {
@@ -633,7 +658,6 @@ export default function AutoScrollCarouselTimeline() {
     setSelectedEvent(event);
     setIsAutoPlay(false);
     // Analytics - Log event click
-    console.log(`📅 Timeline event clicked: ${event.year} - ${event.period}`);
     logLinkClick(`timeline-event-${event.year}-${event.period}`);
   };
 
@@ -643,8 +667,6 @@ export default function AutoScrollCarouselTimeline() {
   };
 
   const handleDotClick = (index) => {
-    console.log(`📍 Timeline dot ${index} clicked - logging...`);
-    logLinkClick(`timeline_dot_${index}`);
     setCurrentIndex(index);
     setIsAutoPlay(false);
   };
@@ -655,21 +677,35 @@ export default function AutoScrollCarouselTimeline() {
       contactSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
     // Analytics - Log contact click
-    console.log("📧 Contact CTA clicked from timeline");
     logLinkClick('journey-contact-cta');
   };
 
   const handleEmailClick = () => {
     // Analytics - Log email click
-    console.log("✉️ Email CTA clicked from timeline");
     logLinkClick('journey-email-cta');
   };
 
+  // If page navigates to "#timeline" or hash changes, scroll into view
+  useEffect(() => {
+    const maybeScroll = () => {
+      if (timelineRef.current && window.location.hash === "#timeline") {
+        timelineRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    };
+
+    // on mount
+    maybeScroll();
+
+    // listen for future hash changes
+    window.addEventListener("hashchange", maybeScroll);
+    return () => window.removeEventListener("hashchange", maybeScroll);
+  }, []);
+
   return (
-    <div 
-      id="journey-timeline"
-      ref={sectionRef}
-      className="relative min-h-screen w-full bg-gradient-to-br from-slate-950 via-black to-slate-900 text-white overflow-hidden scroll-mt-20"
+    <div
+      id="timeline"
+      ref={timelineRef}
+      className="relative min-h-screen w-full bg-gradient-to-br from-slate-950 via-black to-slate-900 text-white overflow-hidden"
     >
       {/* Animated background orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -771,7 +807,6 @@ export default function AutoScrollCarouselTimeline() {
                     opacity: currentIndex === i ? 1 : 0.4,
                   }}
                   className="h-1.5 md:h-2 rounded-full bg-gradient-to-r from-cyan-400 to-purple-600 transition-all cursor-pointer hover:opacity-80 touch-manipulation"
-                  aria-label={`Go to timeline item ${i + 1}`}
                 />
               ))}
             </motion.div>
