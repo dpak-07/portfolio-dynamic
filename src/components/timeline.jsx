@@ -1,6 +1,5 @@
-"use client";
 import React, { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
+import { motion, AnimatePresence, useMotionValue, useTransform, useInView } from "framer-motion";
 import {
   Brain,
   Code,
@@ -435,8 +434,25 @@ export default function AutoScrollCarouselTimeline() {
   const [isAutoPlay, setIsAutoPlay] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
 
-  // Add a ref for the timeline container and expose an id for easy navigation
-  const timelineRef = useRef(null);
+  // ✅ Section tracking with ref
+  const sectionRef = useRef(null);
+  const hasLoggedView = useRef(false);
+  
+  const sectionInView = useInView(sectionRef, { 
+    once: true, 
+    amount: 0.2,
+    margin: "-100px"
+  });
+
+  // ✅ Log section view once when in view
+  useEffect(() => {
+    if (sectionInView && !hasLoggedView.current) {
+      console.log("✅ Journey Timeline section in view - logging...");
+      logSectionView("journey-timeline");
+      logUniqueUser();
+      hasLoggedView.current = true;
+    }
+  }, [sectionInView]);
 
   // Fetch timeline data from Firestore
   const { data: timelineData } = useFirestoreData("timeline", "data");
@@ -567,12 +583,6 @@ export default function AutoScrollCarouselTimeline() {
 
   const timelineEvents = timelineData?.events || defaultTimelineEvents;
 
-  // Analytics - Log section view and unique user
-  useEffect(() => {
-    logSectionView("journey-timeline");
-    logUniqueUser();
-  }, []);
-
   // Detect mobile
   useEffect(() => {
     const checkMobile = () => {
@@ -623,6 +633,7 @@ export default function AutoScrollCarouselTimeline() {
     setSelectedEvent(event);
     setIsAutoPlay(false);
     // Analytics - Log event click
+    console.log(`📅 Timeline event clicked: ${event.year} - ${event.period}`);
     logLinkClick(`timeline-event-${event.year}-${event.period}`);
   };
 
@@ -632,6 +643,8 @@ export default function AutoScrollCarouselTimeline() {
   };
 
   const handleDotClick = (index) => {
+    console.log(`📍 Timeline dot ${index} clicked - logging...`);
+    logLinkClick(`timeline_dot_${index}`);
     setCurrentIndex(index);
     setIsAutoPlay(false);
   };
@@ -642,35 +655,21 @@ export default function AutoScrollCarouselTimeline() {
       contactSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
     // Analytics - Log contact click
+    console.log("📧 Contact CTA clicked from timeline");
     logLinkClick('journey-contact-cta');
   };
 
   const handleEmailClick = () => {
     // Analytics - Log email click
+    console.log("✉️ Email CTA clicked from timeline");
     logLinkClick('journey-email-cta');
   };
 
-  // If page navigates to "#timeline" or hash changes, scroll into view
-  useEffect(() => {
-    const maybeScroll = () => {
-      if (timelineRef.current && window.location.hash === "#timeline") {
-        timelineRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-    };
-
-    // on mount
-    maybeScroll();
-
-    // listen for future hash changes
-    window.addEventListener("hashchange", maybeScroll);
-    return () => window.removeEventListener("hashchange", maybeScroll);
-  }, []);
-
   return (
-    <div
-      id="timeline"
-      ref={timelineRef}
-      className="relative min-h-screen w-full bg-gradient-to-br from-slate-950 via-black to-slate-900 text-white overflow-hidden"
+    <div 
+      id="journey-timeline"
+      ref={sectionRef}
+      className="relative min-h-screen w-full bg-gradient-to-br from-slate-950 via-black to-slate-900 text-white overflow-hidden scroll-mt-20"
     >
       {/* Animated background orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -772,6 +771,7 @@ export default function AutoScrollCarouselTimeline() {
                     opacity: currentIndex === i ? 1 : 0.4,
                   }}
                   className="h-1.5 md:h-2 rounded-full bg-gradient-to-r from-cyan-400 to-purple-600 transition-all cursor-pointer hover:opacity-80 touch-manipulation"
+                  aria-label={`Go to timeline item ${i + 1}`}
                 />
               ))}
             </motion.div>
