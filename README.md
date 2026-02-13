@@ -176,7 +176,7 @@ function MyComponent() {
 📱 **Mobile Optimization** - Touch-friendly, responsive
 ⚡ **Fast Loading** - Vite optimization, lazy loading
 🌙 **Dark Mode** - Native dark theme
-🎯 **Analytics** - Page views, device info, traffic source
+📊 **Analytics** - Firebase, Google Analytics 4 & GTM integration
 🔐 **Secure Admin** - Protected routes with auth
 
 ---
@@ -345,11 +345,43 @@ npm run test:coverage   # Generate coverage report
 
 ## ⚙️ Environment Configuration
 
+### Google Analytics Setup
+The project includes **Google Analytics 4** and **Google Tag Manager** integration:
+
+```env
+# Firebase Measurement ID (Google Analytics)
+VITE_FIREBASE_MEASUREMENT_ID=G-97XVZZ0X98
+
+# Google Tag Manager
+VITE_GTM_ID=GTM-WZML4WNP
+```
+
+**How it works:**
+- `initializeGA()` - Loads GA4 script and initializes tracking
+- `initializeGTM()` - Loads GTM container for enhanced tracking
+- Both are called automatically in `App.jsx` on app mount
+- Custom events can be sent with `sendGAEvent(eventName, data)`
+
+**What's Tracked:**
+✅ Page views and navigation
+✅ Click events and interactions
+✅ Form submissions
+✅ Download events
+✅ Custom user interactions
+✅ Error events
+
 ### Firebase Setup
 1. Create Firebase project at [firebase.google.com](https://firebase.google.com)
 2. Enable Firestore Database
 3. Create admin user account
 4. Copy credentials to `.env.local`
+
+### Google Analytics Setup
+1. Create Google Analytics 4 property at [analytics.google.com](https://analytics.google.com)
+2. Get your **Measurement ID** (format: G-XXXXXXXXXX)
+3. Create Google Tag Manager container at [tagmanager.google.com](https://tagmanager.google.com)
+4. Get your **GTM ID** (format: GTM-XXXXXXXXX)
+5. Add both to `.env` file
 
 ### Google Analytics Setup
 1. Create GA4 property at [analytics.google.com](https://analytics.google.com)
@@ -433,6 +465,89 @@ const { data, loading, error } = useFirestoreData("collection", "document");
 
 ---
 
+## 📊 Analytics & Tracking
+
+### Google Analytics 4 Integration
+The project automatically tracks user behavior with **Google Analytics 4**:
+
+**Initialization:**
+```javascript
+// src/App.jsx - Auto-called on app load
+import { initializeGA, initializeGTM, sendGAEvent } from "./utils/analytics";
+
+initializeGA();      // Initialize GA4
+initializeGTM();     // Initialize GTM
+```
+
+**Tracked Events:**
+- Page views and navigation
+- Section views (with 2-min throttling to prevent duplicates)
+- Link clicks to external sites
+- Resume downloads
+- Contact form submissions
+- Blog interactions
+- GitHub stats views
+
+**Send Custom Events:**
+```javascript
+// Track custom events
+sendGAEvent("button_click", { button_name: "download_resume" });
+sendGAEvent("section_view", { section: "projects" });
+```
+
+### Firebase Analytics
+In addition to Google Analytics, Firebase provides:
+- **Device tracking** - OS, browser, device type
+- **Traffic sources** - Referrer tracking
+- **Unique users** - Daily, weekly, monthly
+- **Error logging** - JavaScript errors with stack traces
+- **Performance metrics** - Page load times
+- **Blog analytics** - Post views and engagement
+
+**Tracked Functions:**
+| Function | Purpose |
+|----------|---------|
+| `logSectionView(section)` | Track section visibility |
+| `logLinkClick(url, label)` | Track external links |
+| `logDownload(fileName)` | Track file downloads |
+| `logDeviceInfo()` | Capture device details |
+| `logTrafficSource()` | Track referrer |
+| `logError(message, stack, context)` | Log errors |
+| `logBlogView(postId, postTitle)` | Track blog posts |
+
+### Google Tag Manager (GTM)
+GTM allows advanced tracking without code changes:
+- **Custom Variables** - Track any custom data
+- **Triggers** - Fire tags on specific events
+- **Data Layer** - Push custom data to analytics
+- **Version Control** - Track changes to tags
+
+**Access GTM:**
+1. Visit [tagmanager.google.com](https://tagmanager.google.com)
+2. Select your container (GTM ID in `.env`)
+3. Create tags, triggers, and variables
+4. Changes auto-update on your site
+
+### Viewing Analytics
+
+**Google Analytics Dashboard:**
+1. Visit [analytics.google.com](https://analytics.google.com)
+2. Select your property
+3. View real-time reports, users, events, conversions
+
+**Firebase Console:**
+1. Visit [firebase.google.com/console](https://firebase.google.com/console)
+2. Open your project
+3. Navigate to Analytics tab
+4. View custom events and user tracking
+
+**Admin Analytics Dashboard:**
+- Path: `/admin/analysis`
+- Shows live traffic, devices, referrers, errors
+- Real-time metrics updated every minute
+
+---
+
 ## 🔐 Admin Dashboard
 
 ### Access
@@ -454,14 +569,17 @@ const { data, loading, error } = useFirestoreData("collection", "document");
 | GitHub Stats | `/admin/githubstats` | GitHub integration |
 | Blog | `/admin/blog` | Blog post editor |
 | LinkedIn | `/admin/linkedin` | LinkedIn content |
-| Analysis | `/admin/analysis` | Analytics dashboard |
+| Analysis | `/admin/analysis` | **Real-time Analytics** 📊 |
 
-### Analytics Features
-- **Page Views**: Track visited sections
-- **Device Info**: OS, browser, device type
-- **Traffic Source**: Referrer tracking
-- **Error Logging**: JavaScript errors captured
-- **Real-time Metrics**: Live dashboard
+### Analytics Features in Admin
+- **Real-time Visitors** - Live user count
+- **Page Views** - Track visited sections
+- **Device Info** - OS, browser, device type
+- **Traffic Source** - Referrer tracking
+- **Error Logging** - JavaScript errors captured
+- **Geographic Data** - User location tracking
+- **Device Performance** - Load times and metrics
+- **User Sessions** - Session duration and paths
 
 ---
 

@@ -10,6 +10,82 @@ import {
 } from "firebase/firestore";
 
 /**
+ * 📊 Google Analytics 4 & GTM Integration
+ * Initialize Google Analytics and Google Tag Manager
+ */
+export const initializeGA = () => {
+  try {
+    const gaId = import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || import.meta.env.VITE_GA_ID;
+    if (!gaId) {
+      console.warn("⚠️ GA_ID not configured");
+      return;
+    }
+
+    // Load Google Analytics script
+    const script = document.createElement("script");
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`;
+    document.head.appendChild(script);
+
+    // Initialize gtag
+    window.dataLayer = window.dataLayer || [];
+    function gtag() {
+      window.dataLayer.push(arguments);
+    }
+    gtag("js", new Date());
+    gtag("config", gaId, {
+      page_path: window.location.pathname,
+    });
+
+    window.gtag = gtag;
+    console.log("✅ Google Analytics initialized:", gaId);
+  } catch (err) {
+    console.error("❌ Failed to initialize Google Analytics:", err);
+  }
+};
+
+/**
+ * 🏷️ Google Tag Manager Integration
+ * Initialize GTM container
+ */
+export const initializeGTM = () => {
+  try {
+    const gtmId = import.meta.env.VITE_GTM_ID;
+    if (!gtmId) {
+      console.warn("⚠️ GTM_ID not configured");
+      return;
+    }
+
+    // Load GTM script
+    const script = document.createElement("script");
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtm.js?id=${gtmId}`;
+    document.head.appendChild(script);
+
+    // Initialize dataLayer
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      event: "gtm.js",
+      "gtm.start": new Date().getTime(),
+      "gtm.uniqueEventId": Math.random(),
+    });
+
+    console.log("✅ Google Tag Manager initialized:", gtmId);
+  } catch (err) {
+    console.error("❌ Failed to initialize GTM:", err);
+  }
+};
+
+/**
+ * 📈 Send custom events to Google Analytics
+ */
+export const sendGAEvent = (eventName, eventData = {}) => {
+  if (window.gtag) {
+    window.gtag("event", eventName, eventData);
+  }
+};
+
+/**
  * ⚡ Firebase Analytics Utility (No localStorage)
  * Tracks:
  *  - Section Views (with 2-min throttling)
