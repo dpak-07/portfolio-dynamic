@@ -367,3 +367,6 @@ export const analytics = {
         });
     },
 };
+
+// ✅ Alias for compatibility
+export const logPageView = trackPageView;

@@ -20,7 +20,7 @@ import Contact from "./components/Contact";
 import Certifications from "./components/certifications";
 import TimelineSection from "./components/timeline";
 import Footer from "./components/Footer";
-import ModernLoadingScreen from "./components/ModernLoadingScreen";
+import Loader from "./components/LoadingScreen";
 import OfflinePage from "./components/offiline"; // ✅ NEW
 
 // Admin pages
@@ -204,17 +204,77 @@ function App() {
     initializeGTM();
 
     // Import analytics functions dynamically
-    import("./utils/analytics").then(({ logDeviceInfo, logTrafficSource, logError }) => {
+    import("./utils/analytics").then(({ logDeviceInfo, logTrafficSource, logError, logPageView, trackEvent }) => {
       // Log device and traffic info on mount
       logDeviceInfo();
       logTrafficSource();
 
-      // Add global error tracking
+      // ✅ Track initial page view
+      logPageView(window.location.pathname, "Portfolio Homepage");
+
+      // ✅ Track page visibility changes
+      const handleVisibilityChange = () => {
+        if (document.hidden) {
+          trackEvent("user_engagement", {
+            event_category: "engagement",
+            event_label: "page_hidden",
+            value: new Date().getTime(),
+          });
+        } else {
+          trackEvent("user_engagement", {
+            event_category: "engagement",
+            event_label: "page_visible",
+            value: new Date().getTime(),
+          });
+        }
+      };
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+
+      // ✅ Track user interactions
+      const handleInteraction = () => {
+        trackEvent("user_interaction", {
+          event_category: "engagement",
+          event_label: "user_active",
+          timestamp: new Date().toISOString(),
+        });
+      };
+      window.addEventListener("click", handleInteraction);
+      window.addEventListener("scroll", handleInteraction);
+
+      // ✅ Global error tracking
       const handleError = (event) => {
         logError(event.message, event.error?.stack, "Global");
+        trackEvent("error_occurred", {
+          event_category: "error",
+          event_label: event.message,
+          error_stack: event.error?.stack,
+        });
       };
       window.addEventListener("error", handleError);
-      return () => window.removeEventListener("error", handleError);
+
+      // ✅ Unhandled promise rejection tracking
+      const handleUnhandledRejection = (event) => {
+        logError(
+          "Unhandled Promise Rejection",
+          event.reason?.toString(),
+          "UnhandledPromise"
+        );
+        trackEvent("error_unhandled_promise", {
+          event_category: "error",
+          event_label: "unhandled_promise",
+          reason: event.reason?.toString(),
+        });
+      };
+      window.addEventListener("unhandledrejection", handleUnhandledRejection);
+
+      // Cleanup
+      return () => {
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+        window.removeEventListener("click", handleInteraction);
+        window.removeEventListener("scroll", handleInteraction);
+        window.removeEventListener("error", handleError);
+        window.removeEventListener("unhandledrejection", handleUnhandledRejection);
+      };
     });
   }, []);
 
@@ -246,7 +306,7 @@ function App() {
                   transition={{ duration: 0.8, ease: "easeInOut" }}
                   className="fixed inset-0 z-[9999]"
                 >
-                  <ModernLoadingScreen />
+                  <Loader onFinish={() => setMinTimePassed(true)} />
                 </motion.div>
               )}
             </AnimatePresence>
