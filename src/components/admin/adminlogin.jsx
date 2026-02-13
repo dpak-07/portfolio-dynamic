@@ -37,7 +37,7 @@ export default function AdminLogin() {
   const validateSession = useCallback(() => {
     const isAdmin = localStorage.getItem(CONSTANTS.STORAGE_KEYS.IS_ADMIN);
     const loginTime = localStorage.getItem(CONSTANTS.STORAGE_KEYS.LOGIN_TIMESTAMP);
-    
+
     if (isAdmin === "1" && loginTime) {
       const sessionAge = Date.now() - parseInt(loginTime);
       if (sessionAge < CONSTANTS.SECURITY.SESSION_DURATION) {
@@ -56,7 +56,7 @@ export default function AdminLogin() {
   const loadAdminCredentials = useCallback(async () => {
     try {
       const adminDoc = await getDoc(doc(db, "admin", "credentials"));
-      
+
       if (adminDoc.exists()) {
         const data = adminDoc.data();
         if (data.user && data.password) {
@@ -70,7 +70,7 @@ export default function AdminLogin() {
       }
     } catch (error) {
       console.error("Error loading admin credentials:", error);
-      
+
       if (retryCount < 3) {
         setTimeout(() => {
           setRetryCount(prev => prev + 1);
@@ -93,7 +93,7 @@ export default function AdminLogin() {
   // Form submission handler
   const handleLogin = async (e) => {
     e.preventDefault();
-    
+
     // Basic validation
     if (!form.username.trim() || !form.password.trim()) {
       setError("Please enter both username and password");
@@ -120,7 +120,7 @@ export default function AdminLogin() {
         // Set admin flag and login timestamp
         localStorage.setItem(CONSTANTS.STORAGE_KEYS.IS_ADMIN, "1");
         localStorage.setItem(CONSTANTS.STORAGE_KEYS.LOGIN_TIMESTAMP, Date.now().toString());
-        
+
         // Success feedback before navigation
         setTimeout(() => {
           navigate(CONSTANTS.ROUTES.DASHBOARD, { replace: true });
@@ -188,13 +188,13 @@ export default function AdminLogin() {
 
   const buttonVariants = {
     initial: { scale: 1 },
-    hover: { 
+    hover: {
       scale: 1.05,
       boxShadow: "0 10px 30px -10px rgba(6, 182, 212, 0.5)",
       transition: { type: "spring", stiffness: 400 }
     },
     tap: { scale: 0.95 },
-    loading: { 
+    loading: {
       scale: 0.98,
       opacity: 0.8
     }
@@ -218,8 +218,8 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-gray-900 to-purple-900 text-white relative overflow-hidden">
-      
+    <div className="min-h-screen flex items-center justify-center text-white relative overflow-hidden">
+
       {/* Enhanced Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
         {/* Floating Particles */}
@@ -273,7 +273,7 @@ export default function AdminLogin() {
         />
 
         {/* Security Grid Pattern */}
-        <div 
+        <div
           className="absolute inset-0 opacity-[0.03]"
           style={{
             backgroundImage: `

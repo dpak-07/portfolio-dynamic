@@ -21,6 +21,9 @@ import {
   Legend,
   ResponsiveContainer,
   ComposedChart,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts";
 import {
   RefreshCw,
@@ -41,6 +44,13 @@ import {
   Sparkles,
   UserCheck,
   UserPlus,
+  Smartphone,
+  Monitor,
+  Globe,
+  Link2,
+  BookOpen,
+  Timer,
+  AlertCircle,
 } from "lucide-react";
 
 export default function AnalysisDashboard() {
@@ -50,6 +60,11 @@ export default function AnalysisDashboard() {
     sectionData: {},
     linkData: {},
     dailyArr: [],
+    devicesData: {},
+    trafficData: {},
+    blogData: {},
+    performanceData: {},
+    errorsData: {},
   });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -71,7 +86,7 @@ export default function AnalysisDashboard() {
     fetchData();
   }, []);
 
-  const { totalsData, usersData, sectionData, linkData, dailyArr } = data;
+  const { totalsData, usersData, sectionData, linkData, dailyArr, devicesData, trafficData, blogData, performanceData, errorsData } = data;
 
   const filteredDaily =
     viewMode === "week"
@@ -135,6 +150,79 @@ export default function AnalysisDashboard() {
     { period: "Last Month", users: usersData.uniqueLastMonth || 0, color: "#8B5CF6" },
   ];
 
+  // Device data
+  const COLORS = ["#00D9FF", "#A855F7", "#10B981", "#F59E0B", "#EC4899", "#8B5CF6"];
+  
+  const browserData = devicesData?.browsers 
+    ? Object.entries(devicesData.browsers).map(([name, value]) => ({ name, value }))
+    : [];
+  
+  const osData = devicesData?.os 
+    ? Object.entries(devicesData.os).map(([name, value]) => ({ name, value }))
+    : [];
+  
+  const deviceTypeData = devicesData?.deviceTypes 
+    ? Object.entries(devicesData.deviceTypes).map(([name, value]) => ({ name, value }))
+    : [];
+
+  // Traffic data
+  const trafficSourceData = trafficData?.sources 
+    ? Object.entries(trafficData.sources).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value)
+    : [];
+
+  const trafficMediumData = trafficData?.mediums 
+    ? Object.entries(trafficData.mediums).map(([name, value]) => ({ name, value }))
+    : [];
+
+  const trafficCampaignData = trafficData?.campaigns 
+    ? Object.entries(trafficData.campaigns).map(([name, value]) => ({ name, value }))
+    : [];
+
+  // Blog data
+  const blogPostsData = Object.entries(blogData || {})
+    .filter(([key]) => key !== "lastUpdated")
+    .map(([slug, data]) => ({
+      slug,
+      title: data.title || slug,
+      views: data.views || 0,
+      likes: data.likes || 0,
+      totalReadTime: data.totalReadTime || 0,
+      readCount: data.readCount || 0,
+      avgReadTime: data.readCount ? Math.floor(data.totalReadTime / data.readCount) : 0,
+      engagementRate: data.views ? ((data.likes / data.views) * 100).toFixed(1) : 0,
+    }))
+    .sort((a, b) => b.views - a.views);
+
+  // Performance data
+  const pageLoadData = performanceData?.pageLoads 
+    ? Object.entries(performanceData.pageLoads).map(([name, data]) => ({
+        name,
+        count: data.count || 0,
+        avgTime: data.count ? Math.floor(data.totalTime / data.count) : 0,
+      }))
+    : [];
+
+  const pageDurationData = performanceData?.pageDurations 
+    ? Object.entries(performanceData.pageDurations).map(([name, data]) => ({
+        name,
+        count: data.count || 0,
+        avgDuration: data.count ? Math.floor(data.totalTime / data.count / 1000) : 0,
+      }))
+    : [];
+
+  // Errors data
+  const errorsArray = Object.entries(errorsData || {})
+    .filter(([key]) => key.startsWith("error_"))
+    .map(([id, error]) => ({
+      id,
+      message: error.message,
+      component: error.component,
+      userAgent: error.userAgent,
+      timestamp: error.timestamp,
+    }))
+    .sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0))
+    .slice(0, 20);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 flex items-center justify-center">
@@ -185,7 +273,7 @@ export default function AnalysisDashboard() {
 
           {/* Tabs */}
           <div className="flex gap-2 mt-6 overflow-x-auto pb-2">
-            {["overview", "users", "trends", "breakdown", "insights"].map((tab) => (
+            {["overview", "users", "trends", "breakdown", "devices", "traffic", "blog", "performance", "errors", "insights"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -679,6 +767,632 @@ export default function AnalysisDashboard() {
             </motion.div>
           )}
 
+          {activeTab === "devices" && (
+            <motion.div
+              key="devices"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+              className="space-y-6"
+            >
+              {/* Device Type Distribution */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <ChartCard title="Device Types" icon={<Smartphone className="w-5 h-5" />}>
+                  {deviceTypeData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={250}>
+                      <PieChart>
+                        <Pie
+                          data={deviceTypeData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {deviceTypeData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "#0f172a",
+                            border: "1px solid #00D9FF",
+                            borderRadius: "12px",
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <p className="text-gray-400 text-center py-16">No device data</p>
+                  )}
+                </ChartCard>
+
+                <ChartCard title="Browsers" icon={<Globe className="w-5 h-5" />}>
+                  {browserData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={250}>
+                      <PieChart>
+                        <Pie
+                          data={browserData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {browserData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "#0f172a",
+                            border: "1px solid #00D9FF",
+                            borderRadius: "12px",
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <p className="text-gray-400 text-center py-16">No browser data</p>
+                  )}
+                </ChartCard>
+
+                <ChartCard title="Operating Systems" icon={<Monitor className="w-5 h-5" />}>
+                  {osData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={250}>
+                      <PieChart>
+                        <Pie
+                          data={osData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {osData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "#0f172a",
+                            border: "1px solid #00D9FF",
+                            borderRadius: "12px",
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <p className="text-gray-400 text-center py-16">No OS data</p>
+                  )}
+                </ChartCard>
+              </div>
+
+              {/* Detailed Device Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 backdrop-blur-sm p-6">
+                  <Smartphone className="w-8 h-8 text-cyan-400 mb-3" />
+                  <p className="text-gray-400 text-sm mb-1">Most Used Device</p>
+                  <p className="text-3xl font-bold text-white">
+                    {deviceTypeData.length > 0 ? deviceTypeData.sort((a, b) => b.value - a.value)[0].name : "N/A"}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    {deviceTypeData.length > 0 ? `${deviceTypeData.sort((a, b) => b.value - a.value)[0].value} visits` : ""}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-500/30 backdrop-blur-sm p-6">
+                  <Globe className="w-8 h-8 text-purple-400 mb-3" />
+                  <p className="text-gray-400 text-sm mb-1">Most Used Browser</p>
+                  <p className="text-3xl font-bold text-white">
+                    {browserData.length > 0 ? browserData.sort((a, b) => b.value - a.value)[0].name : "N/A"}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    {browserData.length > 0 ? `${browserData.sort((a, b) => b.value - a.value)[0].value} visits` : ""}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 backdrop-blur-sm p-6">
+                  <Monitor className="w-8 h-8 text-emerald-400 mb-3" />
+                  <p className="text-gray-400 text-sm mb-1">Most Used OS</p>
+                  <p className="text-3xl font-bold text-white">
+                    {osData.length > 0 ? osData.sort((a, b) => b.value - a.value)[0].name : "N/A"}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    {osData.length > 0 ? `${osData.sort((a, b) => b.value - a.value)[0].value} visits` : ""}
+                  </p>
+                </div>
+              </div>
+
+              {/* Bar Charts */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <ChartCard title="Browser Distribution" icon={<Globe className="w-5 h-5" />}>
+                  {browserData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={browserData.sort((a, b) => b.value - a.value)}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
+                        <XAxis dataKey="name" stroke="#999" />
+                        <YAxis stroke="#999" />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "#0f172a",
+                            border: "1px solid #00D9FF",
+                            borderRadius: "12px",
+                          }}
+                        />
+                        <Bar dataKey="value" fill="#00D9FF" radius={[8, 8, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <p className="text-gray-400 text-center py-16">No data</p>
+                  )}
+                </ChartCard>
+
+                <ChartCard title="OS Distribution" icon={<Monitor className="w-5 h-5" />}>
+                  {osData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={osData.sort((a, b) => b.value - a.value)}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
+                        <XAxis dataKey="name" stroke="#999" />
+                        <YAxis stroke="#999" />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "#0f172a",
+                            border: "1px solid #00D9FF",
+                            borderRadius: "12px",
+                          }}
+                        />
+                        <Bar dataKey="value" fill="#A855F7" radius={[8, 8, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <p className="text-gray-400 text-center py-16">No data</p>
+                  )}
+                </ChartCard>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === "traffic" && (
+            <motion.div
+              key="traffic"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-6"
+            >
+              {/* Traffic Sources */}
+              <ChartCard title="Traffic Sources" icon={<Link2 className="w-5 h-5" />}>
+                {trafficSourceData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={350}>
+                    <BarChart data={trafficSourceData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
+                      <XAxis dataKey="name" stroke="#999" />
+                      <YAxis stroke="#999" />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "#0f172a",
+                          border: "1px solid #00D9FF",
+                          borderRadius: "12px",
+                        }}
+                      />
+                      <Bar dataKey="value" fill="#00D9FF" radius={[8, 8, 0, 0]}>
+                        {trafficSourceData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <p className="text-gray-400 text-center py-16">No traffic data available</p>
+                )}
+              </ChartCard>
+
+              {/* Top Traffic Source */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border-2 border-cyan-500/50 backdrop-blur-sm p-6">
+                  <Link2 className="w-8 h-8 text-cyan-400 mb-3" />
+                  <p className="text-gray-400 text-sm mb-1">Top Traffic Source</p>
+                  <p className="text-3xl font-bold text-white">
+                    {trafficSourceData.length > 0 ? trafficSourceData[0].name : "Direct"}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    {trafficSourceData.length > 0 ? `${trafficSourceData[0].value} visits` : "No data"}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-500/30 backdrop-blur-sm p-6">
+                  <Globe className="w-8 h-8 text-purple-400 mb-3" />
+                  <p className="text-gray-400 text-sm mb-1">Total Sources</p>
+                  <p className="text-3xl font-bold text-white">{trafficSourceData.length}</p>
+                  <p className="text-xs text-gray-500 mt-2">Unique traffic sources</p>
+                </div>
+
+                <div className="rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 backdrop-blur-sm p-6">
+                  <Activity className="w-8 h-8 text-emerald-400 mb-3" />
+                  <p className="text-gray-400 text-sm mb-1">Total Visits</p>
+                  <p className="text-3xl font-bold text-white">
+                    {trafficSourceData.reduce((sum, item) => sum + item.value, 0)}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-2">From all sources</p>
+                </div>
+              </div>
+
+              {/* Medium & Campaign Data */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <ChartCard title="Traffic Mediums" icon={<Target className="w-5 h-5" />}>
+                  {trafficMediumData.length > 0 ? (
+                    <div className="space-y-3">
+                      {trafficMediumData.map((medium, index) => (
+                        <RankingBar
+                          key={medium.name}
+                          rank={index + 1}
+                          name={medium.name}
+                          value={medium.value}
+                          max={trafficMediumData[0]?.value || 1}
+                          color={COLORS[index % COLORS.length]}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-400 text-center py-16">No medium data</p>
+                  )}
+                </ChartCard>
+
+                <ChartCard title="Campaigns" icon={<Zap className="w-5 h-5" />}>
+                  {trafficCampaignData.length > 0 ? (
+                    <div className="space-y-3">
+                      {trafficCampaignData.map((campaign, index) => (
+                        <RankingBar
+                          key={campaign.name}
+                          rank={index + 1}
+                          name={campaign.name}
+                          value={campaign.value}
+                          max={trafficCampaignData[0]?.value || 1}
+                          color={COLORS[index % COLORS.length]}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-400 text-center py-16">No campaign data</p>
+                  )}
+                </ChartCard>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === "blog" && (
+            <motion.div
+              key="blog"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-6"
+            >
+              {/* Blog Stats Overview */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 backdrop-blur-sm p-6">
+                  <BookOpen className="w-8 h-8 text-cyan-400 mb-3" />
+                  <p className="text-gray-400 text-sm mb-1">Total Posts</p>
+                  <p className="text-3xl font-bold text-white">{blogPostsData.length}</p>
+                </div>
+
+                <div className="rounded-2xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-500/30 backdrop-blur-sm p-6">
+                  <Eye className="w-8 h-8 text-purple-400 mb-3" />
+                  <p className="text-gray-400 text-sm mb-1">Total Views</p>
+                  <p className="text-3xl font-bold text-white">
+                    {blogPostsData.reduce((sum, post) => sum + post.views, 0)}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 backdrop-blur-sm p-6">
+                  <Sparkles className="w-8 h-8 text-emerald-400 mb-3" />
+                  <p className="text-gray-400 text-sm mb-1">Total Likes</p>
+                  <p className="text-3xl font-bold text-white">
+                    {blogPostsData.reduce((sum, post) => sum + post.likes, 0)}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-500/30 backdrop-blur-sm p-6">
+                  <Timer className="w-8 h-8 text-orange-400 mb-3" />
+                  <p className="text-gray-400 text-sm mb-1">Avg Read Time</p>
+                  <p className="text-3xl font-bold text-white">
+                    {blogPostsData.length > 0
+                      ? Math.floor(
+                          blogPostsData.reduce((sum, post) => sum + post.avgReadTime, 0) / blogPostsData.length
+                        )
+                      : 0}
+                    s
+                  </p>
+                </div>
+              </div>
+
+              {/* Blog Posts Table */}
+              <ChartCard title="Blog Post Analytics" icon={<BookOpen className="w-5 h-5" />}>
+                {blogPostsData.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-white/5 border-b border-white/10">
+                        <tr>
+                          <th className="px-4 py-3 text-left font-semibold">Title</th>
+                          <th className="px-4 py-3 text-center font-semibold text-cyan-400">Views</th>
+                          <th className="px-4 py-3 text-center font-semibold text-purple-400">Likes</th>
+                          <th className="px-4 py-3 text-center font-semibold text-emerald-400">Reads</th>
+                          <th className="px-4 py-3 text-center font-semibold text-orange-400">Avg Time</th>
+                          <th className="px-4 py-3 text-center font-semibold text-pink-400">Engagement</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {blogPostsData.map((post, i) => (
+                          <motion.tr
+                            key={post.slug}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: i * 0.05 }}
+                            className="border-b border-white/5 hover:bg-white/5 transition-colors"
+                          >
+                            <td className="px-4 py-3 font-medium max-w-xs truncate">{post.title}</td>
+                            <td className="px-4 py-3 text-center text-cyan-400">{post.views}</td>
+                            <td className="px-4 py-3 text-center text-purple-400">{post.likes}</td>
+                            <td className="px-4 py-3 text-center text-emerald-400">{post.readCount}</td>
+                            <td className="px-4 py-3 text-center text-orange-400">{post.avgReadTime}s</td>
+                            <td className="px-4 py-3 text-center text-pink-400">{post.engagementRate}%</td>
+                          </motion.tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-gray-400 text-center py-16">No blog data available</p>
+                )}
+              </ChartCard>
+
+              {/* Top Posts */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <ChartCard title="Most Viewed Posts" icon={<Eye className="w-5 h-5" />}>
+                  {blogPostsData.length > 0 ? (
+                    <div className="space-y-3">
+                      {blogPostsData.slice(0, 5).map((post, index) => (
+                        <RankingBar
+                          key={post.slug}
+                          rank={index + 1}
+                          name={post.title}
+                          value={post.views}
+                          max={blogPostsData[0]?.views || 1}
+                          color={COLORS[index % COLORS.length]}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-400 text-center py-8">No data</p>
+                  )}
+                </ChartCard>
+
+                <ChartCard title="Most Liked Posts" icon={<Sparkles className="w-5 h-5" />}>
+                  {blogPostsData.length > 0 ? (
+                    <div className="space-y-3">
+                      {blogPostsData
+                        .sort((a, b) => b.likes - a.likes)
+                        .slice(0, 5)
+                        .map((post, index) => (
+                          <RankingBar
+                            key={post.slug}
+                            rank={index + 1}
+                            name={post.title}
+                            value={post.likes}
+                            max={blogPostsData.sort((a, b) => b.likes - a.likes)[0]?.likes || 1}
+                            color={COLORS[index % COLORS.length]}
+                          />
+                        ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-400 text-center py-8">No data</p>
+                  )}
+                </ChartCard>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === "performance" && (
+            <motion.div
+              key="performance"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-6"
+            >
+              {/* Page Load Performance */}
+              <ChartCard title="Page Load Times" icon={<Zap className="w-5 h-5" />}>
+                {pageLoadData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={350}>
+                    <BarChart data={pageLoadData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
+                      <XAxis dataKey="name" stroke="#999" />
+                      <YAxis stroke="#999" />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "#0f172a",
+                          border: "1px solid #00D9FF",
+                          borderRadius: "12px",
+                        }}
+                        formatter={(value, name) => {
+                          if (name === "avgTime") return [`${value}ms`, "Avg Load Time"];
+                          return [value, name];
+                        }}
+                      />
+                      <Legend />
+                      <Bar dataKey="count" fill="#00D9FF" radius={[8, 8, 0, 0]} name="Load Count" />
+                      <Bar dataKey="avgTime" fill="#A855F7" radius={[8, 8, 0, 0]} name="Avg Time (ms)" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <p className="text-gray-400 text-center py-16">No performance data available</p>
+                )}
+              </ChartCard>
+
+              {/* Page Duration */}
+              <ChartCard title="Page Visit Duration" icon={<Timer className="w-5 h-5" />}>
+                {pageDurationData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={350}>
+                    <BarChart data={pageDurationData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
+                      <XAxis dataKey="name" stroke="#999" />
+                      <YAxis stroke="#999" />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "#0f172a",
+                          border: "1px solid #00D9FF",
+                          borderRadius: "12px",
+                        }}
+                        formatter={(value, name) => {
+                          if (name === "avgDuration") return [`${value}s`, "Avg Duration"];
+                          return [value, name];
+                        }}
+                      />
+                      <Legend />
+                      <Bar dataKey="count" fill="#10B981" radius={[8, 8, 0, 0]} name="Visit Count" />
+                      <Bar dataKey="avgDuration" fill="#F59E0B" radius={[8, 8, 0, 0]} name="Avg Duration (s)" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <p className="text-gray-400 text-center py-16">No duration data available</p>
+                )}
+              </ChartCard>
+
+              {/* Performance Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 backdrop-blur-sm p-6">
+                  <Zap className="w-8 h-8 text-cyan-400 mb-3" />
+                  <p className="text-gray-400 text-sm mb-1">Fastest Page</p>
+                  <p className="text-2xl font-bold text-white">
+                    {pageLoadData.length > 0
+                      ? pageLoadData.sort((a, b) => a.avgTime - b.avgTime)[0].name
+                      : "N/A"}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    {pageLoadData.length > 0
+                      ? `${pageLoadData.sort((a, b) => a.avgTime - b.avgTime)[0].avgTime}ms avg`
+                      : ""}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-500/30 backdrop-blur-sm p-6">
+                  <Timer className="w-8 h-8 text-purple-400 mb-3" />
+                  <p className="text-gray-400 text-sm mb-1">Longest Visit</p>
+                  <p className="text-2xl font-bold text-white">
+                    {pageDurationData.length > 0
+                      ? pageDurationData.sort((a, b) => b.avgDuration - a.avgDuration)[0].name
+                      : "N/A"}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    {pageDurationData.length > 0
+                      ? `${pageDurationData.sort((a, b) => b.avgDuration - a.avgDuration)[0].avgDuration}s avg`
+                      : ""}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 backdrop-blur-sm p-6">
+                  <Activity className="w-8 h-8 text-emerald-400 mb-3" />
+                  <p className="text-gray-400 text-sm mb-1">Total Page Loads</p>
+                  <p className="text-2xl font-bold text-white">
+                    {pageLoadData.reduce((sum, page) => sum + page.count, 0)}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-2">All pages combined</p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === "errors" && (
+            <motion.div
+              key="errors"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-6"
+            >
+              {/* Error Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="rounded-2xl bg-gradient-to-br from-red-500/20 to-orange-500/20 border-2 border-red-500/50 backdrop-blur-sm p-6">
+                  <AlertCircle className="w-8 h-8 text-red-400 mb-3" />
+                  <p className="text-gray-400 text-sm mb-1">Total Errors</p>
+                  <p className="text-4xl font-bold text-white">{errorsData.errorCount || 0}</p>
+                  <p className="text-xs text-gray-500 mt-2">All time</p>
+                </div>
+
+                <div className="rounded-2xl bg-gradient-to-br from-orange-500/20 to-yellow-500/20 border border-orange-500/30 backdrop-blur-sm p-6">
+                  <FileText className="w-8 h-8 text-orange-400 mb-3" />
+                  <p className="text-gray-400 text-sm mb-1">Recent Errors</p>
+                  <p className="text-4xl font-bold text-white">{errorsArray.length}</p>
+                  <p className="text-xs text-gray-500 mt-2">Last 20 logged</p>
+                </div>
+
+                <div className="rounded-2xl bg-gradient-to-br from-yellow-500/20 to-amber-500/20 border border-yellow-500/30 backdrop-blur-sm p-6">
+                  <Activity className="w-8 h-8 text-yellow-400 mb-3" />
+                  <p className="text-gray-400 text-sm mb-1">Error Rate</p>
+                  <p className="text-4xl font-bold text-white">
+                    {totalsData.totalViews > 0
+                      ? ((errorsData.errorCount / totalsData.totalViews) * 100).toFixed(2)
+                      : 0}
+                    %
+                  </p>
+                  <p className="text-xs text-gray-500 mt-2">Per view</p>
+                </div>
+              </div>
+
+              {/* Error Log */}
+              <ChartCard title="Error Log" icon={<AlertCircle className="w-5 h-5" />}>
+                {errorsArray.length > 0 ? (
+                  <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                    {errorsArray.map((error, i) => (
+                      <motion.div
+                        key={error.id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                        className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 transition-colors"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+                            <span className="font-semibold text-red-400">{error.component}</span>
+                          </div>
+                          <span className="text-xs text-gray-500">
+                            {error.timestamp?.seconds
+                              ? new Date(error.timestamp.seconds * 1000).toLocaleString()
+                              : "Unknown time"}
+                          </span>
+                        </div>
+                        <p className="text-sm text-white mb-2">{error.message}</p>
+                        <details className="text-xs text-gray-400">
+                          <summary className="cursor-pointer hover:text-gray-300">View stack trace</summary>
+                          <pre className="mt-2 p-3 bg-black/30 rounded-lg overflow-x-auto text-[10px]">
+                            {error.stack || "No stack trace available"}
+                          </pre>
+                        </details>
+                        <p className="text-[10px] text-gray-600 mt-2 truncate">
+                          User Agent: {error.userAgent}
+                        </p>
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-16">
+                    <Sparkles className="w-16 h-16 text-emerald-400 mx-auto mb-4" />
+                    <p className="text-2xl font-bold text-white mb-2">No Errors! 🎉</p>
+                    <p className="text-gray-400">Your application is running smoothly</p>
+                  </div>
+                )}
+              </ChartCard>
+            </motion.div>
+          )}
+
           {activeTab === "insights" && (
             <motion.div
               key="insights"
@@ -734,7 +1448,13 @@ export default function AnalysisDashboard() {
                       <li className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
                         <span className="text-gray-300">Best Day</span>
                         <span className="font-bold text-emerald-400">
-                          {dailyArr.length ? dailyArr.reduce((max, d) => d.views > max.views ? d : max).date : "N/A"}
+                          {dailyArr.length ? dailyArr.reduce((max, d) => (d.views > max.views ? d : max)).date : "N/A"}
+                        </span>
+                      </li>
+                      <li className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
+                        <span className="text-gray-300">Top Traffic Source</span>
+                        <span className="font-bold text-orange-400">
+                          {trafficSourceData[0]?.name || "Direct"}
                         </span>
                       </li>
                     </ul>
@@ -756,6 +1476,10 @@ export default function AnalysisDashboard() {
                         <span className="text-gray-300">Avg. Daily Users</span>
                         <span className="font-bold text-blue-400">{insights.avgUsers.toFixed(1)}</span>
                       </li>
+                      <li className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
+                        <span className="text-gray-300">Total Blog Posts</span>
+                        <span className="font-bold text-purple-400">{blogPostsData.length}</span>
+                      </li>
                     </ul>
                   </div>
                 </div>
@@ -769,7 +1493,6 @@ export default function AnalysisDashboard() {
 }
 
 /* ===== Components ===== */
-import { Cell } from "recharts";
 
 function MetricCard({ icon, label, value, color, subtitle }) {
   return (
@@ -802,9 +1525,11 @@ function QuickUserStat({ label, value, growth }) {
       <p className="text-gray-400 text-xs mb-1">{label}</p>
       <p className="text-2xl font-bold text-white">{value || 0}</p>
       {hasGrowth && (
-        <span className={`flex items-center gap-1 text-xs font-semibold mt-1 ${
-          isPositive ? "text-emerald-400" : "text-red-400"
-        }`}>
+        <span
+          className={`flex items-center gap-1 text-xs font-semibold mt-1 ${
+            isPositive ? "text-emerald-400" : "text-red-400"
+          }`}
+        >
           {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
           {Math.abs(growth)}%
         </span>
@@ -820,7 +1545,7 @@ function UserCard({ label, value, comparison, growth, icon, color }) {
   return (
     <motion.div
       whileHover={{ scale: 1.02, y: -4 }}
-      className={`rounded-2xl bg-gradient-to-br ${color.replace('to', 'via')}/10 border border-white/10 backdrop-blur-sm p-6 relative overflow-hidden`}
+      className={`rounded-2xl bg-gradient-to-br ${color.replace("to", "via")}/10 border border-white/10 backdrop-blur-sm p-6 relative overflow-hidden`}
     >
       <div className={`absolute top-4 right-4 w-10 h-10 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center`}>
         {icon}
@@ -830,9 +1555,11 @@ function UserCard({ label, value, comparison, growth, icon, color }) {
       {hasGrowth && (
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-500">vs {comparison || 0}</span>
-          <span className={`flex items-center gap-1 text-sm font-semibold ${
-            isPositive ? "text-emerald-400" : "text-red-400"
-          }`}>
+          <span
+            className={`flex items-center gap-1 text-sm font-semibold ${
+              isPositive ? "text-emerald-400" : "text-red-400"
+            }`}
+          >
             {isPositive ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
             {Math.abs(growth)}%
           </span>
@@ -883,11 +1610,26 @@ function ComparisonCard({ title, current, previous, currentLabel, previousLabel,
             />
           </div>
         </div>
-        <div className={`flex items-center justify-center gap-2 p-3 rounded-lg ${
-          isPositive ? "bg-emerald-500/20 text-emerald-400" : growth < 0 ? "bg-red-500/20 text-red-400" : "bg-blue-500/20 text-blue-400"
-        }`}>
-          {isPositive ? <TrendingUp className="w-5 h-5" /> : growth < 0 ? <TrendingDown className="w-5 h-5" /> : <Activity className="w-5 h-5" />}
-          <span className="font-bold">{isPositive ? "+" : ""}{growth}% change</span>
+        <div
+          className={`flex items-center justify-center gap-2 p-3 rounded-lg ${
+            isPositive
+              ? "bg-emerald-500/20 text-emerald-400"
+              : growth < 0
+              ? "bg-red-500/20 text-red-400"
+              : "bg-blue-500/20 text-blue-400"
+          }`}
+        >
+          {isPositive ? (
+            <TrendingUp className="w-5 h-5" />
+          ) : growth < 0 ? (
+            <TrendingDown className="w-5 h-5" />
+          ) : (
+            <Activity className="w-5 h-5" />
+          )}
+          <span className="font-bold">
+            {isPositive ? "+" : ""}
+            {growth}% change
+          </span>
         </div>
       </div>
     </motion.div>
@@ -920,17 +1662,23 @@ function InsightsCard({ clickRate, downloadRate, weekGrowth, monthGrowth }) {
             <span className="text-2xl font-bold text-purple-400">{clickRate}%</span>
           </div>
           <div className="w-full bg-white/10 rounded-full h-2">
-            <div className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full" style={{ width: `${Math.min(clickRate, 100)}%` }} />
+            <div
+              className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full"
+              style={{ width: `${Math.min(clickRate, 100)}%` }}
+            />
           </div>
         </div>
-        
+
         <div className="p-4 bg-white/5 rounded-xl">
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm text-gray-400">Download Rate</span>
             <span className="text-2xl font-bold text-cyan-400">{downloadRate}%</span>
           </div>
           <div className="w-full bg-white/10 rounded-full h-2">
-            <div className="bg-gradient-to-r from-cyan-500 to-blue-500 h-2 rounded-full" style={{ width: `${Math.min(downloadRate, 100)}%` }} />
+            <div
+              className="bg-gradient-to-r from-cyan-500 to-blue-500 h-2 rounded-full"
+              style={{ width: `${Math.min(downloadRate, 100)}%` }}
+            />
           </div>
         </div>
 
@@ -938,13 +1686,15 @@ function InsightsCard({ clickRate, downloadRate, weekGrowth, monthGrowth }) {
           <div className="p-4 bg-white/5 rounded-xl text-center">
             <p className="text-xs text-gray-400 mb-1">Week Growth</p>
             <p className={`text-xl font-bold ${weekGrowth >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-              {weekGrowth >= 0 ? "+" : ""}{weekGrowth}%
+              {weekGrowth >= 0 ? "+" : ""}
+              {weekGrowth}%
             </p>
           </div>
           <div className="p-4 bg-white/5 rounded-xl text-center">
             <p className="text-xs text-gray-400 mb-1">Month Growth</p>
             <p className={`text-xl font-bold ${monthGrowth >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-              {monthGrowth >= 0 ? "+" : ""}{monthGrowth}%
+              {monthGrowth >= 0 ? "+" : ""}
+              {monthGrowth}%
             </p>
           </div>
         </div>
@@ -955,7 +1705,7 @@ function InsightsCard({ clickRate, downloadRate, weekGrowth, monthGrowth }) {
 
 function RankingBar({ rank, name, value, max, color }) {
   const percentage = (value / max) * 100;
-  
+
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
@@ -963,13 +1713,18 @@ function RankingBar({ rank, name, value, max, color }) {
       transition={{ delay: rank * 0.1 }}
       className="flex items-center gap-3"
     >
-      <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center font-bold text-sm" style={{ color }}>
+      <div
+        className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center font-bold text-sm"
+        style={{ color }}
+      >
         {rank}
       </div>
       <div className="flex-1">
         <div className="flex justify-between items-center mb-1">
-          <span className="text-sm font-medium text-gray-300">{name}</span>
-          <span className="text-sm font-bold" style={{ color }}>{value}</span>
+          <span className="text-sm font-medium text-gray-300 truncate max-w-xs">{name}</span>
+          <span className="text-sm font-bold" style={{ color }}>
+            {value}
+          </span>
         </div>
         <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
           <motion.div
@@ -998,9 +1753,7 @@ function InsightCard({ icon, title, value, description, trend }) {
       className={`rounded-2xl bg-gradient-to-br ${trendColors[trend]} border backdrop-blur-sm p-6`}
     >
       <div className="flex items-start justify-between mb-4">
-        <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center">
-          {icon}
-        </div>
+        <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center">{icon}</div>
         {trend === "positive" && <TrendingUp className="w-5 h-5 text-emerald-400" />}
         {trend === "negative" && <TrendingDown className="w-5 h-5 text-red-400" />}
       </div>

@@ -2,29 +2,34 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useFirestoreData } from "@/hooks/useFirestoreData";
-import { FaBars, FaTimes } from "react-icons/fa";
+import { Home, User, Code, Briefcase, Award, Clock, FileText, Mail, BookOpen, Menu, X, BarChart3 } from "lucide-react";
 import { logLinkClick } from "../utils/analytics";
 
 export default function Navbar() {
+  // Firestore data for section visibility
   const { data: firestoreSectionsData } = useFirestoreData("sections", "visibility");
 
-  const sectionOrder = [
-    "home",
-    "about",
-    "tech-stack",
-    "projects",
-    "certifications",
-    "timeline",
-    "resume",
-    "contact",
+  // Navigation items with modern icons
+  const navItems = [
+    { id: "home", label: "Home", icon: Home },
+    { id: "about", label: "About", icon: User },
+    { id: "tech-stack", label: "Tech Stack", icon: Code },
+    { id: "github-stats", label: "GitHub Stats", icon: BarChart3 },
+    { id: "projects", label: "Projects", icon: Briefcase },
+    { id: "certifications", label: "Certifications", icon: Award },
+    { id: "timeline", label: "Timeline", icon: Clock },
+    { id: "resume", label: "Resume", icon: FileText },
+    { id: "contact", label: "Contact", icon: Mail },
   ];
 
+  // Sections configuration from Firestore or defaults
   const sectionsConfig = useMemo(
     () =>
       firestoreSectionsData || {
         home: true,
         about: true,
         "tech-stack": true,
+        "github-stats": true,
         projects: true,
         resume: true,
         certifications: true,
@@ -34,8 +39,9 @@ export default function Navbar() {
     [firestoreSectionsData]
   );
 
-  const sections = useMemo(
-    () => sectionOrder.filter((sec) => sectionsConfig[sec]),
+  // Filter visible sections based on config
+  const visibleNavItems = useMemo(
+    () => navItems.filter((item) => sectionsConfig[item.id]),
     [sectionsConfig]
   );
 
@@ -44,20 +50,21 @@ export default function Navbar() {
   const [isVisible, setIsVisible] = useState(true);
   const [lastScroll, setLastScroll] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
-  const [scrollTimer, setScrollTimer] = useState(null);
 
-  // 🌈 Scroll progress + navbar visibility with 3-second timer
+  // Scroll progress and navbar visibility - optimized
   useEffect(() => {
     let ticking = false;
+    let hideTimer = null;
+
     const handleScroll = () => {
       if (!ticking) {
         window.requestAnimationFrame(() => {
           const scrolled = window.scrollY;
           const height = document.body.scrollHeight - window.innerHeight;
           setScrollProgress((scrolled / height) * 100);
-          
+
           // Hide navbar on scroll down, show on scroll up
-          if (scrolled > lastScroll && scrolled > 50) {
+          if (scrolled > lastScroll && scrolled > 100) {
             setIsVisible(false);
           } else {
             setIsVisible(true);
@@ -65,230 +72,225 @@ export default function Navbar() {
           setLastScroll(scrolled);
 
           // Clear previous timer
-          if (scrollTimer) clearTimeout(scrollTimer);
+          if (hideTimer) clearTimeout(hideTimer);
 
-          // Set new timer - show navbar after 3 seconds of no scrolling
-          const timer = setTimeout(() => {
+          // Show navbar after 2 seconds of no scrolling
+          hideTimer = setTimeout(() => {
             setIsVisible(true);
-          }, 3000);
-          setScrollTimer(timer);
+          }, 2000);
 
           ticking = false;
         });
         ticking = true;
       }
     };
+
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => {
       window.removeEventListener("scroll", handleScroll);
-      if (scrollTimer) clearTimeout(scrollTimer);
+      if (hideTimer) clearTimeout(hideTimer);
     };
-  }, [lastScroll, scrollTimer]);
+  }, [lastScroll]);
 
-  // 🧭 Active section observer
+  // Active section observer - optimized for instant detection
   useEffect(() => {
     const observer = new IntersectionObserver(
-      (entries) =>
-        entries.forEach((e) => {
-          if (e.isIntersecting && sectionsConfig[e.target.id]) {
-            setActive(e.target.id);
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && sectionsConfig[entry.target.id]) {
+            setActive(entry.target.id);
           }
-        }),
-      { threshold: 0.45 }
+        });
+      },
+      { threshold: 0.2 } // Reduced threshold for faster detection
     );
-    sections.forEach((id) => {
+
+    visibleNavItems.forEach(({ id }) => {
       const el = document.getElementById(id);
       if (el) observer.observe(el);
     });
-    return () => observer.disconnect();
-  }, [sections, sectionsConfig]);
 
-  // ✨ Smooth scroll with analytics logging
+    return () => observer.disconnect();
+  }, [visibleNavItems, sectionsConfig]);
+
+  // Smooth scroll with analytics
   const scrollTo = (id) => {
     if (!sectionsConfig[id]) return;
-    const el = document.getElementById(id);
-    const nav = document.querySelector("header");
 
-    if (el && nav) {
-      const navH = nav.offsetHeight;
-      const y = el.getBoundingClientRect().top + window.scrollY - navH + 5;
+    const el = document.getElementById(id);
+    if (el) {
+      const navHeight = 80;
+      const y = el.getBoundingClientRect().top + window.scrollY - navHeight;
       window.scrollTo({ top: y, behavior: "smooth" });
+      setOpen(false);
     }
 
     logLinkClick(`nav_${id}`);
-    setOpen(false);
   };
 
-  // 🚫 Prevent background scroll when mobile menu open
+  // Prevent background scroll when mobile menu open
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "auto";
+    return () => {
+      document.body.style.overflow = "auto";
+    };
   }, [open]);
 
-  const linkClass = (id) =>
-    `relative px-2 sm:px-3 lg:px-4 py-2 text-xs sm:text-sm lg:text-base font-medium tracking-wide transition-all duration-300 ${
-      sectionsConfig[id]
-        ? active === id
-          ? "text-cyansoft neon-text"
-          : "text-white/70 hover:text-cyansoft"
-        : "text-gray-500 opacity-50 cursor-not-allowed"
-    }`;
-
   return (
-    <motion.header
-      initial={{ y: -60, opacity: 0 }}
-      animate={{ y: isVisible ? 0 : -60, opacity: isVisible ? 1 : 0 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
-      className="fixed inset-x-0 top-0 z-[999] flex flex-col items-center"
-    >
-      {/* 🔹 Scroll Progress */}
+    <>
+      {/* Scroll Progress Bar */}
       <motion.div
-        style={{ width: `${scrollProgress}%` }}
-        className="h-[2px] bg-gradient-to-r from-cyansoft to-cyan-300 neon-glow"
+        className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 origin-left z-[1000]"
+        style={{ scaleX: scrollProgress / 100 }}
+        initial={{ scaleX: 0 }}
       />
 
-      {/* 🔸 Main Navbar */}
-      <motion.nav
-        className="relative mt-1 sm:mt-2 px-2 sm:px-4 md:px-6 lg:px-10 xl:px-12 py-2 sm:py-2.5 
-          flex items-center justify-between 
-          w-[99%] sm:w-[98%] md:w-[96%] lg:w-[94%] xl:w-[92%] 
-          max-w-[1800px]
-          rounded-full border border-cyan-400/20 bg-[rgba(10,10,10,0.5)]
-          backdrop-blur-xl neon-border"
+      {/* Navbar */}
+      <motion.header
+        initial={{ y: -100, opacity: 0 }}
+        animate={{
+          y: isVisible ? 0 : -100,
+          opacity: isVisible ? 1 : 0
+        }}
+        transition={{ duration: 0.15, ease: "easeOut" }}
+        className="fixed top-0 left-0 right-0 z-[999] pt-1"
       >
-        {/* 🚀 Logo */}
-        <motion.h1
-          whileHover={{ scale: 1.03 }}
-          onClick={() => scrollTo("home")}
-          className="font-extrabold cursor-pointer bg-gradient-to-r from-cyan-300 via-blue-400 to-cyansoft 
-            bg-clip-text text-transparent text-sm sm:text-base md:text-lg lg:text-xl neon-text-logo"
-        >
-          Deepak Portfolio
-        </motion.h1>
-
-        {/* 🖥 Desktop Nav */}
-        <div className="hidden md:flex items-center gap-1 lg:gap-2 xl:gap-3">
-          {sections.map((sec) => (
+        <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="relative flex items-center justify-between h-16 bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl px-4 sm:px-6 shadow-2xl">
+            {/* Logo */}
             <motion.button
-              key={sec}
-              onClick={() => scrollTo(sec)}
-              className={linkClass(sec)}
+              onClick={() => scrollTo("home")}
               whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.98 }}
+              whileTap={{ scale: 0.95 }}
+              className="flex items-center gap-2 group"
             >
-              {sec.replace("-", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+              <span className="text-white font-bold text-lg bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+                Deepak
+              </span>
             </motion.button>
-          ))}
-        </div>
 
-        {/* 📱 Mobile Menu Button */}
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          onClick={() => setOpen(!open)}
-          className="md:hidden text-white/90 hover:text-cyansoft transition-colors p-1"
-        >
-          {open ? <FaTimes size={18} /> : <FaBars size={18} />}
-        </motion.button>
+            {/* Desktop Navigation */}
+            <div className="hidden lg:flex items-center gap-1">
+              {visibleNavItems.map(({ id, label, icon: Icon }) => (
+                <motion.button
+                  key={id}
+                  onClick={() => scrollTo(id)}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${active === id
+                    ? "text-white"
+                    : "text-white/60 hover:text-white/90"
+                    }`}
+                >
+                  {active === id && (
+                    <motion.div
+                      layoutId="navbar-active"
+                      className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 rounded-lg border border-cyan-500/30"
+                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                    />
+                  )}
+                  <span className="relative z-10 flex items-center gap-2">
+                    <Icon size={16} />
+                    {label}
+                  </span>
+                </motion.button>
+              ))}
+            </div>
 
-        {/* 📱 Mobile Drawer */}
-        <AnimatePresence>
-          {open && (
-            <>
-              {/* Backdrop */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setOpen(false)}
-                className="fixed inset-0 bg-black/60 backdrop-blur-sm md:hidden"
-                style={{ top: 0, left: 0, right: 0, bottom: 0, zIndex: -1 }}
-              />
-              
-              {/* Menu */}
-              <motion.div
-                key="menu"
-                initial={{ opacity: 0, y: -20, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -20, scale: 0.95 }}
-                transition={{ duration: 0.3 }}
-                className="absolute top-full mt-2 left-2 right-2 mx-auto
-                  bg-black/90 backdrop-blur-2xl border border-cyan-400/30 
-                  rounded-2xl p-3 sm:p-4 neon-border-mobile md:hidden
-                  max-h-[70vh] overflow-y-auto"
+            {/* Blog Link (Desktop) - Conditional */}
+            {sectionsConfig.blog && (
+              <motion.a
+                href="/blog"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="hidden lg:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-lg font-medium shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 transition-all"
               >
-                <div className="flex flex-col gap-2">
-                  {sections.map((sec) => (
-                    <motion.button
-                      key={sec}
-                      onClick={() => scrollTo(sec)}
-                      whileTap={{ scale: 0.97 }}
-                      className={`text-left px-3 py-2.5 text-sm rounded-lg transition-all duration-300 ${
-                        active === sec
-                          ? "bg-cyansoft text-black font-semibold neon-button"
-                          : "text-white/80 hover:bg-cyansoft/10"
+                <BookOpen size={16} />
+                Blog
+              </motion.a>
+            )}
+
+            {/* Mobile Menu Button */}
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setOpen(!open)}
+              className="lg:hidden p-2 text-white/80 hover:text-white transition-colors"
+            >
+              {open ? <X size={24} /> : <Menu size={24} />}
+            </motion.button>
+          </div>
+        </nav>
+      </motion.header>
+
+      {/* Mobile Menu */}
+      <AnimatePresence>
+        {open && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setOpen(false)}
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[998] lg:hidden"
+            />
+
+            {/* Menu Panel */}
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed top-0 right-0 bottom-0 w-[280px] bg-gradient-to-b from-slate-900 to-slate-950 border-l border-white/10 z-[999] lg:hidden overflow-y-auto"
+            >
+              {/* Close Button */}
+              <div className="flex justify-end p-4">
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setOpen(false)}
+                  className="p-2 text-white/80 hover:text-white transition-colors"
+                >
+                  <X size={24} />
+                </motion.button>
+              </div>
+
+              {/* Navigation Items */}
+              <div className="px-4 pb-6 space-y-2">
+                {visibleNavItems.map(({ id, label, icon: Icon }, index) => (
+                  <motion.button
+                    key={id}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.01 }}
+                    onClick={() => scrollTo(id)}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all ${active === id
+                      ? "bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 text-white"
+                      : "text-white/70 hover:bg-white/5 hover:text-white"
                       }`}
-                    >
-                      {sec.replace("-", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-                    </motion.button>
-                  ))}
-                </div>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
-      </motion.nav>
+                  >
+                    <Icon size={20} />
+                    <span className="font-medium">{label}</span>
+                  </motion.button>
+                ))}
 
-      {/* ✨ Styles */}
-      <style jsx="true">{`
-        .neon-text {
-          text-shadow: 0 0 8px rgba(0, 255, 255, 0.6),
-            0 0 12px rgba(0, 255, 255, 0.4);
-        }
-        
-        .neon-text-logo {
-          filter: drop-shadow(0 0 8px rgba(0, 255, 255, 0.5));
-        }
-        
-        .neon-glow {
-          box-shadow: 0 0 10px rgba(0, 255, 255, 0.6),
-            0 0 20px rgba(0, 255, 255, 0.3);
-        }
-        
-        .neon-border {
-          box-shadow: 0 0 15px rgba(0, 255, 255, 0.1),
-            inset 0 0 15px rgba(0, 255, 255, 0.05);
-        }
-        
-        .neon-border-mobile {
-          box-shadow: 0 0 20px rgba(0, 255, 255, 0.2),
-            0 0 40px rgba(0, 255, 255, 0.1);
-        }
-        
-        .neon-button {
-          box-shadow: 0 0 10px rgba(0, 255, 255, 0.4);
-        }
-
-        /* Mobile optimizations */
-        @media (max-width: 640px) {
-          .neon-border {
-            box-shadow: 0 0 10px rgba(0, 255, 255, 0.08);
-          }
-        }
-
-        /* Tablet optimizations */
-        @media (min-width: 641px) and (max-width: 1024px) {
-          nav {
-            padding-left: 1.5rem;
-            padding-right: 1.5rem;
-          }
-        }
-
-        /* Large screen optimizations */
-        @media (min-width: 1600px) {
-          nav {
-            max-width: 1900px !important;
-          }
-        }
-      `}</style>
-    </motion.header>
+                {/* Blog Link (Mobile) - Conditional */}
+                {sectionsConfig.blog && (
+                  <motion.a
+                    href="/blog"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: visibleNavItems.length * 0.01 }}
+                    className="w-full flex items-center gap-3 px-4 py-3 mt-4 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-lg font-medium shadow-lg"
+                  >
+                    <BookOpen size={20} />
+                    Blog
+                  </motion.a>
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   );
 }

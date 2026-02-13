@@ -5,16 +5,19 @@ import "./index.css";
 
 // Components
 import Navbar from "./components/Navbar";
+import FloatingFAB from "./components/FloatingFAB";
+import GlobalBackgroundEffects from "./components/GlobalBackgroundEffects";
 import Header from "./components/Header";
 import About from "./components/About";
 import TechStack from "./components/TechStack";
+import GitHubStats from "./components/GitHubStats";
 import Projects from "./components/Projects";
 import Resume from "./components/Resume";
 import Contact from "./components/Contact";
 import Certifications from "./components/certifications";
 import TimelineSection from "./components/timeline";
 import Footer from "./components/Footer";
-import LoadingScreen from "./components/LoadingScreen";
+import ModernLoadingScreen from "./components/ModernLoadingScreen";
 import OfflinePage from "./components/offiline"; // ✅ NEW
 
 // Admin pages
@@ -27,22 +30,27 @@ import ProjectsEditor from "./components/admin/projectadmin";
 import ResumeEditor from "./components/admin/resumeadmin";
 import CertificationsEditor from "./components/admin/certificationsadmin";
 import TimelineEditor from "./components/admin/timelineadmin";
-import AnalysisDashboard from "./components/admin/AnalysisDashboard"; // ✅ NEW
+import GitHubStatsEditor from "./components/admin/githubstatsadmin";
+import AnalysisDashboard from "./components/admin/AnalysisDashboard";
 
 // Blog page
 import MassiveAnimatedBlogPage from "./components/blogpage";
+import BlogEditor from "./components/admin/BlogEditor";
+import LinkedInEditor from "./components/admin/LinkedInEditor";
 
 // Firestore hook
 import { useFirestoreData } from "./hooks/useFirestoreData";
 
 /* ✅ FIREBASE TOGGLE CONFIGURATION - Set to true to fetch from Firebase, false to use defaults */
-const SHOULD_FETCH_FROM_FIREBASE = true;
+/* ⚡ Set to false for faster development - no Firebase calls */
+const SHOULD_FETCH_FROM_FIREBASE = false;
 
 /* ✅ Default sections configuration (used when Firebase fetching is disabled) */
 const DEFAULT_SECTIONS_CONFIG = {
   home: true,
   about: true,
   "tech-stack": true,
+  "github-stats": true,
   projects: true,
   resume: true,
   certifications: true,
@@ -85,10 +93,11 @@ function AdminNavbar() {
     { name: "About", path: "/admin/about" },
     { name: "Tech", path: "/admin/techadmin" },
     { name: "Projects", path: "/admin/projects" },
+    { name: "GitHub Stats", path: "/admin/githubstats" },
     { name: "Resume", path: "/admin/resume" },
     { name: "Certifications", path: "/admin/certifications" },
     { name: "Timeline", path: "/admin/timeline" },
-    { name: "Analysis", path: "/admin/analysis" }, // ✅ Added
+    { name: "Analysis", path: "/admin/analysis" },
   ];
 
   return (
@@ -100,11 +109,10 @@ function AdminNavbar() {
             <a
               key={link.path}
               href={link.path}
-              className={`text-sm px-3 py-1 rounded transition-all ${
-                location.pathname === link.path
-                  ? "bg-white/20 text-white"
-                  : "bg-white/5 text-white/70 hover:bg-white/10"
-              }`}
+              className={`text-sm px-3 py-1 rounded transition-all ${location.pathname === link.path
+                ? "bg-white/20 text-white"
+                : "bg-white/5 text-white/70 hover:bg-white/10"
+                }`}
             >
               {link.name}
             </a>
@@ -125,13 +133,21 @@ function AdminNavbar() {
 function HomeShell({ sectionsConfig }) {
   return (
     <div className="relative overflow-x-hidden text-white">
+      {/* Global Background Effects */}
+      <GlobalBackgroundEffects />
+
+      {/* Desktop Navbar */}
       <Navbar />
+
+      {/* Mobile FAB Menu */}
+      <FloatingFAB />
 
       {sectionsConfig.home && <Header />}
 
-      <main>
+      <main className="relative z-10">
         {sectionsConfig.about && <About />}
         {sectionsConfig["tech-stack"] && <TechStack />}
+        {sectionsConfig["github-stats"] && <GitHubStats />}
         {sectionsConfig.projects && <Projects />}
         {sectionsConfig.resume && <Resume />}
         {sectionsConfig.certifications && <Certifications />}
@@ -150,9 +166,9 @@ function App() {
   const [fadeOut, setFadeOut] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
-  // ⏱ Force loader to stay for at least 2 seconds
+  // ⏱ Force loader to stay for at least 500ms (optimized for instant loading)
   useEffect(() => {
-    const timer = setTimeout(() => setMinTimePassed(true), 2000);
+    const timer = setTimeout(() => setMinTimePassed(true), 500);
     return () => clearTimeout(timer);
   }, []);
 
@@ -176,6 +192,23 @@ function App() {
     };
     window.addEventListener("mousemove", handleMouseMove);
     return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
+
+  // 📊 Analytics tracking
+  useEffect(() => {
+    // Import analytics functions dynamically
+    import("./utils/analytics").then(({ logDeviceInfo, logTrafficSource, logError }) => {
+      // Log device and traffic info on mount
+      logDeviceInfo();
+      logTrafficSource();
+
+      // Add global error tracking
+      const handleError = (event) => {
+        logError(event.message, event.error?.stack, "Global");
+      };
+      window.addEventListener("error", handleError);
+      return () => window.removeEventListener("error", handleError);
+    });
   }, []);
 
   // 🚨 If offline, show offline page
@@ -206,7 +239,7 @@ function App() {
                   transition={{ duration: 0.8, ease: "easeInOut" }}
                   className="fixed inset-0 z-[9999]"
                 >
-                  <LoadingScreen isLoading={true} />
+                  <ModernLoadingScreen />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -228,13 +261,7 @@ function App() {
                       path="/blog"
                       element={
                         sectionsConfig.blog ? (
-                          <div className="min-h-screen bg-slate-50 text-slate-900">
-                            <Navbar />
-                            <main className="pt-6">
-                              <MassiveAnimatedBlogPage />
-                            </main>
-                            <Footer />
-                          </div>
+                          <MassiveAnimatedBlogPage />
                         ) : (
                           <Navigate to="/" replace />
                         )
@@ -242,12 +269,24 @@ function App() {
                     />
 
                     {/* 🔐 Admin Routes */}
-                    <Route path="/admin/login" element={<AdminLogin />} />
+                    <Route path="/admin/login" element={
+                      <div className="relative min-h-screen">
+                        <GlobalBackgroundEffects />
+                        <div className="relative z-10">
+                          <AdminLogin />
+                        </div>
+                      </div>
+                    } />
                     <Route
                       path="/admindsh"
                       element={
                         <AdminRoute>
-                          <AdminDashboard />
+                          <div className="relative min-h-screen">
+                            <GlobalBackgroundEffects />
+                            <div className="relative z-10">
+                              <AdminDashboard />
+                            </div>
+                          </div>
                         </AdminRoute>
                       }
                     />
@@ -258,19 +297,25 @@ function App() {
                       ["about", AboutEditor],
                       ["techadmin", TechStackEditor],
                       ["projects", ProjectsEditor],
+                      ["githubstats", GitHubStatsEditor],
                       ["resume", ResumeEditor],
                       ["certifications", CertificationsEditor],
                       ["timeline", TimelineEditor],
-                      ["analysis", AnalysisDashboard], // ✅ Added Analytics Route
+                      ["blog", BlogEditor],
+                      ["linkedin", LinkedInEditor],
+                      ["analysis", AnalysisDashboard],
                     ].map(([path, Component]) => (
                       <Route
                         key={path}
                         path={`/admin/${path}`}
                         element={
                           <AdminRoute>
-                            <div className="min-h-screen bg-[#000] text-white">
+                            <div className="min-h-screen bg-[#000] text-white relative">
+                              <GlobalBackgroundEffects />
                               <AdminNavbar />
-                              <Component />
+                              <div className="relative z-10">
+                                <Component />
+                              </div>
                             </div>
                           </AdminRoute>
                         }

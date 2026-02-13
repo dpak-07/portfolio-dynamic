@@ -45,8 +45,8 @@ export default function Header() {
   const sectionRef = useRef(null);
   const sectionInView = useInView(sectionRef, { once: true, amount: 0.3 });
   const loggedOnce = useRef(false);
-  
-  useEffect(() => { 
+
+  useEffect(() => {
     if (!loggedOnce.current) {
       logSectionView("home");
       loggedOnce.current = true;
@@ -86,11 +86,11 @@ export default function Header() {
   // ✅ Process roles for mobile display
   const processedRoles = useMemo(() => {
     if (!profileData?.roles) return { first2: "", remaining: "", hasMore: false };
-    
+
     const rolesArray = profileData.roles.split("•").map(role => role.trim()).filter(Boolean);
     const first2 = rolesArray.slice(0, 2).join(" • ");
     const remaining = rolesArray.slice(2).join(" • ");
-    
+
     return {
       first2,
       remaining,
@@ -127,7 +127,7 @@ export default function Header() {
   // 🌀 Loading Spinner
   if (loading) {
     return (
-      <div className="w-full h-screen flex items-center justify-center bg-black text-white">
+      <div className="w-full h-screen flex items-center justify-center text-white">
         <motion.div
           className="w-12 h-12 border-4 border-cyan-400 border-t-transparent rounded-full"
           animate={{ rotate: 360 }}
@@ -159,9 +159,8 @@ export default function Header() {
     <header
       id="home"
       ref={sectionRef}
-      className={`relative w-full min-h-screen flex flex-col items-center justify-center text-white overflow-hidden transition-opacity duration-700 ${
-        visible ? "opacity-100" : "opacity-0"
-      }`}
+      className={`relative w-full min-h-screen flex flex-col items-center justify-center text-white overflow-hidden transition-opacity duration-700 ${visible ? "opacity-100" : "opacity-0"
+        }`}
     >
       {/* 🌈 Animated Gradient Background */}
       <div className="absolute inset-0 -z-10 overflow-hidden">
@@ -271,8 +270,8 @@ export default function Header() {
           {/* Desktop View */}
           <p
             className="hidden sm:block text-base sm:text-lg md:text-xl text-white/80 whitespace-nowrap overflow-x-auto"
-            style={{ 
-              scrollbarWidth: 'none', 
+            style={{
+              scrollbarWidth: 'none',
               msOverflowStyle: 'none',
             }}
           >
@@ -400,11 +399,20 @@ export default function Header() {
 
       {/* ===== Resume Modal ===== */}
       {showResume && (
-        <div className="fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 backdrop-blur-md">
+        <div
+          className="fixed inset-0 bg-black/90 z-[9999] flex flex-col items-center justify-center p-4 backdrop-blur-md"
+          onClick={(e) => {
+            // Close if clicking the backdrop
+            if (e.target === e.currentTarget) {
+              setShowResume(false);
+            }
+          }}
+        >
           <motion.button
             onClick={() => setShowResume(false)}
-            className="absolute top-4 right-4 sm:top-6 sm:right-6 text-white hover:text-cyansoft transition-all z-10 bg-black/50 rounded-full p-2"
-            whileHover={{ scale: 1.2 }}
+            className="absolute top-4 right-4 sm:top-6 sm:right-6 text-white hover:text-cyansoft transition-all z-[10000] bg-black/80 hover:bg-black rounded-full p-3 border border-white/20 hover:border-cyansoft"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
           >
             <FaTimes className="w-6 h-6" />
           </motion.button>
@@ -414,6 +422,7 @@ export default function Header() {
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.4, ease: "easeOut" }}
             className="w-full max-w-4xl lg:max-w-5xl h-[80vh] bg-[#0a0a0a] border border-white/10 rounded-xl overflow-hidden shadow-2xl mx-4"
+            onClick={(e) => e.stopPropagation()}
           >
             <iframe
               src={preview}

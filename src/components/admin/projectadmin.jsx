@@ -2,8 +2,8 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Eye, Save, Download, Upload,
-  Plus, X, ArrowUp, ArrowDown, Image as ImageIcon, Github, Globe, 
-  FolderPlus, Trash, RotateCcw, Wifi, WifiOff, Loader, 
+  Plus, X, ArrowUp, ArrowDown, Image as ImageIcon, Github, Globe,
+  FolderPlus, Trash, RotateCcw, Wifi, WifiOff, Loader,
   AlertCircle, CheckCircle, Bug, Code, Palette
 } from "lucide-react";
 import { doc, setDoc, getDoc, Timestamp } from "firebase/firestore";
@@ -242,7 +242,7 @@ export default function ProjectsAdminCRT() {
   const [isOnline, setIsOnline] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
-  
+
   // Save confirmation states
   const [changesPopupOpen, setChangesPopupOpen] = useState(false);
   const [pendingChanges, setPendingChanges] = useState([]);
@@ -344,19 +344,19 @@ export default function ProjectsAdminCRT() {
       addDebugLog("ADMIN_LOAD", "Fetching admin document", { path: FIRESTORE_ADMIN_DOC });
       const adminDocRef = doc(db, FIRESTORE_ADMIN_DOC);
       const adminSnap = await getDoc(adminDocRef);
-      
+
       if (adminSnap.exists()) {
         const adminData = adminSnap.data();
         addDebugLog("ADMIN_DATA", "Admin document found", adminData);
-        
+
         // Try multiple possible field names
         const code = adminData.secretCode || adminData.code || adminData.adminCode || adminData.password;
-        
+
         if (code) {
           const trimmedCode = String(code).trim();
           setAdminSecret(trimmedCode);
-          addDebugLog("ADMIN_CODE", "Admin code loaded", { 
-            code: trimmedCode, 
+          addDebugLog("ADMIN_CODE", "Admin code loaded", {
+            code: trimmedCode,
             length: trimmedCode.length,
             fieldsChecked: ["secretCode", "code", "adminCode", "password"]
           });
@@ -375,13 +375,13 @@ export default function ProjectsAdminCRT() {
       setStatus("🔄 Loading projects data...");
       const projectsDocRef = doc(db, FIRESTORE_PROJECTS_DOC);
       const projectsSnap = await getDoc(projectsDocRef);
-      
+
       let initialProjects = null;
-      
+
       if (projectsSnap.exists()) {
         // Use data from Firestore
         initialProjects = projectsSnap.data();
-        addDebugLog("PROJECTS_DATA", "Projects document loaded", { 
+        addDebugLog("PROJECTS_DATA", "Projects document loaded", {
           categories: Object.keys(initialProjects.categories || {}),
           hasCategories: !!initialProjects.categories
         });
@@ -390,7 +390,7 @@ export default function ProjectsAdminCRT() {
         // Fallback to session storage or default
         addDebugLog("PROJECTS_FALLBACK", "Projects document not found, checking session storage");
         const session = sessionStorage.getItem(STORAGE_DRAFT_KEY);
-        
+
         if (session) {
           initialProjects = JSON.parse(session);
           addDebugLog("SESSION_LOAD", "Loaded from session storage");
@@ -401,11 +401,11 @@ export default function ProjectsAdminCRT() {
           setStatus("✓ Using default projects");
         }
       }
-      
+
       setProjects(initialProjects);
       committedRef.current = JSON.parse(JSON.stringify(initialProjects));
       prevProjectsRef.current = JSON.stringify(initialProjects);
-      
+
       // Set active category
       const firstCat = Object.keys(initialProjects.categories || {})[0] || "";
       setActiveCat(firstCat);
@@ -418,21 +418,21 @@ export default function ProjectsAdminCRT() {
       console.error("Init error:", error);
       setStatus("⚠ Using offline mode - " + error.message);
       setStatusType("error");
-      
+
       // Fallback to session storage or default
       const session = sessionStorage.getItem(STORAGE_DRAFT_KEY);
       const fallbackProjects = session ? JSON.parse(session) : defaultData;
-      
+
       setProjects(fallbackProjects);
       committedRef.current = JSON.parse(JSON.stringify(fallbackProjects));
       prevProjectsRef.current = JSON.stringify(fallbackProjects);
-      
+
       const firstCat = Object.keys(fallbackProjects.categories || {})[0] || "";
       setActiveCat(firstCat);
       setAdminSecret("69"); // Fallback admin code
-      addDebugLog("FALLBACK_MODE", "Using fallback data", { 
-        category: firstCat, 
-        hasSession: !!session 
+      addDebugLog("FALLBACK_MODE", "Using fallback data", {
+        category: firstCat,
+        hasSession: !!session
       });
     }
   }, []);
@@ -497,14 +497,14 @@ export default function ProjectsAdminCRT() {
         categories: Object.keys(cleanData.categories),
         totalProjects: Object.values(cleanData.categories).reduce((sum, arr) => sum + arr.length, 0)
       });
-      
+
       setStatus("✓ SAVED TO FIREBASE");
       setStatusType("success");
       setHasChanges(false);
       committedRef.current = JSON.parse(JSON.stringify(projectsData));
       return true;
     } catch (error) {
-      addDebugLog("SAVE_ERROR", "Firebase save failed", { 
+      addDebugLog("SAVE_ERROR", "Firebase save failed", {
         error: error.message,
         code: error.code
       });
@@ -523,14 +523,14 @@ export default function ProjectsAdminCRT() {
     if (!window.confirm("Force overwrite Firebase with current local data? This will replace ALL remote data.")) {
       return;
     }
-    
+
     addDebugLog("MANUAL_SYNC", "Force syncing to Firebase", {
       localCategories: Object.keys(projects.categories || {}),
       localProjects: Object.values(projects.categories || {}).reduce((sum, arr) => sum + arr.length, 0)
     });
-    
+
     const success = await saveToFirebase(projects);
-    
+
     if (success) {
       addDebugLog("MANUAL_SYNC_SUCCESS", "Force sync completed");
       setStatus("✓ Force sync completed");
@@ -546,7 +546,7 @@ export default function ProjectsAdminCRT() {
       addDebugLog("VERIFY", "Verifying Firebase data");
       const projectsDocRef = doc(db, FIRESTORE_PROJECTS_DOC);
       const projectsSnap = await getDoc(projectsDocRef);
-      
+
       if (projectsSnap.exists()) {
         const firebaseData = projectsSnap.data();
         addDebugLog("VERIFY_DATA", "Firebase data found", {
@@ -554,11 +554,11 @@ export default function ProjectsAdminCRT() {
           totalProjects: Object.values(firebaseData.categories || {}).reduce((sum, arr) => sum + arr.length, 0),
           lastUpdated: firebaseData.lastUpdated
         });
-        
+
         // Compare with local data
         const localCategories = Object.keys(projects.categories || {}).sort();
         const firebaseCategories = Object.keys(firebaseData.categories || {}).sort();
-        
+
         if (JSON.stringify(localCategories) !== JSON.stringify(firebaseCategories)) {
           addDebugLog("VERIFY_MISMATCH", "Data mismatch detected", {
             local: localCategories,
@@ -600,7 +600,7 @@ export default function ProjectsAdminCRT() {
       setStatus("⚠ Offline mode");
       setStatusType("error");
     };
-    
+
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
 
@@ -642,7 +642,7 @@ export default function ProjectsAdminCRT() {
       field: key,
       value: value
     });
-    
+
     const copy = JSON.parse(JSON.stringify(projects));
     if (copy.categories && copy.categories[activeCat] && copy.categories[activeCat][idx]) {
       copy.categories[activeCat][idx][key] = value;
@@ -688,7 +688,7 @@ export default function ProjectsAdminCRT() {
     addDebugLog("MOVE_PROJECT", "Moving project", { category: activeCat, index: idx, direction: dir });
     const copy = JSON.parse(JSON.stringify(projects));
     if (!copy.categories || !copy.categories[activeCat]) return;
-    
+
     const arr = copy.categories[activeCat];
     const newIdx = idx + dir;
     if (newIdx < 0 || newIdx >= arr.length) return;
@@ -696,13 +696,44 @@ export default function ProjectsAdminCRT() {
     setProjects(copy);
   };
 
-  const handleImageUpload = (e, idx) => {
-    addDebugLog("IMAGE_UPLOAD", "Uploading image", { category: activeCat, index: idx });
+  const handleImageUpload = async (e, idx) => {
+    addDebugLog("IMAGE_UPLOAD", "Starting Supabase image upload", { category: activeCat, index: idx });
     const file = e.target.files[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => updateProject(idx, "img", ev.target.result);
-    reader.readAsDataURL(file);
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setStatus("✗ Please select an image file");
+      setStatusType("error");
+      return;
+    }
+
+    try {
+      setStatus("📤 Uploading image to Supabase...");
+      setStatusType("info");
+      setIsSyncing(true);
+
+      // Import uploadImage dynamically
+      const { uploadImage } = await import("@/utils/supabaseStorage");
+
+      // Upload to Supabase
+      const imageUrl = await uploadImage(file, 'projects');
+
+      addDebugLog("IMAGE_UPLOAD_SUCCESS", "Image uploaded successfully", { url: imageUrl });
+
+      // Update project with Supabase URL
+      updateProject(idx, "img", imageUrl);
+
+      setStatus("✓ Image uploaded successfully");
+      setStatusType("success");
+    } catch (error) {
+      addDebugLog("IMAGE_UPLOAD_ERROR", "Upload failed", { error: error.message });
+      console.error("Image upload error:", error);
+      setStatus(`✗ Upload failed: ${error.message}`);
+      setStatusType("error");
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   // Button style options
@@ -729,7 +760,7 @@ export default function ProjectsAdminCRT() {
       setStatusType("error");
       return;
     }
-    
+
     const copy = JSON.parse(JSON.stringify(projects));
     if (!copy.categories) copy.categories = {};
     copy.categories[name] = [];
@@ -742,34 +773,34 @@ export default function ProjectsAdminCRT() {
 
   // Delete category function
   const deleteCategory = (cat) => {
-    addDebugLog("DELETE_CATEGORY", "Attempting to delete category", { 
+    addDebugLog("DELETE_CATEGORY", "Attempting to delete category", {
       category: cat,
       currentCategories: Object.keys(projects.categories || {})
     });
-    
+
     if (!projects?.categories || !projects.categories[cat]) {
       addDebugLog("DELETE_ERROR", "Category not found", { category: cat });
       setStatus("⚠ Category not found");
       setStatusType("error");
       return;
     }
-    
+
     const projectCount = projects.categories[cat].length;
     if (window.confirm(`Delete category "${cat}" and all its ${projectCount} projects?`)) {
       const copy = JSON.parse(JSON.stringify(projects));
-      
+
       // Delete the category
       delete copy.categories[cat];
-      
+
       // Update active category if we're deleting the current one
       const remainingCats = Object.keys(copy.categories || {});
       if (activeCat === cat) {
         setActiveCat(remainingCats[0] || "");
       }
-      
+
       setProjects(copy);
-      addDebugLog("DELETE_SUCCESS", "Category deleted locally", { 
-        category: cat, 
+      addDebugLog("DELETE_SUCCESS", "Category deleted locally", {
+        category: cat,
         remainingCategories: remainingCats,
         newActiveCategory: remainingCats[0] || "",
         projectCountDeleted: projectCount
@@ -786,12 +817,12 @@ export default function ProjectsAdminCRT() {
     addDebugLog("SAVE_CONFIRMATION", "Initiating save confirmation");
     const prev = committedRef.current || defaultData;
     const changed = computeChanges(prev, projects);
-    
-    addDebugLog("CHANGES_DETECTED", "Changes computed", { 
+
+    addDebugLog("CHANGES_DETECTED", "Changes computed", {
       changes: changed,
       hasChanges: changed.length > 0
     });
-    
+
     if (changed.length === 0) {
       setStatus("No changes detected");
       setStatusType("info");
@@ -819,13 +850,13 @@ export default function ProjectsAdminCRT() {
 
     const inputCode = String(adminCode).trim();
     const storedCode = String(adminSecret).trim();
-    
+
     addDebugLog("CODE_COMPARISON", "Comparing codes", {
       input: inputCode,
       stored: storedCode,
       match: inputCode === storedCode
     });
-    
+
     if (inputCode !== storedCode) {
       addDebugLog("AUTH_FAILED", "Authentication failed - wrong code");
       setStatus("✗ ACCESS DENIED - Wrong code");
@@ -844,7 +875,7 @@ export default function ProjectsAdminCRT() {
     sessionStorage.removeItem(STORAGE_DRAFT_KEY);
 
     const success = await saveToFirebase(projects);
-    
+
     if (success) {
       committedRef.current = JSON.parse(JSON.stringify(projects));
       setChangesPopupOpen(false);
@@ -868,7 +899,7 @@ export default function ProjectsAdminCRT() {
       setStatus("Reset to default");
       setStatusType("info");
       setHasChanges(false);
-      
+
       // Reset active category
       const firstCat = Object.keys(defaultData.categories || {})[0] || "";
       setActiveCat(firstCat);
@@ -900,7 +931,7 @@ export default function ProjectsAdminCRT() {
         setStatus("Imported successfully");
         setStatusType("success");
         setHasChanges(true);
-        
+
         // Set active category
         const firstCat = Object.keys(imported.categories || {})[0] || "";
         setActiveCat(firstCat);
@@ -917,16 +948,16 @@ export default function ProjectsAdminCRT() {
   // Diff helpers
   function computeChanges(oldConfig = {}, newConfig = {}) {
     const changes = [];
-    
+
     // Check categories
     const oldCats = Object.keys(oldConfig.categories || {});
     const newCats = Object.keys(newConfig.categories || {});
-    
+
     // Category changes
     if (JSON.stringify(oldCats) !== JSON.stringify(newCats)) {
       changes.push("categories");
     }
-    
+
     // Project changes per category
     oldCats.forEach(cat => {
       const oldProjects = oldConfig.categories[cat] || [];
@@ -935,16 +966,16 @@ export default function ProjectsAdminCRT() {
         changes.push(`categories.${cat}`);
       }
     });
-    
+
     return [...new Set(changes)];
   }
 
   // Debug: Log admin secret when it changes
   useEffect(() => {
     if (adminSecret) {
-      addDebugLog("ADMIN_SECRET_UPDATE", "Admin secret updated", { 
+      addDebugLog("ADMIN_SECRET_UPDATE", "Admin secret updated", {
         secret: adminSecret,
-        length: adminSecret.length 
+        length: adminSecret.length
       });
     }
   }, [adminSecret]);
@@ -970,9 +1001,9 @@ export default function ProjectsAdminCRT() {
   return (
     <div className="w-screen h-screen overflow-hidden crt-screen crt-glow">
       <CRTStyles />
-      
+
       <div className="w-full h-full flex flex-col p-4 gap-4">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="crt-panel rounded-lg p-4"
@@ -1054,7 +1085,7 @@ export default function ProjectsAdminCRT() {
 
         {/* DEBUG PANEL */}
         {debugMode && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             className="debug-panel rounded-lg p-4 overflow-hidden"
@@ -1093,7 +1124,7 @@ export default function ProjectsAdminCRT() {
 
         <div className="flex-1 flex gap-4 overflow-hidden">
           {/* SIDEBAR */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             className="w-72 crt-panel rounded-lg p-4 flex flex-col justify-between"
@@ -1105,11 +1136,10 @@ export default function ProjectsAdminCRT() {
                   <div key={cat} className="flex items-center justify-between">
                     <button
                       onClick={() => setActiveCat(cat)}
-                      className={`w-full text-left px-3 py-2 rounded transition-all ${
-                        activeCat === cat 
-                          ? "crt-button crt-text" 
+                      className={`w-full text-left px-3 py-2 rounded transition-all ${activeCat === cat
+                          ? "crt-button crt-text"
                           : "text-cyan-400/60 hover:text-cyan-400"
-                      }`}
+                        }`}
                     >
                       {cat}
                     </button>
@@ -1192,7 +1222,7 @@ export default function ProjectsAdminCRT() {
           </motion.div>
 
           {/* MAIN CONTENT */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="flex-1 crt-panel rounded-lg p-6 overflow-y-auto hide-scrollbar"
@@ -1294,9 +1324,8 @@ export default function ProjectsAdminCRT() {
                             />
                           </label>
                         </div>
-                        <div className={`mt-3 rounded-lg border max-h-48 max-w-full object-contain flex items-center justify-center overflow-hidden ${
-                          !p.img || p.img.trim() === "" ? 'image-placeholder h-32' : ''
-                        }`}>
+                        <div className={`mt-3 rounded-lg border max-h-48 max-w-full object-contain flex items-center justify-center overflow-hidden ${!p.img || p.img.trim() === "" ? 'image-placeholder h-32' : ''
+                          }`}>
                           {!p.img || p.img.trim() === "" ? (
                             <div className="text-center p-4">
                               <ImageIcon size={24} className="mx-auto mb-2 opacity-50" />
@@ -1345,13 +1374,12 @@ export default function ProjectsAdminCRT() {
                               key={style.value}
                               type="button"
                               onClick={() => updateProject(idx, "buttonStyle", style.value)}
-                              className={`px-3 py-2 rounded text-xs font-medium transition-all ${
-                                p.buttonStyle === style.value 
-                                  ? `${style.value} border-2 border-white scale-105` 
+                              className={`px-3 py-2 rounded text-xs font-medium transition-all ${p.buttonStyle === style.value
+                                  ? `${style.value} border-2 border-white scale-105`
                                   : 'crt-button opacity-70 hover:opacity-100'
-                              }`}
-                              style={{ 
-                                backgroundColor: p.buttonStyle === style.value ? style.color : undefined 
+                                }`}
+                              style={{
+                                backgroundColor: p.buttonStyle === style.value ? style.color : undefined
                               }}
                             >
                               {style.label}
@@ -1407,9 +1435,8 @@ export default function ProjectsAdminCRT() {
                     className="crt-panel p-4 rounded-lg hover:shadow-cyan-400/30 transition-all cursor-pointer"
                     whileHover={{ scale: 1.03 }}
                   >
-                    <div className={`w-full h-40 rounded mb-3 overflow-hidden flex items-center justify-center ${
-                      !p.img || p.img.trim() === "" ? 'image-placeholder' : ''
-                    }`}>
+                    <div className={`w-full h-40 rounded mb-3 overflow-hidden flex items-center justify-center ${!p.img || p.img.trim() === "" ? 'image-placeholder' : ''
+                      }`}>
                       {!p.img || p.img.trim() === "" ? (
                         <div className="text-center p-4">
                           <ImageIcon size={32} className="mx-auto mb-2 opacity-30" />
@@ -1482,9 +1509,8 @@ export default function ProjectsAdminCRT() {
                   <X size={18} />
                 </button>
               </div>
-              <div className={`w-full rounded-lg mb-4 border border-cyan-400/30 max-h-64 overflow-hidden flex items-center justify-center ${
-                !selectedProject.img || selectedProject.img.trim() === "" ? 'image-placeholder h-64' : ''
-              }`}>
+              <div className={`w-full rounded-lg mb-4 border border-cyan-400/30 max-h-64 overflow-hidden flex items-center justify-center ${!selectedProject.img || selectedProject.img.trim() === "" ? 'image-placeholder h-64' : ''
+                }`}>
                 {!selectedProject.img || selectedProject.img.trim() === "" ? (
                   <div className="text-center p-4">
                     <ImageIcon size={48} className="mx-auto mb-3 opacity-30" />
@@ -1553,13 +1579,13 @@ export default function ProjectsAdminCRT() {
       {/* SAVE CONFIRMATION MODAL */}
       <AnimatePresence>
         {changesPopupOpen && (
-          <motion.div 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
-            exit={{ opacity: 0 }} 
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/80"
           >
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}

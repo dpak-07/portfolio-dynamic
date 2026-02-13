@@ -54,63 +54,9 @@ export default function Contact() {
     <section
       id="contact"
       ref={sectionRef}
-      className="relative py-16 px-6 bg-black overflow-hidden min-h-[85vh] flex items-center"
+      className="relative py-16 px-6 overflow-hidden min-h-[85vh] flex items-center"
     >
       {/* Animated Background Elements */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-cyan-900/20 via-black to-black" />
-      
-      {/* Floating Orbs */}
-      <motion.div
-        animate={{
-          scale: [1, 1.2, 1],
-          opacity: [0.3, 0.5, 0.3],
-          x: [0, 100, 0],
-        }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-20 left-10 w-72 h-72 bg-cyan-500/30 rounded-full blur-[120px]"
-      />
-      <motion.div
-        animate={{
-          scale: [1, 1.3, 1],
-          opacity: [0.2, 0.4, 0.2],
-          x: [0, -80, 0],
-        }}
-        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute bottom-20 right-10 w-96 h-96 bg-purple-500/20 rounded-full blur-[120px]"
-      />
-      <motion.div
-        animate={{
-          scale: [1, 1.1, 1],
-          opacity: [0.2, 0.35, 0.2],
-          y: [0, -50, 0],
-        }}
-        transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[150px]"
-      />
-
-      {/* Animated Grid */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#0f172a_1px,transparent_1px),linear-gradient(to_bottom,#0f172a_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
-
-      {/* Floating Particles */}
-      {[...Array(20)].map((_, i) => (
-        <motion.div
-          key={i}
-          animate={{
-            y: [0, -30, 0],
-            opacity: [0, 1, 0],
-          }}
-          transition={{
-            duration: 3 + Math.random() * 2,
-            repeat: Infinity,
-            delay: Math.random() * 5,
-          }}
-          className="absolute w-1 h-1 bg-cyan-400/60 rounded-full"
-          style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-          }}
-        />
-      ))}
 
       <div className="relative max-w-6xl mx-auto w-full">
         {/* Compact Header */}
@@ -154,7 +100,7 @@ export default function Contact() {
           >
             {/* Glow Effect on Hover */}
             <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-3xl blur opacity-0 group-hover:opacity-20 transition duration-1000" />
-            
+
             <div className="relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-8 space-y-5 hover:border-cyan-500/30 transition-all">
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="relative">
@@ -214,9 +160,8 @@ export default function Contact() {
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0 }}
-                      className={`text-sm font-medium ${
-                        status.type === "success" ? "text-green-400" : "text-red-400"
-                      }`}
+                      className={`text-sm font-medium ${status.type === "success" ? "text-green-400" : "text-red-400"
+                        }`}
                     >
                       {status.text}
                     </motion.span>
@@ -255,10 +200,10 @@ export default function Contact() {
           >
             {/* Glow Effect */}
             <div className="absolute -inset-0.5 bg-gradient-to-br from-cyan-500 to-purple-500 rounded-3xl blur opacity-20 group-hover:opacity-40 transition duration-1000" />
-            
+
             <div className="relative bg-gradient-to-br from-cyan-500/10 via-purple-500/10 to-blue-500/10 backdrop-blur-sm border border-white/10 rounded-3xl p-8 flex flex-col justify-between hover:border-cyan-500/30 transition-all h-full">
               <div>
-                <motion.h3 
+                <motion.h3
                   className="text-2xl font-bold text-white mb-4 flex items-center gap-2"
                   animate={{ opacity: [1, 0.7, 1] }}
                   transition={{ duration: 2, repeat: Infinity }}
@@ -271,14 +216,14 @@ export default function Contact() {
                     ✨
                   </motion.span>
                 </motion.h3>
-                
+
                 {/* Email */}
                 <div className="mb-4 p-3 bg-black/30 rounded-lg hover:bg-black/40 transition-colors">
                   <div className="flex items-center gap-2 mb-1">
                     <Mail className="w-4 h-4 text-cyan-400" />
                     <span className="text-cyan-400 text-xs font-semibold uppercase">Email</span>
                   </div>
-                  <a 
+                  <a
                     href="mailto:deepakofficial0103@gmail.com"
                     className="text-white/80 text-sm hover:text-cyan-400 transition-colors break-all"
                   >
@@ -298,29 +243,29 @@ export default function Contact() {
 
               {/* Status Indicators */}
               <div className="mt-6 space-y-3">
-                <motion.div 
+                <motion.div
                   className="flex items-center gap-2"
                   whileHover={{ x: 5 }}
                 >
-                  <motion.div 
+                  <motion.div
                     className="w-2 h-2 bg-green-400 rounded-full"
                     animate={{ scale: [1, 1.2, 1] }}
                     transition={{ duration: 2, repeat: Infinity }}
                   />
                   <span className="text-white/70 text-sm">Available for work</span>
                 </motion.div>
-                <motion.div 
+                <motion.div
                   className="flex items-center gap-2"
                   whileHover={{ x: 5 }}
                 >
-                  <motion.div 
+                  <motion.div
                     className="w-2 h-2 bg-cyan-400 rounded-full"
                     animate={{ opacity: [1, 0.5, 1] }}
                     transition={{ duration: 1.5, repeat: Infinity }}
                   />
                   <span className="text-white/70 text-sm">Open to collaborations</span>
                 </motion.div>
-                <motion.div 
+                <motion.div
                   className="flex items-center gap-2"
                   whileHover={{ x: 5 }}
                 >

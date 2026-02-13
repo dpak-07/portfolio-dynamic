@@ -74,13 +74,12 @@ export default function Footer() {
 
   return (
     <motion.footer
-      className="relative bg-gradient-to-b from-black/30 via-black/60 to-black/90 backdrop-blur-2xl border-t border-white/10 text-white py-16 mt-0 overflow-hidden"
+      className="relative backdrop-blur-2xl border-t border-white/10 text-white py-16 mt-0 overflow-hidden"
       initial="hidden"
       whileInView="show"
       viewport={{ once: true }}
     >
       {/* Subtle background glow */}
-      <div className="absolute inset-0 bg-gradient-to-tr from-cyansoft/10 to-transparent blur-3xl"></div>
 
       {/* Loading state */}
       {firestoreLoading && (

@@ -33,7 +33,7 @@ export default function Projects() {
   const categories = useMemo(() => {
     const rawCategories = projectsData?.categories || {};
     const orderedCategories = {};
-    
+
     CATEGORY_ORDER.forEach((categoryName) => {
       if (rawCategories[categoryName]) {
         const sorted = [...rawCategories[categoryName]].sort((a, b) => {
@@ -63,7 +63,7 @@ export default function Projects() {
         if (!a.featured && b.featured) return 1;
         return 0;
       });
-    
+
     return {
       All: allProjects,
       ...orderedCategories,
@@ -136,7 +136,7 @@ export default function Projects() {
     <section
       id="projects"
       ref={sectionRef}
-      className="relative min-h-screen py-20 px-6 bg-black overflow-hidden"
+      className="relative min-h-screen py-20 px-6 overflow-hidden"
     >
       {/* Animated Gradient Background */}
       <motion.div
@@ -212,7 +212,7 @@ export default function Projects() {
             Featured Projects
           </motion.h2>
         </motion.div>
-        
+
         <motion.p
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -245,23 +245,22 @@ export default function Projects() {
             onClick={() => handleCategoryChange(cat)}
             initial={{ opacity: 0, y: 20, scale: 0.8 }}
             whileInView={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ 
-              duration: 0.5, 
+            transition={{
+              duration: 0.5,
               delay: 0.5 + idx * 0.05,
               type: "spring",
               stiffness: 200,
             }}
-            whileHover={{ 
+            whileHover={{
               scale: 1.08,
               y: -2,
               transition: { duration: 0.2 }
             }}
             whileTap={{ scale: 0.95 }}
-            className={`px-6 py-2.5 rounded-full font-semibold text-sm transition-all relative overflow-hidden ${
-              active === cat
+            className={`px-6 py-2.5 rounded-full font-semibold text-sm transition-all relative overflow-hidden ${active === cat
                 ? "bg-gradient-to-r from-cyan-500 to-purple-600 text-white shadow-lg shadow-cyan-500/30"
                 : "bg-white/5 text-white/70 border border-white/10 hover:border-cyan-400/40 hover:text-white hover:bg-white/10"
-            }`}
+              }`}
           >
             {/* Shine effect on hover */}
             <motion.div
@@ -307,8 +306,8 @@ export default function Projects() {
               transition={{ duration: 0.5 }}
               className={`hidden md:grid gap-8 relative z-10 max-w-7xl mx-auto transition-all duration-500`}
               style={{
-                gridTemplateColumns: showAll 
-                  ? 'repeat(auto-fill, minmax(320px, 1fr))' 
+                gridTemplateColumns: showAll
+                  ? 'repeat(auto-fill, minmax(320px, 1fr))'
                   : 'repeat(2, 1fr)'
               }}
             >
@@ -358,11 +357,10 @@ export default function Projects() {
                     onClick={() => setCurrentIndex(idx)}
                     whileHover={{ scale: 1.2 }}
                     whileTap={{ scale: 0.9 }}
-                    className={`rounded-full transition-all ${
-                      idx === currentIndex
+                    className={`rounded-full transition-all ${idx === currentIndex
                         ? "w-8 h-2 bg-cyan-400 shadow-[0_0_8px_rgba(0,255,255,0.6)]"
                         : "w-2 h-2 bg-white/30 hover:bg-white/50"
-                    }`}
+                      }`}
                   />
                 ))}
               </div>
@@ -370,7 +368,7 @@ export default function Projects() {
 
             {/* View More Button */}
             {!isMobile && hasMore && (
-              <motion.div 
+              <motion.div
                 className="flex justify-center mt-12"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -431,8 +429,8 @@ function ProjectCard({ p, i, setOpen, handleImageError, defaultImage, hoveredCar
     <motion.div
       initial={{ opacity: 0, y: 30, scale: 0.9 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ 
-        duration: 0.6, 
+      transition={{
+        duration: 0.6,
         delay: i * 0.1,
         type: "spring",
         stiffness: 100,
@@ -451,8 +449,8 @@ function ProjectCard({ p, i, setOpen, handleImageError, defaultImage, hoveredCar
           rotateY: isHovered ? 2 : 0,
           rotateX: isHovered ? -1 : 0,
         }}
-        transition={{ 
-          duration: 0.4, 
+        transition={{
+          duration: 0.4,
           ease: "easeOut",
           type: "spring",
           stiffness: 300,
@@ -462,15 +460,15 @@ function ProjectCard({ p, i, setOpen, handleImageError, defaultImage, hoveredCar
         <motion.div
           className="absolute inset-0 rounded-2xl pointer-events-none"
           animate={{
-            boxShadow: isHovered 
+            boxShadow: isHovered
               ? [
-                  "0 0 20px rgba(0,255,255,0.3), 0 0 40px rgba(0,255,255,0.2)",
-                  "0 0 30px rgba(138,43,226,0.3), 0 0 50px rgba(138,43,226,0.2)",
-                  "0 0 20px rgba(0,255,255,0.3), 0 0 40px rgba(0,255,255,0.2)",
-                ]
+                "0 0 20px rgba(0,255,255,0.3), 0 0 40px rgba(0,255,255,0.2)",
+                "0 0 30px rgba(138,43,226,0.3), 0 0 50px rgba(138,43,226,0.2)",
+                "0 0 20px rgba(0,255,255,0.3), 0 0 40px rgba(0,255,255,0.2)",
+              ]
               : "0 0 0px rgba(0,255,255,0)",
           }}
-          transition={{ 
+          transition={{
             duration: 2,
             repeat: isHovered ? Infinity : 0,
             ease: "easeInOut"
@@ -479,10 +477,10 @@ function ProjectCard({ p, i, setOpen, handleImageError, defaultImage, hoveredCar
 
         {/* Featured Badge with Pulse Animation */}
         {p.featured && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: -20 }}
-            animate={{ 
-              opacity: 1, 
+            animate={{
+              opacity: 1,
               x: 0,
             }}
             whileHover={{
@@ -502,7 +500,7 @@ function ProjectCard({ p, i, setOpen, handleImageError, defaultImage, hoveredCar
               <Star className="w-4 h-4 fill-black text-black" />
             </motion.div>
             <span className="text-black font-bold text-xs">Featured</span>
-            
+
             {/* Sparkle effect on hover */}
             <AnimatePresence>
               {isHovered && (
@@ -521,12 +519,12 @@ function ProjectCard({ p, i, setOpen, handleImageError, defaultImage, hoveredCar
         )}
 
         {/* Full Photo with Advanced Hover Effects */}
-        <div 
+        <div
           className="w-full h-full overflow-hidden"
           style={{ borderRadius: '16px' }}
         >
           {!imgLoaded && (
-            <motion.div 
+            <motion.div
               className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-purple-500/10"
               animate={{ opacity: [0.5, 1, 0.5] }}
               transition={{ repeat: Infinity, duration: 1.5 }}
@@ -538,7 +536,7 @@ function ProjectCard({ p, i, setOpen, handleImageError, defaultImage, hoveredCar
             onLoad={() => setImgLoaded(true)}
             onError={handleImageError}
             className="w-full h-full object-cover"
-            animate={{ 
+            animate={{
               scale: isHovered ? 1.1 : (imgLoaded ? 1 : 1.1),
               filter: isHovered ? "brightness(1.1) saturate(1.2)" : "brightness(1) saturate(1)",
             }}
@@ -547,10 +545,10 @@ function ProjectCard({ p, i, setOpen, handleImageError, defaultImage, hoveredCar
         </div>
 
         {/* Dynamic Gradient Overlay */}
-        <motion.div 
+        <motion.div
           className="absolute inset-0"
           animate={{
-            background: isHovered 
+            background: isHovered
               ? "linear-gradient(to top, rgba(0,0,0,0.95), rgba(0,0,0,0.85), rgba(0,0,0,0.4))"
               : "linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.6), transparent)"
           }}
@@ -564,7 +562,7 @@ function ProjectCard({ p, i, setOpen, handleImageError, defaultImage, hoveredCar
               initial={{ top: "-100%" }}
               animate={{ top: "100%" }}
               exit={{ top: "100%" }}
-              transition={{ 
+              transition={{
                 duration: 1.5,
                 repeat: Infinity,
                 ease: "linear"
@@ -577,7 +575,7 @@ function ProjectCard({ p, i, setOpen, handleImageError, defaultImage, hoveredCar
 
         {/* Content with Staggered Animations */}
         <div className="absolute inset-0 p-6 flex flex-col justify-end">
-          <motion.h3 
+          <motion.h3
             className="text-2xl font-bold text-white mb-2 text-center"
             animate={{
               y: isHovered ? -5 : 0,
@@ -591,7 +589,7 @@ function ProjectCard({ p, i, setOpen, handleImageError, defaultImage, hoveredCar
           {/* Hover Content with Smooth Transitions */}
           <AnimatePresence>
             {isHovered && (
-              <motion.div 
+              <motion.div
                 className="space-y-4"
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -599,7 +597,7 @@ function ProjectCard({ p, i, setOpen, handleImageError, defaultImage, hoveredCar
                 transition={{ duration: 0.4, ease: "easeOut" }}
               >
                 {/* Description with Slide Up */}
-                <motion.p 
+                <motion.p
                   className="text-white/90 text-sm line-clamp-2"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -609,7 +607,7 @@ function ProjectCard({ p, i, setOpen, handleImageError, defaultImage, hoveredCar
                 </motion.p>
 
                 {/* Tech Tags with Cascade Animation */}
-                <motion.div 
+                <motion.div
                   className="flex flex-wrap gap-2"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -620,12 +618,12 @@ function ProjectCard({ p, i, setOpen, handleImageError, defaultImage, hoveredCar
                       key={t}
                       initial={{ opacity: 0, scale: 0.5, y: 20 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
-                      whileHover={{ 
+                      whileHover={{
                         scale: 1.15,
                         rotate: [0, -5, 5, 0],
                         transition: { duration: 0.3 }
                       }}
-                      transition={{ 
+                      transition={{
                         delay: 0.2 + idx * 0.08,
                         type: "spring",
                         stiffness: 400,
@@ -639,7 +637,7 @@ function ProjectCard({ p, i, setOpen, handleImageError, defaultImage, hoveredCar
                 </motion.div>
 
                 {/* Action Buttons with Fancy Hover Effects */}
-                <motion.div 
+                <motion.div
                   className="flex gap-3"
                   initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -654,7 +652,7 @@ function ProjectCard({ p, i, setOpen, handleImageError, defaultImage, hoveredCar
                         e.stopPropagation();
                         logLinkClick("project_github");
                       }}
-                      whileHover={{ 
+                      whileHover={{
                         scale: 1.08,
                         y: -3,
                         boxShadow: "0 5px 20px rgba(255,255,255,0.2)",
@@ -678,13 +676,13 @@ function ProjectCard({ p, i, setOpen, handleImageError, defaultImage, hoveredCar
                       <span className="relative z-10">Code</span>
                     </motion.a>
                   )}
-                  
+
                   <motion.button
                     onClick={() => {
                       setOpen(p);
                       logLinkClick("project_details");
                     }}
-                    whileHover={{ 
+                    whileHover={{
                       scale: 1.08,
                       y: -3,
                       boxShadow: "0 5px 25px rgba(0,255,255,0.4)",
@@ -764,8 +762,8 @@ function ProjectCard({ p, i, setOpen, handleImageError, defaultImage, hoveredCar
           className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none"
           initial={{ x: "-100%" }}
           animate={{ x: "100%" }}
-          transition={{ 
-            duration: 1.5, 
+          transition={{
+            duration: 1.5,
             delay: i * 0.2,
             ease: "easeInOut"
           }}
@@ -781,7 +779,7 @@ function ProjectModal({ open, setOpen, handleImageError, defaultImage }) {
   const [loaded, setLoaded] = useState(false);
 
   return (
-    <motion.div 
+    <motion.div
       className="fixed inset-0 z-[999] flex items-center justify-center p-4"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -797,9 +795,9 @@ function ProjectModal({ open, setOpen, handleImageError, defaultImage }) {
         exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
         transition={{ duration: 0.3 }}
       />
-      
+
       {/* Modal Container */}
-      <motion.div 
+      <motion.div
         className="relative z-10 bg-gradient-to-br from-gray-900 to-black border border-white/20 overflow-hidden max-w-5xl w-full shadow-2xl max-h-[90vh]"
         style={{ borderRadius: '20px' }}
         initial={{ scale: 0.8, y: 100, rotateX: 15 }}
@@ -825,8 +823,8 @@ function ProjectModal({ open, setOpen, handleImageError, defaultImage }) {
           onClick={() => setOpen(null)}
           initial={{ opacity: 0, rotate: -180, scale: 0 }}
           animate={{ opacity: 1, rotate: 0, scale: 1 }}
-          whileHover={{ 
-            scale: 1.2, 
+          whileHover={{
+            scale: 1.2,
             rotate: 180,
             backgroundColor: "rgba(239, 68, 68, 0.2)",
           }}
@@ -839,7 +837,7 @@ function ProjectModal({ open, setOpen, handleImageError, defaultImage }) {
 
         {/* Featured Badge with Animations */}
         {open.featured && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: -50, scale: 0 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}
             whileHover={{
@@ -862,9 +860,9 @@ function ProjectModal({ open, setOpen, handleImageError, defaultImage }) {
         {/* Content */}
         <div className="flex flex-col md:flex-row max-h-[90vh]">
           {/* Photo Section with Hover Zoom */}
-          <motion.div 
+          <motion.div
             className="w-full md:w-1/2 relative bg-black min-h-[300px] overflow-hidden group/img"
-            style={{ 
+            style={{
               borderTopLeftRadius: '20px',
               borderBottomLeftRadius: '20px',
             }}
@@ -873,7 +871,7 @@ function ProjectModal({ open, setOpen, handleImageError, defaultImage }) {
             transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
           >
             {!loaded && (
-              <motion.div 
+              <motion.div
                 className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-purple-500/10"
                 animate={{ opacity: [0.5, 1, 0.5] }}
                 transition={{ repeat: Infinity, duration: 1.5 }}
@@ -890,7 +888,7 @@ function ProjectModal({ open, setOpen, handleImageError, defaultImage }) {
               whileHover={{ scale: 1.05 }}
               transition={{ duration: 0.6 }}
             />
-            
+
             {/* Image Overlay Effect on Hover */}
             <motion.div
               className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity duration-300"
@@ -900,18 +898,18 @@ function ProjectModal({ open, setOpen, handleImageError, defaultImage }) {
           </motion.div>
 
           {/* Details Section */}
-          <motion.div 
+          <motion.div
             className="w-full md:w-1/2 p-6 overflow-y-auto"
             initial={{ x: 100, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
           >
-            <motion.h2 
+            <motion.h2
               className="text-2xl font-black text-white mb-3"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              whileHover={{ 
+              whileHover={{
                 scale: 1.02,
                 x: 5,
                 color: "#00ffff",
@@ -920,7 +918,7 @@ function ProjectModal({ open, setOpen, handleImageError, defaultImage }) {
               {open.title}
             </motion.h2>
 
-            <motion.p 
+            <motion.p
               className="text-white/80 text-sm leading-relaxed mb-5"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -930,13 +928,13 @@ function ProjectModal({ open, setOpen, handleImageError, defaultImage }) {
             </motion.p>
 
             {/* Tech Stack with Fancy Hover */}
-            <motion.div 
+            <motion.div
               className="mb-6"
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
             >
-              <motion.h3 
+              <motion.h3
                 className="text-sm font-semibold text-cyan-400 mb-2"
                 whileHover={{ x: 5, scale: 1.05 }}
               >
@@ -948,12 +946,12 @@ function ProjectModal({ open, setOpen, handleImageError, defaultImage }) {
                     key={t}
                     initial={{ opacity: 0, scale: 0.5, rotate: -10 }}
                     animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                    transition={{ 
+                    transition={{
                       delay: 0.6 + idx * 0.05,
                       type: "spring",
                       stiffness: 400,
                     }}
-                    whileHover={{ 
+                    whileHover={{
                       scale: 1.15,
                       rotate: [0, -3, 3, -3, 0],
                       backgroundColor: "rgba(6, 182, 212, 0.3)",
@@ -969,7 +967,7 @@ function ProjectModal({ open, setOpen, handleImageError, defaultImage }) {
             </motion.div>
 
             {/* Action Buttons with Advanced Hover Effects */}
-            <motion.div 
+            <motion.div
               className="flex flex-col gap-3"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -981,7 +979,7 @@ function ProjectModal({ open, setOpen, handleImageError, defaultImage }) {
                   target="_blank"
                   rel="noreferrer"
                   onClick={() => logLinkClick("project_live")}
-                  whileHover={{ 
+                  whileHover={{
                     scale: 1.05,
                     y: -3,
                     boxShadow: "0 10px 30px rgba(34, 197, 94, 0.4)",
@@ -1004,14 +1002,14 @@ function ProjectModal({ open, setOpen, handleImageError, defaultImage }) {
                   <span className="relative z-10">Live Demo</span>
                 </motion.a>
               )}
-              
+
               {open.url && (
                 <motion.a
                   href={open.url}
                   target="_blank"
                   rel="noreferrer"
                   onClick={() => logLinkClick("project_github")}
-                  whileHover={{ 
+                  whileHover={{
                     scale: 1.05,
                     y: -3,
                     boxShadow: "0 10px 30px rgba(6, 182, 212, 0.4)",

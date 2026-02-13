@@ -24,7 +24,7 @@ const db = getFirestore(app);
 ------------------------------------------------------- */
 const LOAD_FLAGS = {
   admin: false,
-  sections: false,
+  sections: true,
   profile: false,
   resume: false,
   about: false,
@@ -32,9 +32,11 @@ const LOAD_FLAGS = {
   footer: false,
   projects: false,
   certifications: false,
-  timeline: true,        // ✅ NEW: Timeline data
+  timeline: false,
   analytics: false,
   config: false,
+  blog: false,           // ✅ NEW: Blog posts
+  linkedin: false,       // ✅ NEW: LinkedIn posts
 };
 
 /* -------------------------------------------------------
@@ -59,6 +61,7 @@ const sectionsData = {
   timeline: true,
   contact: true,
   blog: true,
+  GITHUB: true,
 };
 
 /* -------------------------------------------------------
@@ -71,7 +74,7 @@ const profileData = {
   roles: "Full-Stack Developer • Cloud Engineer • AI/ML Enthusiast • Blockchain Explorer • Team Lead",
   typewriterLines: [
     "Building intelligent systems with AI/ML 🤖",
-    "Deploying scalable apps on AWS Cloud ☁️", 
+    "Deploying scalable apps on AWS Cloud ☁️",
     "Leading team 404 Found US 👥",
     "Crafting full-stack solutions with MERN ⚡",
     "Exploring blockchain for secure credentials 🔗",
@@ -100,7 +103,7 @@ const resumeData = {
   description: "Passionate 3rd-year AI & Data Science student at Velammal Engineering College, Chennai with expertise in full-stack development, cloud computing, AI/ML, and team leadership. Leading a 6-member team '404 Found US' for hackathons and projects, building innovative solutions that bridge technology and real-world problems through hands-on experience.",
   skills: [
     "Full-Stack Development",
-    "AI & Machine Learning", 
+    "AI & Machine Learning",
     "Cloud Infrastructure (AWS)",
     "Team Leadership & Management",
     "Blockchain Systems",
@@ -126,47 +129,47 @@ const aboutpageconfig = {
   },
   initialMode: "holo",
   cards: [
-    { 
-      id: "edu", 
-      title: "Education", 
-      icon: "graduation", 
-      short: "B.Tech AI & Data Science (3rd Year)", 
-      long: "Velammal Engineering College, Chennai | Specializing in Machine Learning, Deep Learning, Data Mining, and Artificial Intelligence. Passionately applying theoretical knowledge through real-world projects and hackathons." 
+    {
+      id: "edu",
+      title: "Education",
+      icon: "graduation",
+      short: "B.Tech AI & Data Science (3rd Year)",
+      long: "Velammal Engineering College, Chennai | Specializing in Machine Learning, Deep Learning, Data Mining, and Artificial Intelligence. Passionately applying theoretical knowledge through real-world projects and hackathons."
     },
-    { 
-      id: "ai", 
-      title: "AI & ML", 
-      icon: "brain", 
-      short: "Computer Vision, NLP, Model Deployment", 
-      long: "Hands-on experience with classification models, object detection, transformers, and deploying ML models with Flask/Node.js. Building intelligent systems that solve practical problems using cutting-edge AI technologies." 
+    {
+      id: "ai",
+      title: "AI & ML",
+      icon: "brain",
+      short: "Computer Vision, NLP, Model Deployment",
+      long: "Hands-on experience with classification models, object detection, transformers, and deploying ML models with Flask/Node.js. Building intelligent systems that solve practical problems using cutting-edge AI technologies."
     },
-    { 
-      id: "full", 
-      title: "Full Stack", 
-      icon: "laptop", 
-      short: "MERN Stack, React Native, Flutter", 
-      long: "Expertise in building responsive web applications, authentication systems, REST APIs, real-time features, and cross-platform mobile apps. Experience with modern frameworks and comprehensive state management." 
+    {
+      id: "full",
+      title: "Full Stack",
+      icon: "laptop",
+      short: "MERN Stack, React Native, Flutter",
+      long: "Expertise in building responsive web applications, authentication systems, REST APIs, real-time features, and cross-platform mobile apps. Experience with modern frameworks and comprehensive state management."
     },
-    { 
-      id: "leadership", 
-      title: "Leadership", 
-      icon: "users", 
-      short: "Team Lead - 404 Found US", 
-      long: "Leading a team for SIH 2025 and various hackathons. Responsible for project coordination, task delegation, code reviews, and mentoring team members in technical domains including full-stack development and cloud technologies." 
+    {
+      id: "leadership",
+      title: "Leadership",
+      icon: "users",
+      short: "Team Lead - 404 Found US",
+      long: "Leading a team for SIH 2025 and various hackathons. Responsible for project coordination, task delegation, code reviews, and mentoring team members in technical domains including full-stack development and cloud technologies."
     },
-    { 
-      id: "cloud", 
-      title: "Cloud & DevOps", 
-      icon: "cloud", 
-      short: "AWS EC2, S3, Docker, CI/CD", 
-      long: "Proficient in deploying applications on AWS cloud infrastructure, containerizing applications with Docker, and implementing CI/CD pipelines for automated deployments and scalable solutions." 
+    {
+      id: "cloud",
+      title: "Cloud & DevOps",
+      icon: "cloud",
+      short: "AWS EC2, S3, Docker, CI/CD",
+      long: "Proficient in deploying applications on AWS cloud infrastructure, containerizing applications with Docker, and implementing CI/CD pipelines for automated deployments and scalable solutions."
     },
-    { 
-      id: "blockchain", 
-      title: "Blockchain", 
-      icon: "link", 
-      short: "Credential Systems, Secure Storage", 
-      long: "Developing blockchain-based credential management systems with cryptographic verification and decentralized storage for secure academic certificate management and sharing. Leading CredsOne project for SIH 2025." 
+    {
+      id: "blockchain",
+      title: "Blockchain",
+      icon: "link",
+      short: "Credential Systems, Secure Storage",
+      long: "Developing blockchain-based credential management systems with cryptographic verification and decentralized storage for secure academic certificate management and sharing. Leading CredsOne project for SIH 2025."
     },
   ],
   counters: [
@@ -201,37 +204,37 @@ const aboutpageconfig = {
    ⚙️ Tech Stack + Footer
 ------------------------------------------------------- */
 const techStackData = [
-  { 
-    title: "Programming Languages", 
-    tech: ["Python", "C", "C++", "Java", "JavaScript", "Dart", "HTML5", "CSS3", "TypeScript"] 
+  {
+    title: "Programming Languages",
+    tech: ["Python", "C", "C++", "Java", "JavaScript", "Dart", "HTML5", "CSS3", "TypeScript"]
   },
-  { 
-    title: "Frontend Development", 
-    tech: ["React.js", "React Native", "Flutter", "Next.js", "Tailwind CSS", "Bootstrap", "Vite"] 
+  {
+    title: "Frontend Development",
+    tech: ["React.js", "React Native", "Flutter", "Next.js", "Tailwind CSS", "Bootstrap", "Vite"]
   },
-  { 
-    title: "Backend Development", 
-    tech: ["Node.js", "Express.js", "Flask", "Django", "FastAPI", "Spring Boot"] 
+  {
+    title: "Backend Development",
+    tech: ["Node.js", "Express.js", "Flask", "Django", "FastAPI", "Spring Boot"]
   },
-  { 
-    title: "Databases", 
-    tech: ["MongoDB", "MySQL", "SQLite", "PostgreSQL", "Firebase", "Firestore"] 
+  {
+    title: "Databases",
+    tech: ["MongoDB", "MySQL", "SQLite", "PostgreSQL", "Firebase", "Firestore"]
   },
-  { 
-    title: "Cloud & DevOps", 
-    tech: ["AWS EC2", "AWS S3", "Docker", "Git", "GitHub", "Linux", "Postman"] 
+  {
+    title: "Cloud & DevOps",
+    tech: ["AWS EC2", "AWS S3", "Docker", "Git", "GitHub", "Linux", "Postman"]
   },
-  { 
-    title: "AI & Machine Learning", 
-    tech: ["TensorFlow", "PyTorch", "OpenCV", "Keras", "NumPy", "Pandas", "Scikit-learn"] 
+  {
+    title: "AI & Machine Learning",
+    tech: ["TensorFlow", "PyTorch", "OpenCV", "Keras", "NumPy", "Pandas", "Scikit-learn"]
   },
-  { 
-    title: "Tools", 
-    tech: [ "VS Code", "Figma"] 
+  {
+    title: "Tools",
+    tech: ["VS Code", "Figma"]
   },
-  { 
-    title: "Mobile Development", 
-    tech: ["Flutter", "React Native", "Dart", "Android", "iOS"] 
+  {
+    title: "Mobile Development",
+    tech: ["Flutter", "React Native", "Dart", "Android", "iOS"]
   },
 ];
 
@@ -531,7 +534,7 @@ const timelineData = {
       ],
       skills: ["HTML", "CSS", "JavaScript", "Frontend Development", "Responsive Design"],
     },
-    
+
     {
       year: "2024-2025",
       period: "Leadership & Team Lead",
@@ -649,6 +652,92 @@ const analyticsSeed = {
 };
 
 /* -------------------------------------------------------
+   📝 Blog Posts Data
+------------------------------------------------------- */
+const blogPostsData = [
+  {
+    title: "Building Scalable Web Applications with MERN Stack",
+    slug: "building-scalable-web-applications-with-mern-stack",
+    author: "Deepak",
+    date: "2025-02-10",
+    readTime: "8 min",
+    tags: ["MERN", "Web Development", "Full-Stack"],
+    cover: "https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=1600&h=900&fit=crop",
+    excerpt: "Learn how to build production-ready web applications using MongoDB, Express, React, and Node.js with best practices and modern patterns.",
+    content: `<h2>Introduction</h2><p>The MERN stack has become one of the most popular choices for building modern web applications. In this comprehensive guide, we'll explore how to architect and build scalable applications.</p><h3>Why MERN?</h3><ul><li>Full JavaScript stack</li><li>Rich ecosystem</li><li>Great performance</li><li>Active community</li></ul><h3>Key Concepts</h3><p>We'll cover authentication, state management, API design, and deployment strategies...</p>`,
+    published: true,
+    likes: 42,
+    views: 156,
+  },
+  {
+    title: "AI/ML in Production: Lessons from Real Projects",
+    slug: "ai-ml-in-production-lessons-from-real-projects",
+    author: "Deepak",
+    date: "2025-02-05",
+    readTime: "10 min",
+    tags: ["AI", "Machine Learning", "Production"],
+    cover: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1600&h=900&fit=crop",
+    excerpt: "Deploying ML models to production is challenging. Here are the lessons I learned from building and deploying real-world AI applications.",
+    content: `<h2>The Reality of ML in Production</h2><p>Moving from Jupyter notebooks to production systems requires careful planning and engineering...</p><h3>Common Challenges</h3><ul><li>Model versioning</li><li>Data drift</li><li>Scalability</li><li>Monitoring</li></ul><p>Let's dive into each challenge and explore practical solutions...</p>`,
+    published: true,
+    likes: 67,
+    views: 234,
+  },
+  {
+    title: "AWS Cloud Architecture: Best Practices for Startups",
+    slug: "aws-cloud-architecture-best-practices-for-startups",
+    author: "Deepak",
+    date: "2025-01-28",
+    readTime: "6 min",
+    tags: ["AWS", "Cloud", "DevOps"],
+    cover: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1600&h=900&fit=crop",
+    excerpt: "Setting up cloud infrastructure can be overwhelming. Here's a practical guide to AWS architecture for early-stage startups.",
+    content: `<h2>Starting with AWS</h2><p>When building your startup's infrastructure on AWS, it's important to balance cost, scalability, and maintainability...</p><h3>Essential Services</h3><ul><li>EC2 for compute</li><li>RDS for databases</li><li>S3 for storage</li><li>CloudFront for CDN</li></ul><p>We'll explore how to set up each service with best practices...</p>`,
+    published: true,
+    likes: 38,
+    views: 189,
+  },
+];
+
+/* -------------------------------------------------------
+   💼 LinkedIn Posts Data
+------------------------------------------------------- */
+const linkedInData = {
+  profileName: "Deepak S",
+  profileUrl: "https://linkedin.com/in/deepak-saminathan",
+  profileImage: "https://media.licdn.com/dms/image/v2/D5603AQGxK7VZ8vQZJw/profile-displayphoto-shrink_800_800/profile-displayphoto-shrink_800_800/0/1734365633138?e=1742428800&v=beta&t=Zy8nCCKqNNsJKCUBLDPfOWNdDqhKqQQmPqKDcFqQdFg",
+  posts: [
+    {
+      id: "post1",
+      content: "Excited to share that our team won 1st place at the National Hackathon! 🏆 We built an AI-powered solution for sustainable agriculture using computer vision and IoT sensors. Grateful for my amazing teammates and the learning experience!",
+      image: "https://images.unsplash.com/photo-1531482615713-2afd69097998?w=800&h=600&fit=crop",
+      link: "https://linkedin.com/posts/deepak-saminathan_hackathon-ai-innovation",
+      date: "2025-02-08",
+      likes: 234,
+      comments: 42,
+    },
+    {
+      id: "post2",
+      content: "Just deployed my first production ML model on AWS! 🚀 The journey from Jupyter notebooks to scalable cloud infrastructure taught me so much about MLOps, monitoring, and real-world AI challenges. Here's what I learned...",
+      image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&h=600&fit=crop",
+      link: "https://linkedin.com/posts/deepak-saminathan_aws-machinelearning-mlops",
+      date: "2025-01-25",
+      likes: 189,
+      comments: 28,
+    },
+    {
+      id: "post3",
+      content: "Leading a team of 12 developers as Team Lead for 404 Found US has been an incredible journey. From code reviews to sprint planning, every day brings new challenges and growth opportunities. Proud of what we've built together! 👥💻",
+      image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&h=600&fit=crop",
+      link: "https://linkedin.com/posts/deepak-saminathan_teamwork-leadership-development",
+      date: "2025-01-15",
+      likes: 156,
+      comments: 31,
+    },
+  ],
+};
+
+/* -------------------------------------------------------
    🚀 Firestore Seeder with Load Flags
 ------------------------------------------------------- */
 async function seed() {
@@ -660,49 +749,49 @@ async function seed() {
       await setDoc(doc(db, "admin", "credentials"), adminData);
       loadedCollections.push("admin/credentials");
     }
-    
+
     // Sections visibility
     if (LOAD_FLAGS.sections) {
       await setDoc(doc(db, "sections", "visibility"), sectionsData);
       loadedCollections.push("sections/visibility");
     }
-    
+
     // Profile data
     if (LOAD_FLAGS.profile) {
       await setDoc(doc(db, "portfolio", "profile"), profileData);
       loadedCollections.push("portfolio/profile");
     }
-    
+
     // Resume data
     if (LOAD_FLAGS.resume) {
       await setDoc(doc(db, "resume", "data"), resumeData);
       loadedCollections.push("resume/data");
     }
-    
+
     // About page
     if (LOAD_FLAGS.about) {
       await setDoc(doc(db, "aboutpage", "main"), aboutpageconfig);
       loadedCollections.push("aboutpage/main");
     }
-    
+
     // Tech stack
     if (LOAD_FLAGS.techStack) {
       await setDoc(doc(db, "techStack", "categories"), { techStackData });
       loadedCollections.push("techStack/categories");
     }
-    
+
     // Footer
     if (LOAD_FLAGS.footer) {
       await setDoc(doc(db, "footer", "details"), { footerData });
       loadedCollections.push("footer/details");
     }
-    
+
     // Projects data
     if (LOAD_FLAGS.projects) {
       await setDoc(doc(db, "projects", "data"), projectsData);
       loadedCollections.push("projects/data");
     }
-    
+
     // Certifications
     if (LOAD_FLAGS.certifications) {
       await setDoc(doc(db, "certifications", "data"), certificationsData);
@@ -723,11 +812,25 @@ async function seed() {
       await setDoc(doc(db, "analytics", "daily"), analyticsSeed.daily);
       loadedCollections.push("analytics/totals", "analytics/sections", "analytics/links", "analytics/daily");
     }
-    
+
     // Config
     if (LOAD_FLAGS.config) {
       await setDoc(doc(db, "config", "portfolio"), { theme: "holo" });
       loadedCollections.push("config/portfolio");
+    }
+
+    // ✅ BLOG POSTS - NEW
+    if (LOAD_FLAGS.blog) {
+      for (const post of blogPostsData) {
+        await setDoc(doc(db, "blog", post.slug), post);
+        loadedCollections.push(`blog/${post.slug}`);
+      }
+    }
+
+    // ✅ LINKEDIN POSTS - NEW
+    if (LOAD_FLAGS.linkedin) {
+      await setDoc(doc(db, "linkedin", "posts"), linkedInData);
+      loadedCollections.push("linkedin/posts");
     }
 
     console.log("✅ Seeding completed successfully!");
@@ -745,7 +848,7 @@ async function seed() {
     console.log(`   - ${timelineData.stats.length} stats counters configured`);
     console.log("   - Journey spans from 2021 to 2026+");
     console.log("   - Covers: Foundation → Web Dev → College → Internships → Leadership → Hackathons → Vision");
-    
+
     process.exit(0);
   } catch (err) {
     console.error("❌ Error seeding Firestore:", err);

@@ -20,12 +20,17 @@
 /* ✨ Base Styles & Defaults  */
 /* -------------------------- */
 @layer base {
+
   /* make sure root can grow to full viewport height */
-  html, body, #root {
+  html,
+  body,
+  #root {
     height: 100%;
   }
 
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     box-sizing: border-box;
   }
 
@@ -51,9 +56,9 @@ body::before {
   inset: 0;
   z-index: -2;
   background-image:
-    linear-gradient(120deg, rgba(0,229,255,0.03), rgba(0,229,255,0.02)),
-    radial-gradient(600px 200px at 10% 10%, rgba(0,229,255,0.02), transparent 30%),
-    radial-gradient(500px 180px at 90% 90%, rgba(0,229,255,0.015), transparent 30%);
+    linear-gradient(120deg, rgba(0, 229, 255, 0.03), rgba(0, 229, 255, 0.02)),
+    radial-gradient(600px 200px at 10% 10%, rgba(0, 229, 255, 0.02), transparent 30%),
+    radial-gradient(500px 180px at 90% 90%, rgba(0, 229, 255, 0.015), transparent 30%);
   background-size: 400% 400%, 600px 200px, 500px 180px;
   background-position: 0% 50%, 10% 10%, 90% 90%;
   background-repeat: no-repeat;
@@ -64,58 +69,103 @@ body::before {
 }
 
 /* --------------------------- */
-/* 🖱️ Mouse Glow Global Layer */
+/* Custom Cursor (handled by CustomCursor component) */
 /* --------------------------- */
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: -1;
-  background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(0,229,255,0.07), transparent 40%);
-  transition: background-position 0.2s ease;
-}
 
 /* ------------------ */
 /* 🔁 Animations */
 /* ------------------ */
 @keyframes gradientShift {
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 @keyframes radialPulse {
-  0%   { opacity: .06; transform: scale(1); }
-  50%  { opacity: .12; transform: scale(1.06); }
-  100% { opacity: .06; transform: scale(1); }
+  0% {
+    opacity: .06;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: .12;
+    transform: scale(1.06);
+  }
+
+  100% {
+    opacity: .06;
+    transform: scale(1);
+  }
 }
 
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes fadeInDown {
-  from { opacity: 0; transform: translateY(-20px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes glow {
-  from { text-shadow: 0 0 10px var(--cyansoft); }
-  to   { text-shadow: 0 0 20px var(--cyanglow), 0 0 30px var(--cyanglow); }
+  from {
+    text-shadow: 0 0 10px var(--cyansoft);
+  }
+
+  to {
+    text-shadow: 0 0 20px var(--cyanglow), 0 0 30px var(--cyanglow);
+  }
 }
 
 @keyframes spin {
-  0%   { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes dots {
-  0%   { content: '.'; }
-  33%  { content: '..'; }
-  66%  { content: '...'; }
-  100% { content: ''; }
+  0% {
+    content: '.';
+  }
+
+  33% {
+    content: '..';
+  }
+
+  66% {
+    content: '...';
+  }
+
+  100% {
+    content: '';
+  }
 }
 
 /* ------------------- */
@@ -147,7 +197,7 @@ body::after {
 .spinner {
   width: 80px;
   height: 80px;
-  border: 8px solid rgba(0,255,255,0.2);
+  border: 8px solid rgba(0, 255, 255, 0.2);
   border-top: 8px solid var(--cyanglow);
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -156,9 +206,17 @@ body::after {
 /* ------------------------- */
 /* ✨ Utilities & Shortcuts */
 /* ------------------------- */
-.animate-fadeInUp    { animation: fadeInUp 420ms ease both; }
-.animate-fadeInDown  { animation: fadeInDown 420ms ease both; }
-.animate-slideUp     { animation: fadeInUp 420ms ease both; }
+.animate-fadeInUp {
+  animation: fadeInUp 420ms ease both;
+}
+
+.animate-fadeInDown {
+  animation: fadeInDown 420ms ease both;
+}
+
+.animate-slideUp {
+  animation: fadeInUp 420ms ease both;
+}
 
 .section-large {
   padding-top: 6rem;
@@ -175,15 +233,18 @@ body::after {
   width: 100vw;
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* inner areas will scroll independently */
-  background: transparent; /* keep body background visible */
+  overflow: hidden;
+  /* inner areas will scroll independently */
+  background: transparent;
+  /* keep body background visible */
 }
 
 /* main layout area (editor + preview) */
 .admin-layout {
   flex: 1 1 auto;
   display: flex;
-  min-height: 0; /* critical so children with overflow-auto can shrink properly */
+  min-height: 0;
+  /* critical so children with overflow-auto can shrink properly */
   gap: 1.5rem;
   padding: 1.5rem;
 }
@@ -191,7 +252,8 @@ body::after {
 /* scrollable admin panels (editor / preview) */
 .admin-panel {
   overflow: auto;
-  min-height: 0; /* allows flex children to shrink properly */
+  min-height: 0;
+  /* allows flex children to shrink properly */
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
 }
@@ -217,9 +279,13 @@ body::after {
 }
 
 /* optional nicer thin scrollbar (WebKit) */
-.admin-panel::-webkit-scrollbar { width: 10px; height: 10px; }
+.admin-panel::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
 .admin-panel::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.04);
+  background: rgba(255, 255, 255, 0.04);
   border-radius: 999px;
   border: 2px solid transparent;
   background-clip: padding-box;
@@ -228,8 +294,15 @@ body::after {
 /* ----------------------------- */
 /* Tiny responsive helpers used */
 /* ----------------------------- */
-.min-w-zero { min-width: 0; }
-.truncate-ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.min-w-zero {
+  min-width: 0;
+}
+
+.truncate-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 /* ----------------------------- */
 /* Specific admin tweaks (optional) */
@@ -246,8 +319,8 @@ body::after {
 
 /* panels */
 .admin-panel-card {
-  background: linear-gradient(180deg, rgba(10,12,15,0.75), rgba(8,12,16,0.6));
-  border: 1px solid rgba(255,255,255,0.04);
+  background: linear-gradient(180deg, rgba(10, 12, 15, 0.75), rgba(8, 12, 16, 0.6));
+  border: 1px solid rgba(255, 255, 255, 0.04);
   border-radius: 1rem;
   padding: 1rem;
 }
@@ -255,7 +328,7 @@ body::after {
 /* small buttons */
 .btn-ghost {
   background: transparent;
-  border: 1px solid rgba(255,255,255,0.06);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   padding: 0.5rem 0.75rem;
   border-radius: 0.5rem;
 }
@@ -272,8 +345,13 @@ body::after {
 :focus {
   outline: none;
 }
-button:focus, a:focus, input:focus, textarea:focus, select:focus {
-  box-shadow: 0 0 0 3px rgba(0,229,255,0.08);
+
+button:focus,
+a:focus,
+input:focus,
+textarea:focus,
+select:focus {
+  box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.08);
   outline: none;
 }
 

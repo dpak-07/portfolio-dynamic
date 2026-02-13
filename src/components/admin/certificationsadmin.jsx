@@ -5,11 +5,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Eye, Save, RotateCcw, Download, Upload,
   Plus, X, ArrowUp, ArrowDown, Link as LinkIcon, FileText, Type, KeyRound,
-  Loader, AlertCircle, CheckCircle, Wifi, WifiOff, FileBadge, Building2, 
+  Loader, AlertCircle, CheckCircle, Wifi, WifiOff, FileBadge, Building2,
   CalendarDays, BookOpen, Briefcase, Award, Image as ImageIcon, ExternalLink
 } from "lucide-react";
 import { doc, setDoc, getDoc, Timestamp } from "firebase/firestore";
 import { db } from "@/firebase";
+import { uploadImage } from "@/utils/supabaseStorage";
 
 /* ================================
    STORAGE & ADMIN SETTINGS
@@ -166,15 +167,17 @@ function prettyValue(v) {
 /* ================================
    MAIN COMPONENT
 ================================== */
-export default function CertificatesAdminCRT() {
+export default function CertificatesAdminPanel() {
   const [draft, setDraft] = useState(null);
+  const [activeTab, setActiveTab] = useState("categories");
   const [status, setStatus] = useState("🔌 Connecting to Firebase...");
   const [statusType, setStatusType] = useState("info");
-  const [activeTab, setActiveTab] = useState("categories");
   const [previewMode, setPreviewMode] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [imageInput, setImageInput] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
 
   // Save confirmation modal
   const [changesPopupOpen, setChangesPopupOpen] = useState(false);
@@ -183,8 +186,6 @@ export default function CertificatesAdminCRT() {
   const [adminCode, setAdminCode] = useState(null);
 
   // Image management
-  const [imageInput, setImageInput] = useState("");
-
   const committedRef = useRef(null);
   const draftChangeTimeoutRef = useRef(null);
   const prevDraftRef = useRef(null);
@@ -192,7 +193,7 @@ export default function CertificatesAdminCRT() {
   // Format timestamp for display
   const formatTimestamp = (timestamp) => {
     if (!timestamp) return "Not set";
-    
+
     try {
       if (timestamp.toDate) {
         return timestamp.toDate().toLocaleString("en-US", {
@@ -204,7 +205,7 @@ export default function CertificatesAdminCRT() {
           second: "2-digit"
         });
       }
-      
+
       if (typeof timestamp === "string") {
         const date = new Date(timestamp.replace(" ", "T"));
         return date.toLocaleString("en-US", {
@@ -216,7 +217,7 @@ export default function CertificatesAdminCRT() {
           second: "2-digit"
         });
       }
-      
+
       return "Invalid date";
     } catch (err) {
       return String(timestamp);
@@ -239,7 +240,7 @@ export default function CertificatesAdminCRT() {
     };
 
     window.addEventListener('keydown', preventAutoSave);
-    
+
     const disableAutofill = () => {
       const inputs = document.querySelectorAll('input, textarea');
       inputs.forEach(input => {
@@ -249,7 +250,7 @@ export default function CertificatesAdminCRT() {
         input.setAttribute('spellcheck', 'false');
       });
     };
-    
+
     disableAutofill();
     const interval = setInterval(disableAutofill, 1000);
 
@@ -265,7 +266,7 @@ export default function CertificatesAdminCRT() {
       // Fetch admin code
       const adminDocRef = doc(db, FIRESTORE_ADMIN_DOC);
       const adminSnap = await getDoc(adminDocRef);
-      
+
       if (adminSnap.exists()) {
         const adminData = adminSnap.data();
         setAdminCode(String(adminData.secretCode));
@@ -278,16 +279,16 @@ export default function CertificatesAdminCRT() {
       // Load certificates data from Firestore
       const certsDocRef = doc(db, FIRESTORE_CERTIFICATES_DOC);
       const certsSnap = await getDoc(certsDocRef);
-      
+
       let initialDraft = null;
-      
+
       if (certsSnap.exists()) {
         initialDraft = certsSnap.data();
         setStatus("✓ Certificates loaded from Firestore");
       } else {
         const saved = localStorage.getItem(STORAGE_SAVED_KEY);
         const session = sessionStorage.getItem(STORAGE_DRAFT_KEY);
-        
+
         if (session) {
           initialDraft = JSON.parse(session);
           setStatus("✓ Draft loaded from session");
@@ -299,7 +300,7 @@ export default function CertificatesAdminCRT() {
           setStatus("✓ Using default config");
         }
       }
-      
+
       setDraft(initialDraft);
       committedRef.current = initialDraft;
       prevDraftRef.current = JSON.stringify(initialDraft);
@@ -327,7 +328,7 @@ export default function CertificatesAdminCRT() {
       }
     };
     const handleOffline = () => setIsOnline(false);
-    
+
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
 
@@ -485,10 +486,43 @@ export default function CertificatesAdminCRT() {
   };
 
   // Image management
-  const addImage = (categoryIndex, certIndex, imageUrl) => {
-    if (!imageUrl.trim()) return;
+  const handleImageUpload = async (e, catIndex, certIndex) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setStatus("✗ Please select an image file");
+      setStatusType("error");
+      return;
+    }
+
+    try {
+      setStatus("📤 Uploading image to Supabase...");
+      setStatusType("info");
+      setIsUploading(true);
+
+      // Upload to Supabase
+      const imageUrl = await uploadImage(file, 'certifications');
+
+      // Add image to certificate
+      addImage(catIndex, certIndex, imageUrl);
+
+      setStatus("✓ Image uploaded successfully");
+      setStatusType("success");
+    } catch (error) {
+      console.error("Image upload error:", error);
+      setStatus(`✗ Upload failed: ${error.message}`);
+      setStatusType("error");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const addImage = (catIndex, certIndex, url) => {
+    if (!url.trim()) return;
     const categories = [...(draft.categories || [])];
-    categories[categoryIndex].items[certIndex].images.push(imageUrl.trim());
+    categories[catIndex].items[certIndex].images.push(url.trim());
     update("categories", categories);
     setImageInput("");
   };
@@ -529,14 +563,14 @@ export default function CertificatesAdminCRT() {
       setTimeout(() => setSecretInput(""), 2000);
       return;
     }
-    
+
     try {
       localStorage.setItem(STORAGE_SAVED_KEY, JSON.stringify(draft));
       sessionStorage.removeItem(STORAGE_DRAFT_KEY);
       committedRef.current = JSON.parse(JSON.stringify(draft));
 
       const success = await saveToFirebase(draft);
-      
+
       if (success) {
         setChangesPopupOpen(false);
         setSecretInput("");
@@ -722,11 +756,10 @@ export default function CertificatesAdminCRT() {
                       key={t.id}
                       whileHover={{ x: 5 }}
                       onClick={() => setActiveTab(t.id)}
-                      className={`w-full text-left px-3 py-2 rounded transition-all ${
-                        activeTab === t.id
+                      className={`w-full text-left px-3 py-2 rounded transition-all ${activeTab === t.id
                           ? "crt-button crt-text"
                           : "text-cyan-400/60 hover:text-cyan-400"
-                      }`}
+                        }`}
                     >
                       {t.label}
                     </motion.button>
@@ -794,11 +827,11 @@ export default function CertificatesAdminCRT() {
                     >
                       <div className="flex justify-between items-center">
                         <h2 className="text-xl crt-text">CERTIFICATE CATEGORIES</h2>
-                        <button 
+                        <button
                           onClick={addCategory}
                           className="crt-button px-4 py-2 rounded crt-text inline-flex items-center gap-2"
                         >
-                          <Plus size={16}/> ADD CATEGORY
+                          <Plus size={16} /> ADD CATEGORY
                         </button>
                       </div>
 
@@ -858,11 +891,11 @@ export default function CertificatesAdminCRT() {
                             <div className="mt-4">
                               <div className="flex justify-between items-center mb-3">
                                 <h3 className="text-lg crt-text">Certificates</h3>
-                                <button 
+                                <button
                                   onClick={() => addCertificate(catIndex)}
                                   className="crt-button px-3 py-1 rounded crt-text inline-flex items-center gap-2 text-sm"
                                 >
-                                  <Plus size={14}/> ADD CERTIFICATE
+                                  <Plus size={14} /> ADD CERTIFICATE
                                 </button>
                               </div>
 
@@ -934,22 +967,43 @@ export default function CertificatesAdminCRT() {
                                     {/* Image Management */}
                                     <div>
                                       <label className="block text-xs crt-text mb-2 opacity-60">Certificate Images</label>
-                                      
+
                                       {/* Add Image Input */}
-                                      <div className="flex gap-2 mb-3">
-                                        <input
-                                          type="text"
-                                          value={imageInput}
-                                          onChange={(e) => setImageInput(e.target.value)}
-                                          placeholder="Paste image URL (OneDrive, etc.)"
-                                          className="flex-1 crt-input px-2 py-1 rounded text-sm"
-                                        />
-                                        <button
-                                          onClick={() => addImage(catIndex, certIndex, imageInput)}
-                                          className="crt-button px-3 py-1 rounded text-sm"
-                                        >
-                                          Add
-                                        </button>
+                                      <div className="space-y-2 mb-3">
+                                        <div className="flex gap-2">
+                                          <input
+                                            type="text"
+                                            value={imageInput}
+                                            onChange={(e) => setImageInput(e.target.value)}
+                                            placeholder="Paste image URL or upload below"
+                                            className="flex-1 crt-input px-2 py-1 rounded text-sm"
+                                          />
+                                          <button
+                                            onClick={() => {
+                                              if (imageInput.trim()) {
+                                                addImage(catIndex, certIndex, imageInput);
+                                                setImageInput("");
+                                              }
+                                            }}
+                                            className="crt-button px-3 py-1 rounded text-sm"
+                                            disabled={!imageInput.trim()}
+                                          >
+                                            Add URL
+                                          </button>
+                                        </div>
+                                        <div className="flex gap-2">
+                                          <label className="flex-1 crt-button px-3 py-1 rounded text-sm text-center cursor-pointer">
+                                            <Upload size={14} className="inline mr-2" />
+                                            {isUploading ? 'Uploading...' : 'Upload Image'}
+                                            <input
+                                              type="file"
+                                              accept="image/*"
+                                              onChange={(e) => handleImageUpload(e, catIndex, certIndex)}
+                                              className="hidden"
+                                              disabled={isUploading}
+                                            />
+                                          </label>
+                                        </div>
                                       </div>
 
                                       {/* Image Grid */}
@@ -957,8 +1011,8 @@ export default function CertificatesAdminCRT() {
                                         <div className="image-grid">
                                           {cert.images.map((img, imgIndex) => (
                                             <div key={imgIndex} className="image-item">
-                                              <img 
-                                                src={img} 
+                                              <img
+                                                src={img}
                                                 alt={`Certificate ${imgIndex + 1}`}
                                                 onError={(e) => {
                                                   e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='120' viewBox='0 0 150 120'%3E%3Crect width='150' height='120' fill='%23333'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%2300e5ff' font-family='monospace' font-size='12'%3EImage%3C/text%3E%3C/svg%3E";
@@ -1087,7 +1141,7 @@ export default function CertificatesAdminCRT() {
                               {cert.date}
                             </div>
                             <p className="text-gray-300 text-sm mb-3">{cert.desc}</p>
-                            
+
                             {cert.images && cert.images.length > 0 && (
                               <div className="mt-3">
                                 <div className="text-xs crt-text opacity-60 mb-2">
@@ -1096,8 +1150,8 @@ export default function CertificatesAdminCRT() {
                                 <div className="image-grid">
                                   {cert.images.slice(0, 2).map((img, imgIndex) => (
                                     <div key={imgIndex} className="image-item">
-                                      <img 
-                                        src={img} 
+                                      <img
+                                        src={img}
                                         alt={`Preview ${imgIndex + 1}`}
                                         className="w-full h-20 object-cover"
                                       />

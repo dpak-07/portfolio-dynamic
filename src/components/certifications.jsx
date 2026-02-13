@@ -49,13 +49,13 @@ const cardVariants = {
 // Utility function to optimize OneDrive links for direct image access
 const optimizeOneDriveLink = (url) => {
   if (!url) return null;
-  
+
   try {
     // If it's already a direct image link, return as is
     if (url.match(/\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i)) {
       return url;
     }
-    
+
     // Convert OneDrive share links to direct download links
     if (url.includes('onedrive.live.com') || url.includes('1drv.ms')) {
       // For OneDrive share links, we need to convert them to direct download links
@@ -64,7 +64,7 @@ const optimizeOneDriveLink = (url) => {
         // Shortened OneDrive link - we'll need to expand it first
         return url; // Return original, will need server-side processing or manual conversion
       }
-      
+
       // For direct OneDrive links, add download parameter
       const urlObj = new URL(url);
       if (!urlObj.searchParams.has('download')) {
@@ -72,7 +72,7 @@ const optimizeOneDriveLink = (url) => {
       }
       return urlObj.toString();
     }
-    
+
     return url;
   } catch (error) {
     console.error('Error optimizing OneDrive link:', error);
@@ -83,7 +83,7 @@ const optimizeOneDriveLink = (url) => {
 // Preload images for better performance
 const preloadImages = (imageUrls) => {
   if (!imageUrls || !Array.isArray(imageUrls)) return;
-  
+
   imageUrls.forEach((url) => {
     const optimizedUrl = optimizeOneDriveLink(url);
     if (optimizedUrl) {
@@ -94,13 +94,13 @@ const preloadImages = (imageUrls) => {
 };
 
 // High-quality image component with optimized loading
-const HighQualityImage = ({ 
-  src, 
-  alt, 
-  className, 
-  onLoad, 
+const HighQualityImage = ({
+  src,
+  alt,
+  className,
+  onLoad,
   onError,
-  priority = false 
+  priority = false
 }) => {
   const [optimizedSrc, setOptimizedSrc] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -167,9 +167,8 @@ const HighQualityImage = ({
       <img
         src={optimizedSrc}
         alt={alt}
-        className={`${className} transition-opacity duration-300 ${
-          isLoading ? 'opacity-0' : 'opacity-100'
-        }`}
+        className={`${className} transition-opacity duration-300 ${isLoading ? 'opacity-0' : 'opacity-100'
+          }`}
         onLoad={() => {
           setIsLoading(false);
           onLoad?.();
@@ -194,8 +193,8 @@ export default function CertificationsSection() {
   const certificateData = certsData ? {
     categories: certsData.categories.map(cat => ({
       ...cat,
-      icon: iconComponents[cat.icon] ? React.createElement(iconComponents[cat.icon], { 
-        className: "w-5 h-5 text-cyan-400" 
+      icon: iconComponents[cat.icon] ? React.createElement(iconComponents[cat.icon], {
+        className: "w-5 h-5 text-cyan-400"
       }) : null
     }))
   } : {
@@ -208,7 +207,7 @@ export default function CertificationsSection() {
       },
       {
         id: "internships",
-        label: "Internships", 
+        label: "Internships",
         icon: <Briefcase className="w-5 h-5 text-purple-400" />,
         items: [],
       },
@@ -232,11 +231,11 @@ export default function CertificationsSection() {
   const sectionRef = useRef(null);
   const sectionInView = useInView(sectionRef, { once: true, amount: 0.25 });
 
-useEffect(() => {
-  if (sectionInView) {
-    logSectionView("certifications");
-  }
-}, [sectionInView]);
+  useEffect(() => {
+    if (sectionInView) {
+      logSectionView("certifications");
+    }
+  }, [sectionInView]);
 
   const scrollRef = useRef(null);
   const progressControls = useAnimation();
@@ -361,7 +360,7 @@ useEffect(() => {
   // Show error state if Firestore fails
   if (firestoreError) {
     return (
-      <section id="certifications" className="relative w-full min-h-screen px-6 py-16 text-white overflow-hidden bg-[radial-gradient(circle_at_top_left,#0a0a0a_0%,#000000_60%,#050505_100%)]">
+      <section id="certifications" className="relative w-full min-h-screen px-6 py-16 text-white overflow-hidden">
         <div className="relative z-10 text-center">
           <h2 className="text-3xl font-bold text-red-400 mb-4">Failed to Load Certifications</h2>
           <p className="text-white/70">{firestoreError}</p>
@@ -377,15 +376,9 @@ useEffect(() => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 1 }}
-      className="relative w-full min-h-screen px-6 py-16 text-white overflow-hidden bg-[radial-gradient(circle_at_top_left,#0a0a0a_0%,#000000_60%,#050505_100%)]"
+      className="relative w-full min-h-screen px-6 py-16 text-white overflow-hidden"
     >
       {/* Animated BG */}
-      <motion.div
-        animate={{ backgroundPosition: ["0% 0%", "100% 100%"] }}
-        transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
-        className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(0,255,255,0.08),rgba(0,0,0,0.9))] pointer-events-none"
-      ></motion.div>
-      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay pointer-events-none"></div>
 
       {/* Title */}
       <h2 className="text-4xl md:text-5xl font-bold mb-10 text-center tracking-wide">
@@ -400,11 +393,10 @@ useEffect(() => {
             onClick={() => handleCategoryChange(cat.id)}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className={`flex items-center gap-2 px-5 py-2 rounded-full font-medium border transition-all ${
-              active === cat.id
-                ? "bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.3)]"
-                : "border-gray-600 hover:border-white"
-            }`}
+            className={`flex items-center gap-2 px-5 py-2 rounded-full font-medium border transition-all ${active === cat.id
+              ? "bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.3)]"
+              : "border-gray-600 hover:border-white"
+              }`}
           >
             {cat.icon}
             {cat.label}
@@ -444,9 +436,8 @@ useEffect(() => {
                   key={cat.id}
                   onClick={() => handleCategoryChange(cat.id)}
                   whileHover={{ backgroundColor: "rgba(255,255,255,0.1)" }}
-                  className={`w-full flex items-center gap-2 px-4 py-3 text-left border-b border-white/10 last:border-b-0 ${
-                    active === cat.id ? "bg-cyan-400/20" : ""
-                  }`}
+                  className={`w-full flex items-center gap-2 px-4 py-3 text-left border-b border-white/10 last:border-b-0 ${active === cat.id ? "bg-cyan-400/20" : ""
+                    }`}
                 >
                   {cat.icon}
                   {cat.label}

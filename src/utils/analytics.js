@@ -17,6 +17,7 @@ import {
  *  - Resume Downloads & Opens
  *  - Unique Users (daily, weekly, monthly)
  *  - Extended: today, yesterday, last week, last month, overall users
+ *  - Device Info, Traffic Sources, Blog Analytics, Performance, Errors
  *  - Fully server-safe
  */
 
@@ -27,9 +28,18 @@ const sessionCache = new Map(); // 🧠 In-memory cache (cleared when tab closes
    ⚙️ Ensure All Required Analytics Docs Exist
 ------------------------------------------------------- */
 async function ensureAnalyticsDocs() {
-  const refs = ["totals", "sections", "links", "daily", "users"].map((id) =>
-    doc(db, "analytics", id)
-  );
+  const refs = [
+    "totals",
+    "sections",
+    "links",
+    "daily",
+    "users",
+    "devices",
+    "traffic",
+    "blog",
+    "performance",
+    "errors",
+  ].map((id) => doc(db, "analytics", id));
   await Promise.all(refs.map((ref) => setDoc(ref, {}, { merge: true })));
 }
 
@@ -228,31 +238,280 @@ export const logCustomEvent = async (category, eventName, meta = {}) => {
 };
 
 /* -------------------------------------------------------
+   📱 Device Detection & Tracking
+------------------------------------------------------- */
+function getDeviceInfo() {
+  const ua = navigator.userAgent;
+
+  // Detect Browser
+  let browser = "Other";
+  if (ua.includes("Chrome") && !ua.includes("Edg")) browser = "Chrome";
+  else if (ua.includes("Safari") && !ua.includes("Chrome")) browser = "Safari";
+  else if (ua.includes("Firefox")) browser = "Firefox";
+  else if (ua.includes("Edg")) browser = "Edge";
+
+  // Detect OS
+  let os = "Other";
+  if (ua.includes("Win")) os = "Windows";
+  else if (ua.includes("Mac")) os = "macOS";
+  else if (ua.includes("Linux")) os = "Linux";
+  else if (ua.includes("Android")) os = "Android";
+  else if (ua.includes("iOS") || ua.includes("iPhone") || ua.includes("iPad")) os = "iOS";
+
+  // Detect Device Type
+  let deviceType = "Desktop";
+  if (/Mobi|Android/i.test(ua)) deviceType = "Mobile";
+  else if (/Tablet|iPad/i.test(ua)) deviceType = "Tablet";
+
+  return { browser, os, deviceType };
+}
+
+export const logDeviceInfo = async () => {
+  try {
+    if (isRecentEvent("device_info", 1440)) { // Once per day
+      return;
+    }
+
+    await ensureAnalyticsDocs();
+    const { browser, os, deviceType } = getDeviceInfo();
+
+    const devicesRef = doc(db, "analytics", "devices");
+    await updateDoc(devicesRef, {
+      [`browsers.${browser}`]: increment(1),
+      [`os.${os}`]: increment(1),
+      [`deviceTypes.${deviceType}`]: increment(1),
+      lastUpdated: serverTimestamp(),
+    });
+
+    console.log(`📱 Device info logged → ${browser}, ${os}, ${deviceType}`);
+  } catch (err) {
+    console.error("❌ Error logging device info:", err);
+  }
+};
+
+/* -------------------------------------------------------
+   🔗 Traffic Source Tracking
+------------------------------------------------------- */
+function getTrafficSource() {
+  const params = new URLSearchParams(window.location.search);
+  const utmSource = params.get("utm_source");
+  const utmMedium = params.get("utm_medium");
+  const utmCampaign = params.get("utm_campaign");
+  const referrer = document.referrer;
+
+  let source = "Direct";
+  if (utmSource) {
+    source = utmSource;
+  } else if (referrer) {
+    try {
+      const refDomain = new URL(referrer).hostname;
+      if (refDomain.includes("google")) source = "Google";
+      else if (refDomain.includes("linkedin")) source = "LinkedIn";
+      else if (refDomain.includes("twitter") || refDomain.includes("t.co")) source = "Twitter";
+      else if (refDomain.includes("facebook")) source = "Facebook";
+      else source = refDomain;
+    } catch (e) {
+      source = "Referral";
+    }
+  }
+
+  return { source, medium: utmMedium, campaign: utmCampaign };
+}
+
+export const logTrafficSource = async () => {
+  try {
+    if (isRecentEvent("traffic_source", 1440)) { // Once per day
+      return;
+    }
+
+    await ensureAnalyticsDocs();
+    const { source, medium, campaign } = getTrafficSource();
+
+    const trafficRef = doc(db, "analytics", "traffic");
+    const updates = {
+      [`sources.${source}`]: increment(1),
+      lastUpdated: serverTimestamp(),
+    };
+
+    if (medium) updates[`mediums.${medium}`] = increment(1);
+    if (campaign) updates[`campaigns.${campaign}`] = increment(1);
+
+    await updateDoc(trafficRef, updates);
+
+    console.log(`🔗 Traffic source logged → ${source}${medium ? ` (${medium})` : ""}${campaign ? ` [${campaign}]` : ""}`);
+  } catch (err) {
+    console.error("❌ Error logging traffic source:", err);
+  }
+};
+
+/* -------------------------------------------------------
+   📖 Blog Analytics
+------------------------------------------------------- */
+export const logBlogView = async (postSlug, postTitle) => {
+  try {
+    if (!postSlug) return;
+
+    await ensureAnalyticsDocs();
+    const blogRef = doc(db, "analytics", "blog");
+
+    await updateDoc(blogRef, {
+      [`${postSlug}.title`]: postTitle,
+      [`${postSlug}.views`]: increment(1),
+      [`${postSlug}.lastViewed`]: serverTimestamp(),
+    });
+
+    console.log(`📖 Blog view logged → ${postSlug}`);
+  } catch (err) {
+    console.error("❌ Error logging blog view:", err);
+  }
+};
+
+export const logBlogLike = async (postSlug) => {
+  try {
+    if (!postSlug) return;
+
+    await ensureAnalyticsDocs();
+    const blogRef = doc(db, "analytics", "blog");
+
+    await updateDoc(blogRef, {
+      [`${postSlug}.likes`]: increment(1),
+    });
+
+    console.log(`❤️ Blog like logged → ${postSlug}`);
+  } catch (err) {
+    console.error("❌ Error logging blog like:", err);
+  }
+};
+
+export const logBlogReadTime = async (postSlug, seconds) => {
+  try {
+    if (!postSlug || seconds < 5) return; // Only log if read for 5+ seconds
+
+    await ensureAnalyticsDocs();
+    const blogRef = doc(db, "analytics", "blog");
+
+    await updateDoc(blogRef, {
+      [`${postSlug}.totalReadTime`]: increment(Math.floor(seconds)),
+      [`${postSlug}.readCount`]: increment(1),
+    });
+
+    console.log(`⏱️ Blog read time logged → ${postSlug}: ${Math.floor(seconds)}s`);
+  } catch (err) {
+    console.error("❌ Error logging blog read time:", err);
+  }
+};
+
+/* -------------------------------------------------------
+   ⚡ Performance Tracking
+------------------------------------------------------- */
+export const logPageLoad = async (pageName, loadTimeMs) => {
+  try {
+    if (!pageName || loadTimeMs < 0) return;
+
+    await ensureAnalyticsDocs();
+    const perfRef = doc(db, "analytics", "performance");
+
+    await updateDoc(perfRef, {
+      [`pageLoads.${pageName}.count`]: increment(1),
+      [`pageLoads.${pageName}.totalTime`]: increment(Math.floor(loadTimeMs)),
+      lastUpdated: serverTimestamp(),
+    });
+
+    console.log(`⚡ Page load logged → ${pageName}: ${Math.floor(loadTimeMs)}ms`);
+  } catch (err) {
+    console.error("❌ Error logging page load:", err);
+  }
+};
+
+export const logPageDuration = async (pageName, durationMs) => {
+  try {
+    if (!pageName || durationMs < 1000) return; // Only log if 1+ second
+
+    await ensureAnalyticsDocs();
+    const perfRef = doc(db, "analytics", "performance");
+
+    await updateDoc(perfRef, {
+      [`pageDurations.${pageName}.count`]: increment(1),
+      [`pageDurations.${pageName}.totalTime`]: increment(Math.floor(durationMs)),
+      lastUpdated: serverTimestamp(),
+    });
+
+    console.log(`⏱️ Page duration logged → ${pageName}: ${Math.floor(durationMs / 1000)}s`);
+  } catch (err) {
+    console.error("❌ Error logging page duration:", err);
+  }
+};
+
+/* -------------------------------------------------------
+   ❌ Error Tracking
+------------------------------------------------------- */
+export const logError = async (errorMessage, errorStack, componentName = "Unknown") => {
+  try {
+    // Don't log errors from browser extensions
+    if (errorStack && errorStack.includes("chrome-extension://")) return;
+
+    await ensureAnalyticsDocs();
+    const errorsRef = doc(db, "analytics", "errors");
+
+    const errorId = `error_${Date.now()}`;
+    await updateDoc(errorsRef, {
+      [errorId]: {
+        message: errorMessage || "Unknown error",
+        stack: errorStack || "No stack trace",
+        component: componentName,
+        userAgent: navigator.userAgent,
+        timestamp: serverTimestamp(),
+      },
+      errorCount: increment(1),
+    });
+
+    console.log(`❌ Error logged → ${componentName}: ${errorMessage}`);
+  } catch (err) {
+    console.error("❌ Error logging error (meta!):", err);
+  }
+};
+
+/* -------------------------------------------------------
    📊 Fetch Analytics Data (for dashboard) — Extended
-   Includes:
-   ✅ Today / Yesterday
-   ✅ This Week / Last Week
-   ✅ This Month / Last Month
-   ✅ Overall unique users
 ------------------------------------------------------- */
 export const getAnalyticsData = async () => {
   try {
     await ensureAnalyticsDocs();
 
-    const [totalsSnap, sectionsSnap, linksSnap, dailySnap, usersSnap] =
-      await Promise.all([
-        getDoc(doc(db, "analytics", "totals")),
-        getDoc(doc(db, "analytics", "sections")),
-        getDoc(doc(db, "analytics", "links")),
-        getDoc(doc(db, "analytics", "daily")),
-        getDoc(doc(db, "analytics", "users")),
-      ]);
+    const [
+      totalsSnap,
+      sectionsSnap,
+      linksSnap,
+      dailySnap,
+      usersSnap,
+      devicesSnap,
+      trafficSnap,
+      blogSnap,
+      performanceSnap,
+      errorsSnap,
+    ] = await Promise.all([
+      getDoc(doc(db, "analytics", "totals")),
+      getDoc(doc(db, "analytics", "sections")),
+      getDoc(doc(db, "analytics", "links")),
+      getDoc(doc(db, "analytics", "daily")),
+      getDoc(doc(db, "analytics", "users")),
+      getDoc(doc(db, "analytics", "devices")),
+      getDoc(doc(db, "analytics", "traffic")),
+      getDoc(doc(db, "analytics", "blog")),
+      getDoc(doc(db, "analytics", "performance")),
+      getDoc(doc(db, "analytics", "errors")),
+    ]);
 
     const totals = totalsSnap.exists() ? totalsSnap.data() : {};
     const sections = sectionsSnap.exists() ? sectionsSnap.data() : {};
     const links = linksSnap.exists() ? linksSnap.data() : {};
     const daily = dailySnap.exists() ? dailySnap.data() : {};
     const users = usersSnap.exists() ? usersSnap.data() : {};
+    const devices = devicesSnap.exists() ? devicesSnap.data() : {};
+    const traffic = trafficSnap.exists() ? trafficSnap.data() : {};
+    const blog = blogSnap.exists() ? blogSnap.data() : {};
+    const performance = performanceSnap.exists() ? performanceSnap.data() : {};
+    const errors = errorsSnap.exists() ? errorsSnap.data() : {};
 
     const dailyArr = Object.keys(daily)
       .filter((k) => typeof daily[k] === "object")
@@ -270,7 +529,7 @@ export const getAnalyticsData = async () => {
     const lastSeen = users.lastSeen || {};
     const allDates = Object.values(lastSeen);
     const now = new Date();
-    
+
     // Get today and yesterday dates
     const todayDate = now.toISOString().split("T")[0];
     const yesterday = new Date(now);
@@ -341,6 +600,11 @@ export const getAnalyticsData = async () => {
       sectionData: sections,
       linkData: links,
       dailyArr,
+      devicesData: devices,
+      trafficData: traffic,
+      blogData: blog,
+      performanceData: performance,
+      errorsData: errors,
     };
   } catch (err) {
     console.error("❌ Error fetching analytics data:", err);
@@ -350,6 +614,11 @@ export const getAnalyticsData = async () => {
       sectionData: {},
       linkData: {},
       dailyArr: [],
+      devicesData: {},
+      trafficData: {},
+      blogData: {},
+      performanceData: {},
+      errorsData: {},
     };
   }
 };
@@ -359,7 +628,7 @@ export const getAnalyticsData = async () => {
 ------------------------------------------------------- */
 export const resetAnalytics = async () => {
   try {
-    const refs = ["totals", "sections", "links", "daily", "users"].map((id) =>
+    const refs = ["totals", "sections", "links", "daily", "users", "devices", "traffic", "blog", "performance", "errors"].map((id) =>
       doc(db, "analytics", id)
     );
     await Promise.all(refs.map((ref) => setDoc(ref, {}, { merge: false })));

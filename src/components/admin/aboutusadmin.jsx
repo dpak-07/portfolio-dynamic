@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
+import {
   Eye, Save, RotateCcw, Download, Upload,
   ChevronDown, ChevronUp, Plus, X, ArrowUp, ArrowDown,
   GraduationCap, Brain, Laptop, Cloud, Trophy, Compass,
@@ -10,6 +10,7 @@ import {
 import { doc, setDoc, getDoc, Timestamp } from "firebase/firestore";
 import { db } from "@/firebase";
 import { useFirestoreData } from "@/hooks/useFirestoreData";
+import { uploadImage } from "@/utils/supabaseStorage";
 
 const STORAGE_DRAFT_KEY = "about_config_draft";
 const STORAGE_SAVED_KEY = "about_config_saved";
@@ -145,23 +146,23 @@ const iconMap = {
 function computeChanges(oldConfig = {}, newConfig = {}) {
   const changes = [];
   function same(a, b) { return JSON.stringify(a) === JSON.stringify(b); }
-  
+
   // Basic config
   if ((oldConfig.image?.url || "") !== (newConfig.image?.url || "")) changes.push("image.url");
   if ((oldConfig.initialMode || "") !== (newConfig.initialMode || "")) changes.push("initialMode");
   if ((oldConfig.resumeTarget || "") !== (newConfig.resumeTarget || "")) changes.push("resumeTarget");
-  
+
   // Bio
   if ((oldConfig.bio?.short || "") !== (newConfig.bio?.short || "")) changes.push("bio.short");
   if (!same(oldConfig.bio?.badges || [], newConfig.bio?.badges || [])) changes.push("bio.badges");
   if ((oldConfig.bio?.expanded?.recent || "") !== (newConfig.bio?.expanded?.recent || "")) changes.push("bio.expanded.recent");
   if ((oldConfig.bio?.expanded?.values || "") !== (newConfig.bio?.expanded?.values || "")) changes.push("bio.expanded.values");
-  
+
   // Arrays
   if (!same(oldConfig.cards || [], newConfig.cards || [])) changes.push("cards");
   if (!same(oldConfig.counters || [], newConfig.counters || [])) changes.push("counters");
   if (!same(oldConfig.holoSections || [], newConfig.holoSections || [])) changes.push("holoSections");
-  
+
   return [...new Set(changes)];
 }
 
@@ -192,22 +193,23 @@ export default function CRTAdminPanel() {
   const [isOnline, setIsOnline] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
-  
+
   // Save confirmation states
   const [changesPopupOpen, setChangesPopupOpen] = useState(false);
   const [pendingChanges, setPendingChanges] = useState([]);
   const [secretInput, setSecretInput] = useState("");
   const [adminCode, setAdminCode] = useState(null);
-  
+  const [isUploading, setIsUploading] = useState(false);
+
   // Committed snapshot (last confirmed save)
   const committedRef = useRef(null);
   const draftChangeTimeoutRef = useRef(null);
   const prevDraftRef = useRef(null);
 
   const defaultConfig = {
-    image: { 
-      url: "https://1drv.ms/i/c/ac01abdcf0387f53/IQTDfhsFAQDOQ5Zeh9Df4-vAbMANaw6yEm8EdW4q4NpN4w?width=1280&height=1280", 
-      iframeFallbackUrl: null 
+    image: {
+      url: "https://1drv.ms/i/c/ac01abdcf0387f53/IQTDfhsFAQDOQ5Zeh9Df4-vAbMANaw6yEm8EdW4q4NpN4w?width=1280&height=1280",
+      iframeFallbackUrl: null
     },
     initialMode: "holo",
     cards: [
@@ -242,7 +244,7 @@ export default function CRTAdminPanel() {
       // Fetch admin code
       const adminDocRef = doc(db, FIRESTORE_ADMIN_DOC);
       const adminSnap = await getDoc(adminDocRef);
-      
+
       if (adminSnap.exists()) {
         const adminData = adminSnap.data();
         setAdminCode(String(adminData.secretCode));
@@ -255,9 +257,9 @@ export default function CRTAdminPanel() {
       // Load about page data from Firestore
       const aboutDocRef = doc(db, FIRESTORE_ABOUT_DOC);
       const aboutSnap = await getDoc(aboutDocRef);
-      
+
       let initialDraft = null;
-      
+
       if (aboutSnap.exists()) {
         // Use data from Firestore
         initialDraft = aboutSnap.data();
@@ -265,7 +267,7 @@ export default function CRTAdminPanel() {
       } else {
         // Fallback to session storage or default
         const session = sessionStorage.getItem(STORAGE_DRAFT_KEY);
-        
+
         if (session) {
           initialDraft = JSON.parse(session);
           setStatus("✓ Draft loaded from session");
@@ -274,7 +276,7 @@ export default function CRTAdminPanel() {
           setStatus("✓ Using default config");
         }
       }
-      
+
       setDraft(initialDraft);
       committedRef.current = JSON.parse(JSON.stringify(initialDraft));
       prevDraftRef.current = JSON.stringify(initialDraft);
@@ -284,11 +286,11 @@ export default function CRTAdminPanel() {
       console.error("Init error:", error);
       setStatus("⚠ Using offline mode");
       setStatusType("error");
-      
+
       // Fallback to session storage or default
       const session = sessionStorage.getItem(STORAGE_DRAFT_KEY);
       const fallbackDraft = session ? JSON.parse(session) : defaultConfig;
-      
+
       setDraft(fallbackDraft);
       committedRef.current = JSON.parse(JSON.stringify(fallbackDraft));
       prevDraftRef.current = JSON.stringify(fallbackDraft);
@@ -347,7 +349,7 @@ export default function CRTAdminPanel() {
       setStatus("⚠ Offline mode");
       setStatusType("error");
     };
-    
+
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
 
@@ -393,7 +395,7 @@ export default function CRTAdminPanel() {
     }
 
     window.addEventListener('keydown', preventAutoSave);
-    
+
     const disableAutofill = () => {
       const inputs = document.querySelectorAll('input, textarea');
       inputs.forEach(input => {
@@ -403,7 +405,7 @@ export default function CRTAdminPanel() {
         input.setAttribute('spellcheck', 'false');
       });
     };
-    
+
     disableAutofill();
     const interval = setInterval(disableAutofill, 1000);
 
@@ -489,11 +491,11 @@ export default function CRTAdminPanel() {
       setStatusType("error");
       return;
     }
-    
+
     try {
       // Save to Firebase
       const success = await saveToFirebase(draft);
-      
+
       if (success) {
         sessionStorage.removeItem(STORAGE_DRAFT_KEY);
         committedRef.current = JSON.parse(JSON.stringify(draft));
@@ -519,6 +521,39 @@ export default function CRTAdminPanel() {
       setStatus("Reset to default");
       setStatusType("info");
       setHasChanges(false);
+    }
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setStatus("✗ Please select an image file");
+      setStatusType("error");
+      return;
+    }
+
+    try {
+      setStatus("📤 Uploading image to Supabase...");
+      setStatusType("info");
+      setIsUploading(true);
+
+      // Upload to Supabase
+      const imageUrl = await uploadImage(file, 'about');
+
+      // Update draft with Supabase URL
+      updateNested('image.url', imageUrl);
+
+      setStatus("✓ Image uploaded successfully");
+      setStatusType("success");
+    } catch (error) {
+      console.error("Image upload error:", error);
+      setStatus(`✗ Upload failed: ${error.message}`);
+      setStatusType("error");
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -568,9 +603,9 @@ export default function CRTAdminPanel() {
   return (
     <div className="w-screen h-screen overflow-hidden crt-screen crt-glow">
       <CRTStyles />
-      
+
       <div className="w-full h-full flex flex-col p-4 gap-4">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="crt-panel rounded-lg p-4"
@@ -645,7 +680,7 @@ export default function CRTAdminPanel() {
         <div className="flex-1 flex gap-4 overflow-hidden">
           {!previewMode ? (
             <>
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 className="w-64 crt-panel rounded-lg p-4 flex flex-col gap-4"
@@ -658,11 +693,10 @@ export default function CRTAdminPanel() {
                         key={tab}
                         whileHover={{ x: 5 }}
                         onClick={() => setActiveTab(tab)}
-                        className={`w-full text-left px-3 py-2 rounded transition-all ${
-                          activeTab === tab 
-                            ? "crt-button crt-text" 
+                        className={`w-full text-left px-3 py-2 rounded transition-all ${activeTab === tab
+                            ? "crt-button crt-text"
                             : "text-cyan-400/60 hover:text-cyan-400"
-                        }`}
+                          }`}
                       >
                         {tab.toUpperCase()}
                       </motion.button>
@@ -675,8 +709,8 @@ export default function CRTAdminPanel() {
                 <div>
                   <h3 className="text-sm crt-text mb-3 opacity-60">ACTIONS</h3>
                   <div className="space-y-2">
-                    <button 
-                      onClick={initiateSaveConfirmation} 
+                    <button
+                      onClick={initiateSaveConfirmation}
                       disabled={!hasChanges}
                       className="w-full crt-button px-3 py-2 rounded crt-text flex items-center gap-2"
                     >
@@ -696,7 +730,7 @@ export default function CRTAdminPanel() {
                 </div>
               </motion.div>
 
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="flex-1 crt-panel rounded-lg p-6 overflow-hidden"
@@ -712,16 +746,42 @@ export default function CRTAdminPanel() {
                         className="space-y-6"
                       >
                         <h2 className="text-xl crt-text mb-4">BASIC CONFIGURATION</h2>
-                        
+
                         <div>
-                          <label className="block text-sm crt-text mb-2 opacity-60">IMAGE URL</label>
-                          <input
-                            type="text"
-                            value={draft.image?.url || ""}
-                            onChange={(e) => updateNested('image.url', e.target.value)}
-                            className="w-full crt-input px-4 py-2 rounded"
-                            autoComplete="off"
-                          />
+                          <label className="block text-sm crt-text mb-2 opacity-60">PROFILE IMAGE</label>
+                          <div className="space-y-3">
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                value={draft.image?.url || ""}
+                                onChange={(e) => updateNested('image.url', e.target.value)}
+                                className="flex-1 crt-input px-4 py-2 rounded"
+                                placeholder="Image URL or upload below"
+                                autoComplete="off"
+                              />
+                              <label className="crt-button px-4 py-2 rounded crt-text flex items-center gap-2 cursor-pointer">
+                                <Upload size={16} />
+                                {isUploading ? 'UPLOADING...' : 'UPLOAD'}
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={handleImageUpload}
+                                  className="hidden"
+                                  disabled={isUploading}
+                                />
+                              </label>
+                            </div>
+                            {draft.image?.url && (
+                              <div className="crt-panel p-2 rounded">
+                                <img
+                                  src={draft.image.url}
+                                  alt="Preview"
+                                  className="w-full h-32 object-cover rounded"
+                                  onError={(e) => e.target.style.display = 'none'}
+                                />
+                              </div>
+                            )}
+                          </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
@@ -771,12 +831,12 @@ export default function CRTAdminPanel() {
                         <div className="flex items-center justify-between mb-4">
                           <h2 className="text-xl crt-text">CARDS EDITOR</h2>
                           <button
-                            onClick={() => pushArray('cards', { 
-                              id: `card_${Date.now()}`, 
-                              title: 'New Card', 
-                              icon: 'laptop', 
-                              short: 'Short description', 
-                              long: 'Long description' 
+                            onClick={() => pushArray('cards', {
+                              id: `card_${Date.now()}`,
+                              title: 'New Card',
+                              icon: 'laptop',
+                              short: 'Short description',
+                              long: 'Long description'
                             })}
                             className="crt-button px-4 py-2 rounded crt-text flex items-center gap-2"
                           >
@@ -882,10 +942,10 @@ export default function CRTAdminPanel() {
                         <div className="flex items-center justify-between mb-4">
                           <h2 className="text-xl crt-text">COUNTERS EDITOR</h2>
                           <button
-                            onClick={() => pushArray('counters', { 
-                              id: `counter_${Date.now()}`, 
-                              label: 'New Counter', 
-                              value: 0 
+                            onClick={() => pushArray('counters', {
+                              id: `counter_${Date.now()}`,
+                              label: 'New Counter',
+                              value: 0
                             })}
                             className="crt-button px-4 py-2 rounded crt-text flex items-center gap-2"
                           >
@@ -956,7 +1016,7 @@ export default function CRTAdminPanel() {
                         className="space-y-6"
                       >
                         <h2 className="text-xl crt-text mb-4">BIO CONFIGURATION</h2>
-                        
+
                         <div>
                           <label className="block text-sm crt-text mb-2 opacity-60">BADGES</label>
                           <div className="flex gap-2 mb-3">
@@ -1032,7 +1092,7 @@ export default function CRTAdminPanel() {
                         className="space-y-6"
                       >
                         <h2 className="text-xl crt-text mb-4">ADVANCED SETTINGS</h2>
-                        
+
                         <div>
                           <label className="block text-sm crt-text mb-2 opacity-60">RAW JSON EDITOR</label>
                           <textarea
@@ -1060,7 +1120,7 @@ export default function CRTAdminPanel() {
               </motion.div>
             </>
           ) : (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               className="flex-1 crt-panel rounded-lg p-6 overflow-auto hide-scrollbar"
@@ -1072,7 +1132,7 @@ export default function CRTAdminPanel() {
                     <h3 className="text-lg mb-2">Image URL</h3>
                     <p className="text-sm opacity-80 break-all">{draft.image?.url}</p>
                   </div>
-                  
+
                   <div className="crt-panel p-4 rounded">
                     <h3 className="text-lg mb-2">Bio</h3>
                     <p className="text-sm opacity-80">{draft.bio?.short}</p>
@@ -1114,13 +1174,13 @@ export default function CRTAdminPanel() {
       {/* Changes confirmation modal */}
       <AnimatePresence>
         {changesPopupOpen && (
-          <motion.div 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
-            exit={{ opacity: 0 }} 
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/80"
           >
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}

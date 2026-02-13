@@ -79,7 +79,7 @@ const AnimatedCounter = ({ value, duration = 2, isVisible }) => {
     let start = 0;
     const end = parseInt(value) || 0;
     if (end === 0) return;
-    
+
     const increment = end / (duration * 60);
 
     const timer = setInterval(() => {
@@ -302,10 +302,10 @@ const MiniCard = ({ event, onClick, isVisible, index }) => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
-    
+
     checkMobile();
     window.addEventListener('resize', checkMobile);
-    
+
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
@@ -316,20 +316,20 @@ const MiniCard = ({ event, onClick, isVisible, index }) => {
       whileTap={{ scale: 0.95 }}
       className="flex-shrink-0 focus:outline-none touch-manipulation"
       initial={
-        isMobile 
-          ? { opacity: 0, scale: 0.8 } 
+        isMobile
+          ? { opacity: 0, scale: 0.8 }
           : { opacity: 0, scale: 0.5, rotate: -180 }
       }
       animate={
         isVisible
           ? { opacity: 1, scale: 1, rotate: 0 }
-          : isMobile 
-            ? { opacity: 0, scale: 0.8, rotate: 0 } 
+          : isMobile
+            ? { opacity: 0, scale: 0.8, rotate: 0 }
             : { opacity: 0, scale: 0.5, rotate: -180 }
       }
       exit={
-        isMobile 
-          ? { opacity: 0, scale: 0.8 } 
+        isMobile
+          ? { opacity: 0, scale: 0.8 }
           : { opacity: 0, scale: 0.5, rotate: 180 }
       }
       transition={
@@ -342,7 +342,7 @@ const MiniCard = ({ event, onClick, isVisible, index }) => {
         className={`w-36 h-36 md:w-48 md:h-48 rounded-2xl md:rounded-3xl bg-gradient-to-br ${event.color} border-2 border-white/30 shadow-2xl hover:shadow-2xl transition-all flex flex-col items-center justify-center gap-3 md:gap-4 cursor-pointer group overflow-hidden relative`}
       >
         {/* Background glow */}
-        <motion.div 
+        <motion.div
           className="absolute inset-0 opacity-10 bg-white"
           animate={{ opacity: [0.05, 0.15, 0.05] }}
           transition={{ repeat: Infinity, duration: 3 }}
@@ -406,10 +406,10 @@ const defaultStats = [
 // Stats component
 const StatsSection = () => {
   const [ref, isVisible] = useScrollReveal(0.3);
-  
+
   // Fetch stats data from Firestore
   const { data: timelineData, loading } = useFirestoreData("timeline", "data");
-  
+
   // Use default stats if Firestore data is empty or loading
   const stats = (timelineData?.stats && timelineData.stats.length > 0) ? timelineData.stats : defaultStats;
 
@@ -424,7 +424,7 @@ const StatsSection = () => {
       {stats.map((stat, i) => {
         // Handle both string icon names and direct icon components
         const IconComponent = typeof stat.icon === 'string' ? iconMap[stat.icon] : stat.icon;
-        
+
         return (
           <motion.div
             key={i}
@@ -475,7 +475,7 @@ export default function AutoScrollCarouselTimeline() {
 
   // Fetch timeline data from Firestore
   const { data: timelineData } = useFirestoreData("timeline", "data");
-  
+
   // Default timeline events - fallback to null if no data
   const defaultTimelineEvents = [
     {
@@ -613,10 +613,10 @@ export default function AutoScrollCarouselTimeline() {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
-    
+
     checkMobile();
     window.addEventListener('resize', checkMobile);
-    
+
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
@@ -705,7 +705,7 @@ export default function AutoScrollCarouselTimeline() {
     <div
       id="timeline"
       ref={timelineRef}
-      className="relative min-h-screen w-full bg-gradient-to-br from-slate-950 via-black to-slate-900 text-white overflow-hidden"
+      className="relative min-h-screen w-full text-white overflow-hidden"
     >
       {/* Animated background orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -768,7 +768,7 @@ export default function AutoScrollCarouselTimeline() {
               >
                 {visibleYears}
               </motion.div>
-              
+
               <motion.p
                 animate={{ opacity: [0.7, 1, 0.7] }}
                 transition={{ repeat: Infinity, duration: 2 }}

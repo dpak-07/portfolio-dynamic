@@ -23,7 +23,7 @@ export default function AdminDashboard() {
   const MatrixRain = () => {
     const columns = 40;
     const characters = "01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン";
-    
+
     return (
       <div className="fixed inset-0 overflow-hidden pointer-events-none opacity-5">
         {[...Array(columns)].map((_, i) => (
@@ -59,7 +59,7 @@ export default function AdminDashboard() {
     ];
     let currentIndex = 0;
     let charIndex = 0;
-    
+
     const typewriter = setInterval(() => {
       if (currentIndex < messages.length) {
         if (charIndex < messages[currentIndex].length) {
@@ -135,7 +135,9 @@ export default function AdminDashboard() {
     { name: "RESUME", path: "/admin/resume", code: "0x05", icon: "▼" },
     { name: "CERTS", path: "/admin/certifications", code: "0x06", icon: "◉" },
     { name: "TIMELINE", path: "/admin/timeline", code: "0x07", icon: "◈" },
-    { name: "ANALYTICS", path: "/admin/analysis", code: "0x08", icon: "◎" },
+    { name: "BLOG", path: "/admin/blog", code: "0x08", icon: "✎" },
+    { name: "LINKEDIN", path: "/admin/linkedin", code: "0x09", icon: "◈" },
+    { name: "ANALYTICS", path: "/admin/analysis", code: "0x0A", icon: "◎" },
   ];
 
   if (loading) {
@@ -148,7 +150,7 @@ export default function AdminDashboard() {
           className="relative z-10 text-center"
         >
           <motion.div
-            animate={{ 
+            animate={{
               boxShadow: [
                 "0 0 20px #00ff00",
                 "0 0 40px #00ff00",
@@ -212,7 +214,7 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <motion.div
-                  animate={{ 
+                  animate={{
                     boxShadow: [
                       "0 0 8px #00ff00",
                       "0 0 15px #00ff00",
@@ -228,7 +230,7 @@ export default function AdminDashboard() {
                   <div className="flex items-center gap-2 font-mono text-sm">
                     <span className="text-green-500">[ROOT@ADMIN]</span>
                     <span className="text-green-600">USER:</span>
-                    <motion.span 
+                    <motion.span
                       className="text-cyan-400 font-bold"
                       animate={{
                         textShadow: [
@@ -254,7 +256,7 @@ export default function AdminDashboard() {
                 </div>
 
                 <motion.button
-                  whileHover={{ 
+                  whileHover={{
                     scale: 1.05,
                     boxShadow: "0 0 15px #ff0000"
                   }}
@@ -299,9 +301,9 @@ export default function AdminDashboard() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-green-600">STATUS:</span>
-                      <motion.span 
+                      <motion.span
                         className="text-green-400 font-bold"
-                        animate={{ 
+                        animate={{
                           textShadow: [
                             "0 0 5px #00ff00",
                             "0 0 10px #00ff00",
@@ -340,11 +342,10 @@ export default function AdminDashboard() {
                   {Object.entries(sections).map(([key, value]) => (
                     <div
                       key={key}
-                      className={`border p-2 transition-all ${
-                        value
+                      className={`border p-2 transition-all ${value
                           ? "border-green-500/50 bg-green-900/20"
                           : "border-green-500/20 bg-black/40"
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -367,11 +368,10 @@ export default function AdminDashboard() {
                           whileTap={{ scale: 0.9 }}
                           onClick={() => toggleSection(key)}
                           disabled={updating}
-                          className={`px-2 py-0.5 border text-[9px] font-bold ${
-                            value
+                          className={`px-2 py-0.5 border text-[9px] font-bold ${value
                               ? "border-green-500 text-green-400 bg-green-900/30"
                               : "border-gray-600 text-gray-500 bg-gray-900/30"
-                          }`}
+                            }`}
                         >
                           {value ? "ON" : "OFF"}
                         </motion.button>
@@ -401,7 +401,7 @@ export default function AdminDashboard() {
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: 0.3 + index * 0.03 }}
-                      whileHover={{ 
+                      whileHover={{
                         scale: 1.03,
                         boxShadow: "0 0 15px #00ff00",
                         borderColor: "#00ff00"
@@ -416,7 +416,7 @@ export default function AdminDashboard() {
                         whileHover={{ x: "100%" }}
                         transition={{ duration: 0.5 }}
                       />
-                      
+
                       <div className="relative z-10">
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-2xl text-green-500">{route.icon}</span>

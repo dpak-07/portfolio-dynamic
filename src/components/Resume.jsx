@@ -4,23 +4,18 @@ import { motion, AnimatePresence, useInView } from "framer-motion";
 import {
   Eye,
   Download,
-  Calendar,
-  User,
   FileText,
   X,
-  ChevronRight,
   Briefcase,
-  ChevronDown,
-  ChevronUp,
+  Award,
+  Code,
+  Star,
 } from "lucide-react";
 import { useFirestoreData } from "@/hooks/useFirestoreData";
 import { logSectionView, logLinkClick, logDownload, logResumeOpen } from "../utils/analytics";
 
 export default function Resume() {
   const [isOpen, setIsOpen] = useState(false);
-  const [showAllSkills, setShowAllSkills] = useState(false);
-  const [showFullDescription, setShowFullDescription] = useState(false);
-
   const sectionRef = useRef(null);
   const sectionInView = useInView(sectionRef, { once: true, amount: 0.3 });
 
@@ -61,25 +56,12 @@ export default function Resume() {
     logLinkClick("download_resume");
   };
 
-  // Truncate description
-  const MAX_DESCRIPTION_LENGTH = 150;
-  const shouldTruncateDescription = resumeData?.description?.length > MAX_DESCRIPTION_LENGTH;
-  const displayDescription = showFullDescription || !shouldTruncateDescription
-    ? resumeData?.description
-    : `${resumeData?.description?.substring(0, MAX_DESCRIPTION_LENGTH)}...`;
-
-  // Limit skills display
-  const MAX_SKILLS_DISPLAY = 6;
-  const allSkills = resumeData?.skills || [];
-  const displayedSkills = showAllSkills ? allSkills : allSkills.slice(0, MAX_SKILLS_DISPLAY);
-  const hasMoreSkills = allSkills.length > MAX_SKILLS_DISPLAY;
-
   if (loading) {
     return (
-      <section 
-        id="resume" 
+      <section
+        id="resume"
         ref={sectionRef}
-        className="relative bg-black py-20 px-6 flex items-center justify-center"
+        className="relative min-h-screen py-20 px-6 flex items-center justify-center"
       >
         <motion.div
           animate={{ rotate: 360 }}
@@ -93,10 +75,10 @@ export default function Resume() {
 
   if (error || !resumeData) {
     return (
-      <section 
-        id="resume" 
+      <section
+        id="resume"
         ref={sectionRef}
-        className="relative bg-black py-20 px-6 flex items-center justify-center"
+        className="relative min-h-screen py-20 px-6 flex items-center justify-center"
       >
         <div className="text-center">
           <p className="text-red-400 text-xl">Failed to load resume</p>
@@ -109,279 +91,179 @@ export default function Resume() {
     <section
       id="resume"
       ref={sectionRef}
-      className="relative bg-black py-16 px-6 overflow-hidden scroll-mt-20"
+      className="relative min-h-screen py-20 px-4 sm:px-6 lg:px-8 overflow-hidden scroll-mt-20"
     >
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-20" />
-      
-      {/* Floating Orb Animation */}
-      <motion.div
-        animate={{ 
-          opacity: [0.1, 0.3, 0.1],
-          scale: [1, 1.1, 1],
-        }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-40 right-20 w-96 h-96 bg-cyan-500/10 rounded-full blur-[100px]"
-      />
-      <motion.div
-        animate={{ 
-          opacity: [0.1, 0.25, 0.1],
-          scale: [1, 1.15, 1],
-        }}
-        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-        className="absolute bottom-40 left-20 w-[400px] h-[400px] bg-purple-500/10 rounded-full blur-[100px]"
-      />
-
-      {/* Floating Particles */}
-      {[...Array(15)].map((_, i) => (
+      {/* Content */}
+      <div className="relative z-20 max-w-7xl mx-auto">
+        {/* Header */}
         <motion.div
-          key={i}
-          animate={{
-            y: [0, -30, 0],
-            opacity: [0, 0.6, 0],
-          }}
-          transition={{
-            duration: 3 + Math.random() * 2,
-            repeat: Infinity,
-            delay: Math.random() * 5,
-          }}
-          className="absolute w-1 h-1 bg-cyan-400/40 rounded-full"
-          style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-          }}
-        />
-      ))}
-
-      <div className="relative max-w-5xl mx-auto">
-        {/* Header Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
-          className="mb-12 text-center md:text-left"
+          initial={{ opacity: 0, y: -50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="text-center mb-12 sm:mb-16"
         >
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            whileInView={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 px-3 py-1.5 bg-cyan-500/10 border border-cyan-500/30 rounded-full mb-4"
+          <motion.h2
+            className="text-4xl sm:text-5xl md:text-7xl font-black text-white mb-4 sm:mb-6 px-4"
+            animate={{
+              backgroundImage: [
+                "linear-gradient(to right, #06b6d4, #8b5cf6)",
+                "linear-gradient(to right, #8b5cf6, #06b6d4)",
+                "linear-gradient(to right, #06b6d4, #8b5cf6)",
+              ],
+            }}
+            transition={{ duration: 5, repeat: Infinity }}
+            style={{
+              backgroundClip: "text",
+              WebkitBackgroundClip: "text",
+              color: "transparent",
+            }}
           >
-            <motion.div
-              animate={{ rotate: [0, 10, -10, 0] }}
-              transition={{ duration: 3, repeat: Infinity }}
-            >
-              <Briefcase className="w-3 h-3 text-cyan-400" />
-            </motion.div>
-            <span className="text-cyan-400 text-xs font-medium uppercase tracking-wider">
-              Professional Resume
-            </span>
-          </motion.div>
-          
-          <h2 className="text-5xl md:text-7xl font-black text-white mb-3 bg-gradient-to-r from-white via-cyan-200 to-cyan-500 bg-clip-text text-transparent">
-            Career Overview
-          </h2>
-          
-          {/* Description with Show More */}
-          <div className="text-white/60 text-lg md:text-xl max-w-3xl">
-            <p className="mb-2">{displayDescription}</p>
-            {shouldTruncateDescription && (
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setShowFullDescription(!showFullDescription)}
-                className="inline-flex items-center gap-1 text-cyan-400 hover:text-cyan-300 text-sm font-medium transition-colors"
-              >
-                {showFullDescription ? (
-                  <>
-                    <span>Show Less</span>
-                    <ChevronUp className="w-4 h-4" />
-                  </>
-                ) : (
-                  <>
-                    <span>Show More</span>
-                    <ChevronDown className="w-4 h-4" />
-                  </>
-                )}
-              </motion.button>
-            )}
-          </div>
-        </motion.div>
-
-        {/* Main Content */}
-        <div className="space-y-6">
-          {/* Resume Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            viewport={{ once: true }}
-            className="relative group"
-          >
-            {/* Glow Effect */}
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-3xl blur opacity-0 group-hover:opacity-20 transition duration-1000" />
-            
-            <div className="relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-8 hover:border-cyan-500/30 transition-all">
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-4">
-                    <motion.div
-                      animate={{ rotate: [0, 5, -5, 0] }}
-                      transition={{ duration: 4, repeat: Infinity }}
-                    >
-                      <FileText className="w-12 h-12 text-cyan-400" />
-                    </motion.div>
-                    <div>
-                      <h3 className="text-2xl font-bold text-white">Professional Resume</h3>
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-2 text-sm text-white/60">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {formatDate(resumeData.lastUpdated)}
-                        </span>
-                        <span className="hidden sm:block text-white/30">•</span>
-                        <span className="flex items-center gap-1">
-                          <User className="w-3 h-3" />
-                          {resumeData.updatedBy || "Admin"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={handleViewResume}
-                    disabled={!embedLink}
-                    className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold px-6 py-3 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-cyan-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Eye className="w-4 h-4" />
-                    <span>View Resume</span>
-                  </motion.button>
-
-                  <motion.a
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    href={downloadLink || "#"}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={handleDownload}
-                    className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white font-bold px-6 py-3 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-purple-500/25"
-                  >
-                    <Download className="w-4 h-4" />
-                    <span>Download</span>
-                  </motion.a>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Skills Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            viewport={{ once: true }}
-            className="relative group"
-          >
-            {/* Glow Effect */}
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-3xl blur opacity-0 group-hover:opacity-15 transition duration-1000" />
-            
-            <div className="relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-8 hover:border-purple-500/30 transition-all">
-              <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                <ChevronRight className="w-5 h-5 text-cyan-400" />
-                Technical Skills
-                <span className="text-sm text-white/40 font-normal ml-2">
-                  ({allSkills.length} {allSkills.length === 1 ? 'skill' : 'skills'})
-                </span>
-              </h3>
-              
-              <div className="flex flex-wrap gap-3 mb-4">
-                <AnimatePresence mode="popLayout">
-                  {displayedSkills.map((skill, i) => (
-                    <motion.span
-                      key={skill}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.8 }}
-                      transition={{ delay: i * 0.03 }}
-                      whileHover={{ scale: 1.1, y: -3 }}
-                      className="relative group/skill"
-                    >
-                      <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg blur opacity-0 group-hover/skill:opacity-30 transition" />
-                      <span className="relative block px-4 py-2 bg-black/40 border border-white/20 rounded-lg text-white/90 text-sm font-medium hover:border-cyan-400/50 hover:text-cyan-400 transition-all">
-                        {skill}
-                      </span>
-                    </motion.span>
-                  ))}
-                </AnimatePresence>
-              </div>
-
-              {/* Show More/Less Button for Skills */}
-              {hasMoreSkills && (
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => setShowAllSkills(!showAllSkills)}
-                  className="w-full mt-2 px-4 py-3 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 hover:from-cyan-500/20 hover:to-purple-500/20 border border-cyan-500/30 hover:border-cyan-500/50 rounded-xl text-cyan-400 hover:text-cyan-300 font-medium text-sm transition-all flex items-center justify-center gap-2"
-                >
-                  {showAllSkills ? (
-                    <>
-                      <span>Show Less Skills</span>
-                      <ChevronUp className="w-4 h-4" />
-                    </>
-                  ) : (
-                    <>
-                      <span>Show {allSkills.length - MAX_SKILLS_DISPLAY} More Skills</span>
-                      <ChevronDown className="w-4 h-4" />
-                    </>
-                  )}
-                </motion.button>
-              )}
-            </div>
-          </motion.div>
-        </div>
-      </div>
-
-      {/* Resume Modal */}
-      <AnimatePresence>
-        {isOpen && embedLink && (
-          <motion.div
+            My Resume
+          </motion.h2>
+          <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/90 backdrop-blur-xl flex items-center justify-center z-50 p-4"
-            onClick={() => setIsOpen(false)}
+            transition={{ delay: 0.3 }}
+            className="text-lg sm:text-xl text-gray-300 max-w-2xl mx-auto px-4"
+          >
+            {resumeData?.description || "Explore my professional journey and skills"}
+          </motion.p>
+        </motion.div>
+
+        {/* Resume Cards Grid - Centered */}
+        <div className="flex justify-center mb-12 sm:mb-16">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl w-full px-4">
+            {/* Skills Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              whileHover={{ scale: 1.05, y: -10 }}
+              className="group relative"
+            >
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-3xl opacity-0 group-hover:opacity-75 blur transition duration-500" />
+              <div className="relative bg-slate-800/50 backdrop-blur-xl border border-purple-400/20 rounded-3xl p-6 sm:p-8 h-full">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Code className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
+                </div>
+                <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">Skills</h3>
+                <div className="flex flex-wrap gap-2 mt-4">
+                  {(resumeData?.skills || ["React", "Node.js", "Python", "JavaScript", "TypeScript", "CSS"]).slice(0, 6).map((skill, i) => (
+                    <span
+                      key={i}
+                      className="px-2.5 sm:px-3 py-1 bg-purple-500/20 text-purple-300 rounded-full text-xs sm:text-sm border border-purple-400/30"
+                    >
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Achievements Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              whileHover={{ scale: 1.05, y: -10 }}
+              className="group relative"
+            >
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-orange-500 to-yellow-500 rounded-3xl opacity-0 group-hover:opacity-75 blur transition duration-500" />
+              <div className="relative bg-slate-800/50 backdrop-blur-xl border border-orange-400/20 rounded-3xl p-6 sm:p-8 h-full">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-orange-500 to-yellow-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Award className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
+                </div>
+                <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">Achievements</h3>
+                <p className="text-sm sm:text-base text-gray-300">
+                  {resumeData?.achievements || "Multiple awards and certifications"}
+                </p>
+                <div className="mt-4 flex items-center gap-2 text-orange-400">
+                  <Star className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="text-xs sm:text-sm font-semibold">Recognized</span>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+
+        {/* Action Buttons - Mobile Responsive */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center px-4"
+        >
+          <motion.button
+            onClick={handleViewResume}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="group relative w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold text-base sm:text-lg rounded-xl overflow-hidden shadow-lg shadow-cyan-500/50"
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              transition={{ type: "spring", damping: 25 }}
-              onClick={(e) => e.stopPropagation()}
-              className="relative bg-slate-900 border-2 border-cyan-400/30 rounded-3xl shadow-2xl shadow-cyan-500/20 w-full max-w-6xl h-[90vh] overflow-hidden"
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+              animate={{ x: ["-100%", "200%"] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            />
+            <span className="relative flex items-center justify-center gap-2 sm:gap-3">
+              <Eye className="w-5 h-5 sm:w-6 sm:h-6" />
+              View Resume
+            </span>
+          </motion.button>
+
+          {downloadLink && (
+            <motion.a
+              href={downloadLink}
+              onClick={handleDownload}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="group relative w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-purple-500 to-pink-600 text-white font-bold text-base sm:text-lg rounded-xl overflow-hidden shadow-lg shadow-purple-500/50"
             >
-              {/* Close Button */}
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                animate={{ x: ["-100%", "200%"] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear", delay: 0.5 }}
+              />
+              <span className="relative flex items-center justify-center gap-2 sm:gap-3">
+                <Download className="w-5 h-5 sm:w-6 sm:h-6" />
+                Download PDF
+              </span>
+            </motion.a>
+          )}
+        </motion.div>
+      </div>
+
+      {/* Resume Modal - Mobile Optimized */}
+      <AnimatePresence>
+        {isOpen && embedLink && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsOpen(false)}
+              className="fixed inset-0 bg-black/90 z-[9998] backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="fixed inset-0 z-[9999] flex flex-col items-center justify-center p-2 sm:p-4"
+            >
               <motion.button
+                onClick={() => setIsOpen(false)}
                 whileHover={{ scale: 1.1, rotate: 90 }}
                 whileTap={{ scale: 0.9 }}
-                onClick={() => setIsOpen(false)}
-                className="absolute top-4 right-4 z-10 bg-red-500 hover:bg-red-600 text-white rounded-full p-2.5 shadow-lg transition-colors"
+                className="absolute top-2 right-2 sm:top-6 sm:right-6 text-white hover:text-cyan-400 transition-all z-[10000] bg-black/80 hover:bg-black rounded-full p-3 sm:p-4 border border-white/20 hover:border-cyan-400"
               >
-                <X className="w-5 h-5" />
+                <X className="w-6 h-6 sm:w-8 sm:h-8" />
               </motion.button>
-
-              {/* Resume Preview */}
-              <iframe 
-                src={embedLink} 
-                className="w-full h-full rounded-3xl" 
-                title="Resume Viewer"
-                allow="autoplay"
+              <iframe
+                src={embedLink}
+                className="w-full max-w-5xl h-[85vh] sm:h-[80vh] rounded-xl sm:rounded-2xl shadow-2xl border-2 border-cyan-400/30"
+                title="Resume Preview"
               />
             </motion.div>
-          </motion.div>
+          </>
         )}
       </AnimatePresence>
     </section>

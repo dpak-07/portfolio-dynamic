@@ -1,0 +1,10 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+
+# Disallow admin pages
+Disallow: /admin/
+Disallow: /admindsh/
+
+# Sitemap
+Sitemap: https://deepakportfolio-0607.web.app/sitemap.xml

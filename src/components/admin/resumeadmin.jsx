@@ -6,6 +6,7 @@ import {
 } from "lucide-react"
 import { doc, setDoc, getDoc, Timestamp } from "firebase/firestore"
 import { db } from "@/firebase"
+import { uploadPDF } from "@/utils/supabaseStorage"
 
 const STORAGE_DRAFT_KEY = "resume_config_draft"
 const STORAGE_SAVED_KEY = "resume_config_saved"
@@ -107,7 +108,7 @@ const defaultConfig = {
   description: "Driven software engineer passionate about designing intelligent, scalable, and visually refined digital systems. Focused on merging AI, full-stack architecture, and human-centered design to craft seamless experiences that empower users and transform industries.",
   skills: [
     "Full-Stack Development",
-    "AI & Machine Learning", 
+    "AI & Machine Learning",
     "Cloud Infrastructure",
     "DevOps & CI/CD",
     "Data Engineering",
@@ -131,7 +132,8 @@ export default function ResumeAdmin() {
   const [isOnline, setIsOnline] = useState(true)
   const [isSyncing, setIsSyncing] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
-  
+  const [isUploading, setIsUploading] = useState(false)
+
   const committedRef = useRef(defaultConfig)
   const draftChangeTimeoutRef = useRef(null)
   const prevDraftRef = useRef(null)
@@ -139,7 +141,7 @@ export default function ResumeAdmin() {
   // Format timestamp for display
   const formatTimestamp = (timestamp) => {
     if (!timestamp) return "Not set"
-    
+
     try {
       // Handle Firestore Timestamp
       if (timestamp.toDate) {
@@ -152,7 +154,7 @@ export default function ResumeAdmin() {
           second: "2-digit"
         })
       }
-      
+
       // Handle ISO string
       if (typeof timestamp === "string") {
         const date = new Date(timestamp.replace(" ", "T"))
@@ -165,7 +167,7 @@ export default function ResumeAdmin() {
           second: "2-digit"
         })
       }
-      
+
       return "Invalid date"
     } catch (err) {
       return String(timestamp)
@@ -178,7 +180,7 @@ export default function ResumeAdmin() {
       // Fetch admin code
       const adminDocRef = doc(db, FIRESTORE_ADMIN_DOC)
       const adminSnap = await getDoc(adminDocRef)
-      
+
       if (adminSnap.exists()) {
         const adminData = adminSnap.data()
         setAdminCode(String(adminData.secretCode))
@@ -191,9 +193,9 @@ export default function ResumeAdmin() {
       // Load resume data from Firestore
       const resumeDocRef = doc(db, FIRESTORE_RESUME_DOC)
       const resumeSnap = await getDoc(resumeDocRef)
-      
+
       let initialDraft = null
-      
+
       if (resumeSnap.exists()) {
         // Use data from Firestore
         initialDraft = resumeSnap.data()
@@ -202,7 +204,7 @@ export default function ResumeAdmin() {
         // Fallback to localStorage or default
         const saved = localStorage.getItem(STORAGE_SAVED_KEY)
         const session = sessionStorage.getItem(STORAGE_DRAFT_KEY)
-        
+
         if (session) {
           initialDraft = JSON.parse(session)
           setStatus("✓ Draft loaded from session")
@@ -214,7 +216,7 @@ export default function ResumeAdmin() {
           setStatus("✓ Using default config")
         }
       }
-      
+
       setDraft(initialDraft)
       committedRef.current = initialDraft
       prevDraftRef.current = JSON.stringify(initialDraft)
@@ -247,7 +249,7 @@ export default function ResumeAdmin() {
     }
 
     window.addEventListener('keydown', preventAutoSave)
-    
+
     const disableAutofill = () => {
       const inputs = document.querySelectorAll('input, textarea')
       inputs.forEach(input => {
@@ -257,7 +259,7 @@ export default function ResumeAdmin() {
         input.setAttribute('spellcheck', 'false')
       })
     }
-    
+
     disableAutofill()
     const interval = setInterval(disableAutofill, 1000)
 
@@ -279,7 +281,7 @@ export default function ResumeAdmin() {
       }
     }
     const handleOffline = () => setIsOnline(false)
-    
+
     window.addEventListener("online", handleOnline)
     window.addEventListener("offline", handleOffline)
 
@@ -349,6 +351,40 @@ export default function ResumeAdmin() {
     setStatus("🔄 Refreshing from Firebase...")
     setStatusType("info")
     await loadFromFirebase()
+  }
+
+  // Handle PDF upload
+  const handlePDFUpload = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    // Validate file type
+    if (file.type !== 'application/pdf') {
+      setStatus("✗ Please select a PDF file")
+      setStatusType("error")
+      return
+    }
+
+    try {
+      setStatus("📤 Uploading PDF to Supabase...")
+      setStatusType("info")
+      setIsUploading(true)
+
+      // Upload to Supabase
+      const pdfUrl = await uploadPDF(file, 'resumes')
+
+      // Update draft with Supabase URL
+      update('resumeDriveLink', pdfUrl)
+
+      setStatus("✓ PDF uploaded successfully")
+      setStatusType("success")
+    } catch (error) {
+      console.error("PDF upload error:", error)
+      setStatus(`✗ Upload failed: ${error.message}`)
+      setStatusType("error")
+    } finally {
+      setIsUploading(false)
+    }
   }
 
   const update = useCallback((path, val) => {
@@ -424,13 +460,13 @@ export default function ResumeAdmin() {
       setTimeout(() => setCode(""), 2000)
       return
     }
-    
+
     localStorage.setItem(STORAGE_SAVED_KEY, JSON.stringify(draft))
     sessionStorage.removeItem(STORAGE_DRAFT_KEY)
     committedRef.current = draft
 
     const success = await saveToFirebase(draft)
-    
+
     if (success) {
       setSaveOpen(false)
       setCode("")
@@ -627,14 +663,44 @@ export default function ResumeAdmin() {
                 </div>
 
                 <div>
-                  <h2 className="crt-text text-lg mb-2">Google Drive Link</h2>
-                  <input
-                    value={draft.resumeDriveLink || ""}
-                    onChange={(e) => update("resumeDriveLink", e.target.value)}
-                    className="crt-input"
-                    placeholder="Google Drive resume link"
-                    autoComplete="off"
-                  />
+                  <h2 className="crt-text text-lg mb-2">Resume PDF</h2>
+                  <div className="space-y-3">
+                    <div className="flex gap-2">
+                      <input
+                        value={draft.resumeDriveLink || ""}
+                        onChange={(e) => update("resumeDriveLink", e.target.value)}
+                        className="flex-1 crt-input"
+                        placeholder="PDF URL or upload below"
+                        autoComplete="off"
+                      />
+                      <label className="crt-button px-4 py-2 flex items-center gap-2 cursor-pointer flex-shrink-0">
+                        <Upload size={16} />
+                        {isUploading ? 'Uploading...' : 'Upload PDF'}
+                        <input
+                          type="file"
+                          accept="application/pdf"
+                          onChange={handlePDFUpload}
+                          className="hidden"
+                          disabled={isUploading}
+                        />
+                      </label>
+                    </div>
+                    {draft.resumeDriveLink && (
+                      <div className="crt-panel p-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-cyan-400">Current PDF:</span>
+                          <a
+                            href={draft.resumeDriveLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-blue-400 hover:text-blue-300 underline flex items-center gap-1"
+                          >
+                            View PDF <FileDown size={14} />
+                          </a>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div>
@@ -667,7 +733,7 @@ export default function ResumeAdmin() {
                       />
                     </div>
                   </div>
-                  
+
                   {/* Read-only timestamp fields */}
                   <div className="grid grid-cols-2 gap-3 mt-3">
                     <div>

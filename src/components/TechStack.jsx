@@ -99,9 +99,9 @@ export default function AnimatedTechStack() {
   // ✅ Section tracking with ref
   const sectionRef = useRef(null);
   const hasLoggedView = useRef(false);
-  
-  const sectionInView = useInView(sectionRef, { 
-    once: true, 
+
+  const sectionInView = useInView(sectionRef, {
+    once: true,
     amount: 0.2,
     margin: "-100px"
   });
@@ -148,11 +148,11 @@ export default function AnimatedTechStack() {
         };
       });
       setCategories(processed);
-      
+
       const maxTechCount = Math.max(...processed.map(cat => cat.tech.length));
       const calculatedHeight = 180 + Math.ceil(maxTechCount / 2) * 48;
       setMaxHeight(calculatedHeight);
-      
+
       console.log("✅ Tech stack loaded:", processed.length, "categories");
       console.log("✅ Max height calculated:", calculatedHeight);
     }
@@ -213,10 +213,10 @@ export default function AnimatedTechStack() {
   // 🌀 Loading State
   if (loading) {
     return (
-      <section 
-        id="tech-stack" 
+      <section
+        id="tech-stack"
         ref={sectionRef}
-        className="relative py-20 bg-black overflow-hidden scroll-mt-20"
+        className="relative py-20 overflow-hidden scroll-mt-20"
       >
         <div className="max-w-6xl mx-auto px-6 md:px-10 flex items-center justify-center h-96">
           <div className="text-center">
@@ -237,10 +237,10 @@ export default function AnimatedTechStack() {
   // 🌀 Error State
   if (error) {
     return (
-      <section 
-        id="tech-stack" 
+      <section
+        id="tech-stack"
         ref={sectionRef}
-        className="relative py-20 bg-black overflow-hidden scroll-mt-20"
+        className="relative py-20 overflow-hidden scroll-mt-20"
       >
         <div className="max-w-6xl mx-auto px-6 md:px-10 flex items-center justify-center h-96">
           <div className="text-center">
@@ -255,10 +255,10 @@ export default function AnimatedTechStack() {
   // 🌀 Empty State
   if (!categories || categories.length === 0) {
     return (
-      <section 
-        id="tech-stack" 
+      <section
+        id="tech-stack"
         ref={sectionRef}
-        className="relative py-20 bg-black overflow-hidden scroll-mt-20"
+        className="relative py-20 overflow-hidden scroll-mt-20"
       >
         <div className="max-w-6xl mx-auto px-6 md:px-10 flex items-center justify-center h-96">
           <div className="text-center">
@@ -275,7 +275,7 @@ export default function AnimatedTechStack() {
     <section
       id="tech-stack"
       ref={sectionRef}
-      className="relative py-20 bg-black overflow-hidden scroll-mt-20"
+      className="relative py-20 overflow-hidden scroll-mt-20"
     >
       {/* CRT Glow */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(0,255,255,0.07),transparent_70%)]"></div>
@@ -362,9 +362,9 @@ export default function AnimatedTechStack() {
                 initial="enter"
                 animate="center"
                 exit="exit"
-                style={{ 
-                  rotateX, 
-                  rotateY, 
+                style={{
+                  rotateX,
+                  rotateY,
                   transformStyle: "preserve-3d",
                   minHeight: `${maxHeight}px`
                 }}
@@ -400,7 +400,7 @@ export default function AnimatedTechStack() {
                     {categories[index].title}
                   </h3>
                 </div>
-                
+
                 <div className="flex-1 flex items-start">
                   <ul className="grid grid-cols-2 gap-3 w-full z-20">
                     {categories[index].tech.map((tech, techIndex) => (
@@ -440,11 +440,10 @@ export default function AnimatedTechStack() {
                 setAutoPlay(false);
                 setTimeout(() => setAutoPlay(true), 3000);
               }}
-              className={`h-[4px] w-6 rounded-full transition-all duration-300 cursor-pointer ${
-                i === index
-                  ? "bg-cyan-400 shadow-[0_0_12px_rgba(0,255,255,0.8)] w-10"
-                  : "bg-white/10 hover:bg-white/30"
-              }`}
+              className={`h-[4px] w-6 rounded-full transition-all duration-300 cursor-pointer ${i === index
+                ? "bg-cyan-400 shadow-[0_0_12px_rgba(0,255,255,0.8)] w-10"
+                : "bg-white/10 hover:bg-white/30"
+                }`}
               aria-label={`Go to slide ${i + 1}`}
             ></button>
           ))}
