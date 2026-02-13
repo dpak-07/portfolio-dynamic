@@ -3,6 +3,9 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-route
 import { motion, AnimatePresence } from "framer-motion";
 import "./index.css";
 
+// Analytics
+import { initializeGA, initializeGTM } from "./utils/analytics";
+
 // Components
 import Navbar from "./components/Navbar";
 import FloatingFAB from "./components/FloatingFAB";
@@ -194,8 +197,12 @@ function App() {
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
 
-  // 📊 Analytics tracking
+  // 📊 Analytics tracking & Google Analytics initialization
   useEffect(() => {
+    // ✅ Initialize Google Analytics 4 and Google Tag Manager
+    initializeGA();
+    initializeGTM();
+
     // Import analytics functions dynamically
     import("./utils/analytics").then(({ logDeviceInfo, logTrafficSource, logError }) => {
       // Log device and traffic info on mount

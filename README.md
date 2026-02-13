@@ -59,6 +59,11 @@ Perfect for developers, designers, and creative professionals who want a modern,
 - **Supabase 2.39** - Alternative database support
 - **EmailJS 4.4** - Email service integration
 
+### Analytics & Tracking
+- **React GA4** - Google Analytics 4 integration
+- **Google Tag Manager** - Advanced event tracking
+- **Custom Analytics** - Firebase analytics tracking
+
 ### UI Components & Icons
 - **Lucide React** - Modern icon library
 - **React Icons 5.5** - Additional icon sets
@@ -82,7 +87,61 @@ Perfect for developers, designers, and creative professionals who want a modern,
 
 ---
 
-## ✨ Features
+## 📊 Analytics & Tracking
+
+Your portfolio includes **complete Google Analytics 4 (GA4)** and **Google Tag Manager (GTM)** integration with:
+
+### Key Features
+✅ **Real-time Analytics** - Monitor traffic in real-time
+✅ **Event Tracking** - Automatic tracking of user interactions
+✅ **Device Tracking** - OS, browser, device type detection
+✅ **Traffic Source** - Referrer and UTM parameter tracking
+✅ **Custom Events** - Pre-built event trackers for:
+  - Project clicks and views
+  - Resume downloads
+  - Form submissions
+  - Social media interactions
+  - Blog post engagement
+  - Admin actions
+✅ **Performance Monitoring** - Page load metrics and Core Web Vitals
+✅ **Error Tracking** - Automatic JavaScript error logging
+✅ **React Hooks** - Easy-to-use hooks for analytics integration
+
+### Quick Start
+
+1. **Get your GA4 Measurement ID** from [Google Analytics](https://analytics.google.com)
+2. **Add to .env**:
+   ```env
+   VITE_FIREBASE_MEASUREMENT_ID=G-XXXXXXXXXX
+   VITE_GTM_ID=GTM-XXXXXXXX
+   ```
+3. **Check console** for initialization confirmations
+4. **View stats** in [Google Analytics Real-time Dashboard](https://analytics.google.com/analytics/web/)
+
+### Using Analytics in Components
+
+```jsx
+import { analytics } from '@/utils/analytics';
+import { useGoogleAnalytics } from '@/hooks/useGoogleAnalytics';
+
+// Simple event tracking
+analytics.projectClick('My Project', 'Web Dev');
+analytics.downloadResume('pdf', 'resume.pdf');
+analytics.contactFormSubmit('contact', 'success');
+
+// Using the hook
+function MyComponent() {
+  const { trackEvent, trackTimeOnPage } = useGoogleAnalytics();
+  
+  const handleClick = () => {
+    trackEvent('custom_event');
+  };
+}
+```
+
+📚 **Full Documentation**: See [GOOGLE_ANALYTICS_SETUP.md](./GOOGLE_ANALYTICS_SETUP.md)
+
+---
 
 ### Public-Facing Features
 ✅ **Dynamic Hero Section** - Typewriter animations, CTA buttons
@@ -292,6 +351,46 @@ npm run test:coverage   # Generate coverage report
 3. Create admin user account
 4. Copy credentials to `.env.local`
 
+### Google Analytics Setup
+1. Create GA4 property at [analytics.google.com](https://analytics.google.com)
+2. Get your **Measurement ID** (format: `G-XXXXXXXXXX`)
+3. Create **Google Tag Manager** at [tagmanager.google.com](https://tagmanager.google.com)
+4. Get your **GTM ID** (format: `GTM-XXXXXXXX`)
+5. Add both to `.env`
+
+### Complete `.env` Template
+
+```env
+# Firebase Configuration
+VITE_FIREBASE_API_KEY=your_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
+VITE_FIREBASE_PROJECT_ID=your_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_storage_bucket
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
+VITE_FIREBASE_MEASUREMENT_ID=G-XXXXXXXXXX
+
+# Supabase Configuration (Optional)
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_anon_key
+
+# Google Analytics Configuration
+VITE_FIREBASE_MEASUREMENT_ID=G-XXXXXXXXXX
+VITE_GTM_ID=GTM-XXXXXXXX
+
+# Stripe Configuration (Optional)
+VITE_STRIPE_PUBLISHABLE_KEY=your_stripe_key
+
+# EmailJS Configuration
+VITE_EMAILJS_SERVICE_ID=your_service_id
+VITE_EMAILJS_TEMPLATE_ID=your_template_id
+VITE_EMAILJS_PUBLIC_KEY=your_public_key
+```
+
+---
+
+## 🔥 Firebase Integration
+
 ### Firestore Collections Structure
 ```
 firestore/
@@ -315,10 +414,6 @@ In [src/App.jsx](src/App.jsx#L44):
 ```javascript
 const SHOULD_FETCH_FROM_FIREBASE = false; // Set to false for faster dev
 ```
-
----
-
-## 🔥 Firebase Integration
 
 ### Authentication
 - **Admin Login**: Uses Firebase Authentication
