@@ -12,14 +12,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v3
+      - name: Setup Node
+        uses: actions/setup-node@v3
         with:
           node-version: '20'
+          cache: 'npm'
 
-      - run: npm ci
+      - name: Install deps
+        run: npm ci
 
-      - name: Create .env
+      - name: Create .env for Vite
         run: |
+          rm -f .env
+          
           # Firebase Configuration
           echo "VITE_FIREBASE_API_KEY=${{ secrets.VITE_FIREBASE_API_KEY }}" >> .env
           echo "VITE_FIREBASE_AUTH_DOMAIN=${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}" >> .env
@@ -44,9 +49,30 @@ jobs:
           # Google Tag Manager
           echo "VITE_GTM_ID=${{ secrets.VITE_GTM_ID }}" >> .env
 
-      - run: npm run build
+      - name: Validate Supabase env (no secrets leaked)
+        run: |
+          if [ -z "${{ secrets.VITE_SUPABASE_URL }}" ]; then
+            echo "❌ VITE_SUPABASE_URL is missing in GitHub Secrets"
+            exit 1
+          fi
 
-      - uses: FirebaseExtended/action-hosting-deploy@v0
+          if [ -z "${{ secrets.VITE_SUPABASE_ANON_KEY }}" ]; then
+            echo "❌ VITE_SUPABASE_ANON_KEY is missing in GitHub Secrets"
+            exit 1
+          fi
+
+          if [[ "${{ secrets.VITE_SUPABASE_URL }}" != https://* ]]; then
+            echo "❌ VITE_SUPABASE_URL must start with https://"
+            exit 1
+          fi
+
+          echo "✅ Supabase secrets look valid"
+
+      - name: Build app
+        run: npm run build
+
+      - name: Deploy to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DEEPAKPORTFOLIO_0607 }}
