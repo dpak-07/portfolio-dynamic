@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useFirestoreData } from "@/hooks/useFirestoreData";
-import { Home, User, Code, Briefcase, Award, Clock, FileText, Mail, BookOpen, Menu, X, BarChart3 } from "lucide-react";
+import { Home, User, Code, Briefcase, Award, Clock, FileText, Mail, BookOpen, Menu, X, BarChart3, MoreVertical } from "lucide-react";
 import { logLinkClick } from "../utils/analytics";
 
 export default function Navbar() {
@@ -145,7 +145,7 @@ export default function Navbar() {
         initial={{ scaleX: 0 }}
       />
 
-      {/* Navbar */}
+      {/* Desktop Navbar */}
       <motion.header
         initial={{ y: -100, opacity: 0 }}
         animate={{
@@ -153,7 +153,7 @@ export default function Navbar() {
           opacity: isVisible ? 1 : 0
         }}
         transition={{ duration: 0.15, ease: "easeOut" }}
-        className="fixed top-0 left-0 right-0 z-[999] pt-1"
+        className="fixed top-0 left-0 right-0 z-[999] pt-1 hidden lg:block"
       >
         <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="relative flex items-center justify-between h-16 bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl px-4 sm:px-6 shadow-2xl">
@@ -170,7 +170,7 @@ export default function Navbar() {
             </motion.button>
 
             {/* Desktop Navigation */}
-            <div className="hidden lg:flex items-center gap-1">
+            <div className="flex items-center gap-1">
               {visibleNavItems.map(({ id, label, icon: Icon }) => (
                 <motion.button
                   key={id}
@@ -203,73 +203,89 @@ export default function Navbar() {
                 href="/blog"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="hidden lg:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-lg font-medium shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 transition-all"
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-lg font-medium shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 transition-all"
               >
                 <BookOpen size={16} />
                 Blog
               </motion.a>
             )}
-
-            {/* Mobile Menu Button */}
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setOpen(!open)}
-              className="lg:hidden p-2 text-white/80 hover:text-white transition-colors"
-            >
-              {open ? <X size={24} /> : <Menu size={24} />}
-            </motion.button>
           </div>
         </nav>
       </motion.header>
 
-      {/* Mobile Menu */}
-      <AnimatePresence>
-        {open && (
-          <>
-            {/* Backdrop */}
+      {/* Mobile Floating Bottom Navigation */}
+      <div className="lg:hidden">
+        {/* Floating Menu Button */}
+        <motion.button
+          whileTap={{ scale: 0.9 }}
+          onClick={() => setOpen(!open)}
+          className="fixed bottom-6 right-6 z-[998] p-3 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 text-white shadow-lg hover:shadow-xl transition-all"
+        >
+          <AnimatePresence mode="wait">
+            {open ? (
+              <motion.div
+                key="close"
+                initial={{ rotate: -90, opacity: 0 }}
+                animate={{ rotate: 0, opacity: 1 }}
+                exit={{ rotate: -90, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <X size={24} />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="menu"
+                initial={{ rotate: 90, opacity: 0 }}
+                animate={{ rotate: 0, opacity: 1 }}
+                exit={{ rotate: 90, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <MoreVertical size={24} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.button>
+
+        {/* Mobile Menu Backdrop */}
+        <AnimatePresence>
+          {open && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setOpen(false)}
-              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[998] lg:hidden"
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[997]"
             />
+          )}
+        </AnimatePresence>
 
-            {/* Menu Panel */}
+        {/* Mobile Menu Modal */}
+        <AnimatePresence>
+          {open && (
             <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed top-0 right-0 bottom-0 w-[280px] bg-gradient-to-b from-slate-900 to-slate-950 border-l border-white/10 z-[999] lg:hidden overflow-y-auto"
+              initial={{ scale: 0, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0, opacity: 0, y: 20 }}
+              transition={{ type: "spring", damping: 20, stiffness: 300 }}
+              className="fixed bottom-24 right-6 z-[998] w-48 bg-gradient-to-b from-slate-900 to-slate-950 rounded-2xl border border-white/10 shadow-2xl overflow-hidden"
             >
-              {/* Close Button */}
-              <div className="flex justify-end p-4">
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => setOpen(false)}
-                  className="p-2 text-white/80 hover:text-white transition-colors"
-                >
-                  <X size={24} />
-                </motion.button>
-              </div>
-
               {/* Navigation Items */}
-              <div className="px-4 pb-6 space-y-2">
+              <div className="py-2 space-y-1">
                 {visibleNavItems.map(({ id, label, icon: Icon }, index) => (
                   <motion.button
                     key={id}
-                    initial={{ opacity: 0, x: 20 }}
+                    initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.01 }}
+                    transition={{ delay: index * 0.05 }}
                     onClick={() => scrollTo(id)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all ${active === id
-                      ? "bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 text-white"
-                      : "text-white/70 hover:bg-white/5 hover:text-white"
-                      }`}
+                    className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all ${
+                      active === id
+                        ? "bg-gradient-to-r from-cyan-500/30 to-purple-500/30 border-l-2 border-cyan-500 text-white"
+                        : "text-white/70 hover:bg-white/5 hover:text-white"
+                    }`}
                   >
-                    <Icon size={20} />
-                    <span className="font-medium">{label}</span>
+                    <Icon size={18} />
+                    <span className="font-medium text-sm">{label}</span>
                   </motion.button>
                 ))}
 
@@ -277,20 +293,20 @@ export default function Navbar() {
                 {sectionsConfig.blog && (
                   <motion.a
                     href="/blog"
-                    initial={{ opacity: 0, x: 20 }}
+                    initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: visibleNavItems.length * 0.01 }}
-                    className="w-full flex items-center gap-3 px-4 py-3 mt-4 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-lg font-medium shadow-lg"
+                    transition={{ delay: (visibleNavItems.length + 1) * 0.05 }}
+                    className="flex items-center gap-3 px-4 py-3 text-left mt-2 pt-2 border-t border-white/10 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 text-white hover:from-cyan-500/30 hover:to-purple-500/30 transition-all"
                   >
-                    <BookOpen size={20} />
-                    Blog
+                    <BookOpen size={18} />
+                    <span className="font-medium text-sm">Blog</span>
                   </motion.a>
                 )}
               </div>
             </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>
+      </div>
     </>
   );
 }
