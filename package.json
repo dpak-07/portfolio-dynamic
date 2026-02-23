@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "supabase:keepalive": "node scripts/supabase-keepalive.mjs"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",

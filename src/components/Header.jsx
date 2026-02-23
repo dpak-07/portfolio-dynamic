@@ -35,6 +35,7 @@ const getDriveLinks = (url) => {
 export default function Header() {
   // 🔥 Fetch profile data from Firestore
   const { data: firestoreProfileData, loading: firestoreLoading, error: firestoreError } = useFirestoreData('portfolio', 'profile');
+  const { data: resumeDocData } = useFirestoreData("resume", "data");
 
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -69,9 +70,10 @@ export default function Header() {
 
   // ✅ Drive links (memoized)
   const { preview, download } = useMemo(() => {
-    if (!profileData?.resumeDriveLink) return { preview: "", download: "" };
-    return getDriveLinks(profileData.resumeDriveLink);
-  }, [profileData?.resumeDriveLink]);
+    const sourceResumeLink = resumeDocData?.resumeDriveLink || profileData?.resumeDriveLink;
+    if (!sourceResumeLink) return { preview: "", download: "" };
+    return getDriveLinks(sourceResumeLink);
+  }, [resumeDocData?.resumeDriveLink, profileData?.resumeDriveLink]);
 
   // ✅ Fade-in trigger
   useEffect(() => {

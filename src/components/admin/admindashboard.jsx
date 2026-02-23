@@ -10,9 +10,13 @@ export default function AdminDashboard() {
     home: true,
     about: true,
     "tech-stack": true,
+    "github-stats": true,
     projects: true,
     resume: true,
+    certifications: true,
+    timeline: true,
     contact: true,
+    blog: true,
   });
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -96,7 +100,7 @@ export default function AdminDashboard() {
         setLoading(true);
         const sectionsDoc = await getDoc(doc(db, "sections", "visibility"));
         if (sectionsDoc.exists()) {
-          setSections(sectionsDoc.data());
+          setSections((prev) => ({ ...prev, ...sectionsDoc.data() }));
         }
       } catch (error) {
         console.error("Error loading sections:", error);
@@ -132,12 +136,13 @@ export default function AdminDashboard() {
     { name: "ABOUT", path: "/admin/about", code: "0x02", icon: "◆" },
     { name: "TECH.STACK", path: "/admin/techadmin", code: "0x03", icon: "⬢" },
     { name: "PROJECTS", path: "/admin/projects", code: "0x04", icon: "■" },
-    { name: "RESUME", path: "/admin/resume", code: "0x05", icon: "▼" },
-    { name: "CERTS", path: "/admin/certifications", code: "0x06", icon: "◉" },
-    { name: "TIMELINE", path: "/admin/timeline", code: "0x07", icon: "◈" },
-    { name: "BLOG", path: "/admin/blog", code: "0x08", icon: "✎" },
-    { name: "LINKEDIN", path: "/admin/linkedin", code: "0x09", icon: "◈" },
-    { name: "ANALYTICS", path: "/admin/analysis", code: "0x0A", icon: "◎" },
+    { name: "GITHUB", path: "/admin/githubstats", code: "0x05", icon: "GH" },
+    { name: "RESUME", path: "/admin/resume", code: "0x06", icon: "▼" },
+    { name: "CERTS", path: "/admin/certifications", code: "0x07", icon: "◉" },
+    { name: "TIMELINE", path: "/admin/timeline", code: "0x08", icon: "◈" },
+    { name: "BLOG", path: "/admin/blog", code: "0x09", icon: "✎" },
+    { name: "LINKEDIN", path: "/admin/linkedin", code: "0x0A", icon: "◈" },
+    { name: "ANALYTICS", path: "/admin/analysis", code: "0x0B", icon: "◎" },
   ];
 
   if (loading) {
