@@ -15,6 +15,65 @@ const DEFAULT_CONFIG = {
   showStats: true,
 };
 
+const RATE_LIMIT_BACKOFF_MS = 60 * 60 * 1000;
+const REFRESH_INTERVAL_MS = 30 * 60 * 1000;
+const FETCH_TIMEOUT_MS = 12000;
+
+const emptyStats = {
+  totalCommits: "N/A",
+  currentStreak: "N/A",
+  longestStreak: "N/A",
+  totalRepos: "N/A",
+  totalStars: "N/A",
+};
+
+function getCacheKey(username) {
+  return `github_stats_cache_${username}`;
+}
+
+function getRateLimitKey(username) {
+  return `github_stats_rate_limit_until_${username}`;
+}
+
+function readCachedStats(username) {
+  try {
+    const raw = localStorage.getItem(getCacheKey(username));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed?.stats ? parsed.stats : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedStats(username, stats) {
+  try {
+    localStorage.setItem(
+      getCacheKey(username),
+      JSON.stringify({ stats, updatedAt: Date.now() })
+    );
+  } catch {
+    // ignore storage quota/private-mode failures
+  }
+}
+
+async function fetchJson(url) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        Accept: "application/vnd.github+json",
+      },
+      signal: controller.signal,
+    });
+    return response;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export default function GitHubStats() {
   const { data: githubConfig } = useFirestoreData("portfolio", "githubStats");
 
@@ -27,6 +86,7 @@ export default function GitHubStats() {
   }, [githubConfig]);
 
   const [stats, setStats] = useState({
+    ...emptyStats,
     totalCommits: "...",
     currentStreak: "...",
     longestStreak: "...",
@@ -34,6 +94,12 @@ export default function GitHubStats() {
     totalStars: "...",
     loading: true,
     error: null,
+  });
+
+  const [imageVisible, setImageVisible] = useState({
+    contributions: true,
+    streak: true,
+    summary: true,
   });
 
   const sectionRef = useRef(null);
@@ -48,6 +114,14 @@ export default function GitHubStats() {
   }, [sectionInView]);
 
   useEffect(() => {
+    setImageVisible({
+      contributions: true,
+      streak: true,
+      summary: true,
+    });
+  }, [config.username]);
+
+  useEffect(() => {
     if (!config.enabled || !config.username) {
       setStats((prev) => ({ ...prev, loading: false }));
       return undefined;
@@ -55,112 +129,161 @@ export default function GitHubStats() {
 
     let active = true;
 
+    const applyRateLimitUntil = () => {
+      try {
+        localStorage.setItem(
+          getRateLimitKey(config.username),
+          String(Date.now() + RATE_LIMIT_BACKOFF_MS)
+        );
+      } catch {
+        // ignore
+      }
+    };
+
     const fetchGitHubStats = async () => {
+      const cachedStats = readCachedStats(config.username);
+      const blockedUntil = Number(localStorage.getItem(getRateLimitKey(config.username)) || 0);
+
+      if (blockedUntil > Date.now()) {
+        if (!active) return;
+        if (cachedStats) {
+          setStats({
+            ...cachedStats,
+            loading: false,
+            error: "GitHub API rate limited. Showing cached stats.",
+          });
+        } else {
+          setStats({
+            ...emptyStats,
+            loading: false,
+            error: "GitHub API rate limited. Try again later.",
+          });
+        }
+        return;
+      }
+
       try {
         setStats((prev) => ({ ...prev, loading: true, error: null }));
 
-        const userResponse = await fetch(`https://api.github.com/users/${config.username}`);
+        const userResponse = await fetchJson(`https://api.github.com/users/${config.username}`);
+        if (userResponse.status === 403) {
+          applyRateLimitUntil();
+          throw new Error("GitHub API rate limit reached (403)");
+        }
         if (!userResponse.ok) {
           throw new Error(`User fetch failed (${userResponse.status})`);
         }
+
         const userData = await userResponse.json();
 
-        let allRepos = [];
-        let page = 1;
-        let hasMore = true;
+        const reposResponse = await fetchJson(
+          `https://api.github.com/users/${config.username}/repos?per_page=100&type=owner&sort=updated`
+        );
 
-        while (hasMore && page <= 10) {
-          const reposResponse = await fetch(
-            `https://api.github.com/users/${config.username}/repos?per_page=100&page=${page}&sort=updated`
-          );
-
-          if (!reposResponse.ok) {
-            throw new Error(`Repo fetch failed (${reposResponse.status})`);
-          }
-
-          const repos = await reposResponse.json();
-
-          if (repos.length === 0) {
-            hasMore = false;
-          } else {
-            allRepos = [...allRepos, ...repos];
-            page += 1;
-          }
+        if (reposResponse.status === 403) {
+          applyRateLimitUntil();
+          throw new Error("GitHub API rate limit reached (403)");
+        }
+        if (!reposResponse.ok) {
+          throw new Error(`Repo fetch failed (${reposResponse.status})`);
         }
 
-        const totalStars = allRepos.reduce(
+        const repos = await reposResponse.json();
+        const totalStars = repos.reduce(
           (acc, repo) => acc + (Number(repo.stargazers_count) || 0),
           0
         );
 
-        const eventsResponse = await fetch(
+        let recentCommits = "N/A";
+        let currentStreak = "N/A";
+        let longestStreak = "N/A";
+
+        const eventsResponse = await fetchJson(
           `https://api.github.com/users/${config.username}/events/public?per_page=100`
         );
 
-        const events = eventsResponse.ok ? await eventsResponse.json() : [];
+        if (eventsResponse.ok) {
+          const events = await eventsResponse.json();
+          const pushEvents = events.filter((event) => event.type === "PushEvent").length;
 
-        const recentCommits = events.filter((event) => event.type === "PushEvent").length;
+          recentCommits =
+            pushEvents > 50
+              ? `${Math.floor(pushEvents / 10) * 10}+`
+              : String(pushEvents);
 
-        const eventDates = new Set(
-          events.map((event) => new Date(event.created_at).toDateString())
-        );
+          const eventDates = new Set(
+            events.map((event) => new Date(event.created_at).toDateString())
+          );
 
-        let currentStreak = 0;
-        let longestStreak = 0;
-        let running = 0;
-        const today = new Date();
+          let running = 0;
+          let streakNow = 0;
+          let streakMax = 0;
+          const today = new Date();
 
-        for (let i = 0; i < 30; i += 1) {
-          const checkDate = new Date(today);
-          checkDate.setDate(today.getDate() - i);
-          const hasActivity = eventDates.has(checkDate.toDateString());
+          for (let i = 0; i < 30; i += 1) {
+            const checkDate = new Date(today);
+            checkDate.setDate(today.getDate() - i);
+            const hasActivity = eventDates.has(checkDate.toDateString());
 
-          if (hasActivity) {
-            running += 1;
-            if (i === running - 1) {
-              currentStreak = running;
+            if (hasActivity) {
+              running += 1;
+              if (i === running - 1) streakNow = running;
+            } else {
+              if (i === 0) streakNow = 0;
+              running = 0;
             }
-          } else if (i === 0) {
-            currentStreak = 0;
-          } else {
-            running = 0;
+
+            if (running > streakMax) streakMax = running;
           }
 
-          if (running > longestStreak) {
-            longestStreak = running;
-          }
+          currentStreak = String(streakNow);
+          longestStreak = String(streakMax);
+        } else if (eventsResponse.status === 403) {
+          applyRateLimitUntil();
         }
 
-        if (!active) return;
-
-        setStats({
-          totalCommits:
-            recentCommits > 50
-              ? `${Math.floor(recentCommits / 10) * 10}+`
-              : String(recentCommits),
-          currentStreak: String(currentStreak),
-          longestStreak: String(longestStreak),
+        const nextStats = {
+          totalCommits: recentCommits,
+          currentStreak,
+          longestStreak,
           totalRepos: String(userData.public_repos ?? 0),
           totalStars: String(totalStars),
+        };
+
+        writeCachedStats(config.username, nextStats);
+
+        if (!active) return;
+        setStats({
+          ...nextStats,
           loading: false,
           error: null,
         });
       } catch (error) {
         if (!active) return;
-        setStats({
-          totalCommits: "N/A",
-          currentStreak: "N/A",
-          longestStreak: "N/A",
-          totalRepos: "N/A",
-          totalStars: "N/A",
-          loading: false,
-          error: error?.message || "Failed to load GitHub stats",
-        });
+
+        const cached = readCachedStats(config.username);
+        const message = error?.message || "Failed to load GitHub stats";
+
+        if (cached) {
+          setStats({
+            ...cached,
+            loading: false,
+            error: message.includes("rate limit")
+              ? "GitHub API rate limited. Showing cached stats."
+              : message,
+          });
+        } else {
+          setStats({
+            ...emptyStats,
+            loading: false,
+            error: message,
+          });
+        }
       }
     };
 
     fetchGitHubStats();
-    const interval = setInterval(fetchGitHubStats, 5 * 60 * 1000);
+    const interval = setInterval(fetchGitHubStats, REFRESH_INTERVAL_MS);
 
     return () => {
       active = false;
@@ -203,9 +326,7 @@ export default function GitHubStats() {
             CODING_STATS
           </h2>
           <div className="h-1 w-32 bg-gradient-to-r from-transparent via-cyan-400 to-transparent mx-auto" />
-          {stats.error && (
-            <p className="mt-3 text-sm text-red-400">{stats.error}</p>
-          )}
+          {stats.error && <p className="mt-3 text-sm text-red-400">{stats.error}</p>}
         </motion.div>
 
         {(config.showContributions || config.showStreak) && (
@@ -220,22 +341,34 @@ export default function GitHubStats() {
 
             {config.showContributions && (
               <div className="w-full overflow-x-auto">
-                <img
-                  src={`https://ghchart.rshah.org/00e5ff/${config.username}`}
-                  alt="GitHub Contributions"
-                  className="w-full max-w-4xl mx-auto rounded-lg"
-                  style={{ minWidth: "600px" }}
-                />
+                {imageVisible.contributions ? (
+                  <img
+                    src={`https://ghchart.rshah.org/00e5ff/${config.username}`}
+                    alt="GitHub Contributions"
+                    className="w-full max-w-4xl mx-auto rounded-lg"
+                    style={{ minWidth: "600px" }}
+                    onError={() =>
+                      setImageVisible((prev) => ({ ...prev, contributions: false }))
+                    }
+                  />
+                ) : (
+                  <p className="text-center text-gray-400">Contributions graph is temporarily unavailable.</p>
+                )}
               </div>
             )}
 
             {config.showStreak && (
               <div className="mt-6 flex justify-center">
-                <img
-                  src={`https://streak-stats.demolab.com/?user=${config.username}&theme=dark&hide_border=true&background=0D1117&ring=00E5FF&fire=00E5FF&currStreakLabel=00E5FF&sideLabels=00E5FF&currStreakNum=FFFFFF&sideNums=FFFFFF&dates=8B949E`}
-                  alt="GitHub Streak"
-                  className="rounded-lg max-w-full"
-                />
+                {imageVisible.streak ? (
+                  <img
+                    src={`https://streak-stats.demolab.com/?user=${config.username}&theme=dark&hide_border=true&background=0D1117&ring=00E5FF&fire=00E5FF&currStreakLabel=00E5FF&sideLabels=00E5FF&currStreakNum=FFFFFF&sideNums=FFFFFF&dates=8B949E`}
+                    alt="GitHub Streak"
+                    className="rounded-lg max-w-full"
+                    onError={() => setImageVisible((prev) => ({ ...prev, streak: false }))}
+                  />
+                ) : (
+                  <p className="text-center text-gray-400">Streak card is temporarily unavailable.</p>
+                )}
               </div>
             )}
           </motion.div>
@@ -307,11 +440,18 @@ export default function GitHubStats() {
         </motion.div>
 
         <motion.div variants={itemVariants} className="mt-12 flex justify-center">
-          <img
-            src={`https://github-readme-stats.vercel.app/api?username=${config.username}&show_icons=true&theme=dark&hide_border=true&bg_color=0D1117&title_color=00E5FF&icon_color=00E5FF&text_color=FFFFFF&count_private=true`}
-            alt="GitHub Stats"
-            className="rounded-lg max-w-full"
-          />
+          {imageVisible.summary ? (
+            <img
+              src={`https://github-readme-stats.vercel.app/api?username=${config.username}&show_icons=true&theme=dark&hide_border=true&bg_color=0D1117&title_color=00E5FF&icon_color=00E5FF&text_color=FFFFFF&count_private=true`}
+              alt="GitHub Stats"
+              className="rounded-lg max-w-full"
+              onError={() => setImageVisible((prev) => ({ ...prev, summary: false }))}
+            />
+          ) : (
+            <div className="rounded-lg border border-cyan-400/20 bg-gray-900/40 px-6 py-4 text-gray-300">
+              GitHub summary card is temporarily unavailable.
+            </div>
+          )}
         </motion.div>
       </motion.div>
     </section>

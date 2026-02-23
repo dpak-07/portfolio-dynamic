@@ -86,23 +86,26 @@ export const sendGAEvent = (eventName, eventData = {}) => {
 };
 
 /**
- * ⚡ Firebase Analytics Utility (No localStorage)
- * Tracks:
- *  - Section Views (with 2-min throttling)
- *  - Link Clicks
- *  - Resume Downloads & Opens
- *  - Unique Users (daily, weekly, monthly)
- *  - Extended: today, yesterday, last week, last month, overall users
- *  - Device Info, Traffic Sources, Blog Analytics, Performance, Errors
- *  - Fully server-safe
+ * Backward-compatible event tracking helper expected by App.jsx
  */
+export const trackEvent = (eventName, eventData = {}) => {
+  sendGAEvent(eventName, eventData);
+};
+
+/**
+ * Backward-compatible page view helper expected by App.jsx
+ */
+export const logPageView = (pagePath = window.location.pathname, pageTitle = document.title) => {
+  sendGAEvent("page_view", {
+    page_path: pagePath,
+    page_title: pageTitle,
+    page_location: window.location.href,
+  });
+};
 
 const today = new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
 const sessionCache = new Map(); // 🧠 In-memory cache (cleared when tab closes)
 
-/* -------------------------------------------------------
-   ⚙️ Ensure All Required Analytics Docs Exist
-------------------------------------------------------- */
 async function ensureAnalyticsDocs() {
   const refs = [
     "totals",

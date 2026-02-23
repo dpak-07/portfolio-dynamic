@@ -203,79 +203,101 @@ function App() {
     initializeGA();
     initializeGTM();
 
+    let cleanup = null;
+
     // Import analytics functions dynamically
-    import("./utils/analytics").then(({ logDeviceInfo, logTrafficSource, logError, logPageView, trackEvent }) => {
-      // Log device and traffic info on mount
-      logDeviceInfo();
-      logTrafficSource();
+    import("./utils/analytics")
+      .then((mod) => {
+        const logDeviceInfo = mod.logDeviceInfo || (() => { });
+        const logTrafficSource = mod.logTrafficSource || (() => { });
+        const logError = mod.logError || (() => { });
+        const trackEvent = mod.trackEvent || mod.sendGAEvent || (() => { });
+        const logPageView =
+          mod.logPageView ||
+          ((path, title) =>
+            trackEvent("page_view", {
+              page_path: path,
+              page_title: title,
+              page_location: window.location.href,
+            }));
 
-      // ✅ Track initial page view
-      logPageView(window.location.pathname, "Portfolio Homepage");
+        // Log device and traffic info on mount
+        logDeviceInfo();
+        logTrafficSource();
 
-      // ✅ Track page visibility changes
-      const handleVisibilityChange = () => {
-        if (document.hidden) {
-          trackEvent("user_engagement", {
+        // ✅ Track initial page view
+        logPageView(window.location.pathname, "Portfolio Homepage");
+
+        // ✅ Track page visibility changes
+        const handleVisibilityChange = () => {
+          if (document.hidden) {
+            trackEvent("user_engagement", {
+              event_category: "engagement",
+              event_label: "page_hidden",
+              value: new Date().getTime(),
+            });
+          } else {
+            trackEvent("user_engagement", {
+              event_category: "engagement",
+              event_label: "page_visible",
+              value: new Date().getTime(),
+            });
+          }
+        };
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+
+        // ✅ Track user interactions
+        const handleInteraction = () => {
+          trackEvent("user_interaction", {
             event_category: "engagement",
-            event_label: "page_hidden",
-            value: new Date().getTime(),
+            event_label: "user_active",
+            timestamp: new Date().toISOString(),
           });
-        } else {
-          trackEvent("user_engagement", {
-            event_category: "engagement",
-            event_label: "page_visible",
-            value: new Date().getTime(),
+        };
+        window.addEventListener("click", handleInteraction);
+        window.addEventListener("scroll", handleInteraction);
+
+        // ✅ Global error tracking
+        const handleError = (event) => {
+          logError(event.message, event.error?.stack, "Global");
+          trackEvent("error_occurred", {
+            event_category: "error",
+            event_label: event.message,
+            error_stack: event.error?.stack,
           });
-        }
-      };
-      document.addEventListener("visibilitychange", handleVisibilityChange);
+        };
+        window.addEventListener("error", handleError);
 
-      // ✅ Track user interactions
-      const handleInteraction = () => {
-        trackEvent("user_interaction", {
-          event_category: "engagement",
-          event_label: "user_active",
-          timestamp: new Date().toISOString(),
-        });
-      };
-      window.addEventListener("click", handleInteraction);
-      window.addEventListener("scroll", handleInteraction);
+        // ✅ Unhandled promise rejection tracking
+        const handleUnhandledRejection = (event) => {
+          logError(
+            "Unhandled Promise Rejection",
+            event.reason?.toString(),
+            "UnhandledPromise"
+          );
+          trackEvent("error_unhandled_promise", {
+            event_category: "error",
+            event_label: "unhandled_promise",
+            reason: event.reason?.toString(),
+          });
+        };
+        window.addEventListener("unhandledrejection", handleUnhandledRejection);
 
-      // ✅ Global error tracking
-      const handleError = (event) => {
-        logError(event.message, event.error?.stack, "Global");
-        trackEvent("error_occurred", {
-          event_category: "error",
-          event_label: event.message,
-          error_stack: event.error?.stack,
-        });
-      };
-      window.addEventListener("error", handleError);
+        cleanup = () => {
+          document.removeEventListener("visibilitychange", handleVisibilityChange);
+          window.removeEventListener("click", handleInteraction);
+          window.removeEventListener("scroll", handleInteraction);
+          window.removeEventListener("error", handleError);
+          window.removeEventListener("unhandledrejection", handleUnhandledRejection);
+        };
+      })
+      .catch((error) => {
+        console.error("Analytics module load failed:", error);
+      });
 
-      // ✅ Unhandled promise rejection tracking
-      const handleUnhandledRejection = (event) => {
-        logError(
-          "Unhandled Promise Rejection",
-          event.reason?.toString(),
-          "UnhandledPromise"
-        );
-        trackEvent("error_unhandled_promise", {
-          event_category: "error",
-          event_label: "unhandled_promise",
-          reason: event.reason?.toString(),
-        });
-      };
-      window.addEventListener("unhandledrejection", handleUnhandledRejection);
-
-      // Cleanup
-      return () => {
-        document.removeEventListener("visibilitychange", handleVisibilityChange);
-        window.removeEventListener("click", handleInteraction);
-        window.removeEventListener("scroll", handleInteraction);
-        window.removeEventListener("error", handleError);
-        window.removeEventListener("unhandledrejection", handleUnhandledRejection);
-      };
-    });
+    return () => {
+      if (cleanup) cleanup();
+    };
   }, []);
 
   // 🚨 If offline, show offline page
