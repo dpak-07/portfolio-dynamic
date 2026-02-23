@@ -18,19 +18,8 @@ import { useRef, useState, useEffect, useMemo } from "react";
 import { useFirestoreData } from "@/hooks/useFirestoreData";
 import { useInView } from "framer-motion";
 import { logSectionView, logLinkClick, logDownload } from "../utils/analytics";
+import { getResumeLinks } from "@/utils/urlHelpers";
 
-
-// ✅ Helper — Converts Google Drive URL → Preview & Download URLs
-const getDriveLinks = (url) => {
-  if (!url) return { preview: "", download: "" };
-  const match = url.match(/\/d\/([a-zA-Z0-9_-]+)\//);
-  if (!match) return { preview: url, download: url };
-  const fileId = match[1];
-  return {
-    preview: `https://drive.google.com/file/d/${fileId}/preview`,
-    download: `https://drive.google.com/uc?export=download&id=${fileId}`,
-  };
-};
 
 export default function Header() {
   // 🔥 Fetch profile data from Firestore
@@ -72,7 +61,7 @@ export default function Header() {
   const { preview, download } = useMemo(() => {
     const sourceResumeLink = resumeDocData?.resumeDriveLink || profileData?.resumeDriveLink;
     if (!sourceResumeLink) return { preview: "", download: "" };
-    return getDriveLinks(sourceResumeLink);
+    return getResumeLinks(sourceResumeLink);
   }, [resumeDocData?.resumeDriveLink, profileData?.resumeDriveLink]);
 
   // ✅ Fade-in trigger
@@ -335,10 +324,12 @@ export default function Header() {
 
           <button
             onClick={() => {
+              if (!preview) return;
               logLinkClick("resume");
               setShowResume(true);
             }}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-cyansoft text-black px-5 py-2.5 rounded-full font-semibold shadow-lg hover:bg-cyan-300 hover:scale-105 transition-all text-sm sm:text-base whitespace-nowrap"
+            disabled={!preview}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-cyansoft text-black px-5 py-2.5 rounded-full font-semibold shadow-lg hover:bg-cyan-300 hover:scale-105 transition-all text-sm sm:text-base whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
             <FaFileAlt className="w-3.5 h-3.5" /> Open Resume
           </button>
@@ -346,8 +337,16 @@ export default function Header() {
           <a
             href={download}
             download
-            onClick={() => logDownload("resume")}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 border border-white/20 text-white/90 px-5 py-2.5 rounded-full font-medium hover:border-cyansoft hover:bg-white/10 transition-all text-sm sm:text-base whitespace-nowrap"
+            onClick={(e) => {
+              if (!download) {
+                e.preventDefault();
+                return;
+              }
+              logDownload("resume");
+            }}
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 border border-white/20 text-white/90 px-5 py-2.5 rounded-full font-medium transition-all text-sm sm:text-base whitespace-nowrap ${
+              download ? "hover:border-cyansoft hover:bg-white/10" : "opacity-50 pointer-events-none"
+            }`}
           >
             <FaDownload className="w-3.5 h-3.5" /> Download
           </a>
@@ -437,3 +436,5 @@ export default function Header() {
     </header>
   );
 }
+
+

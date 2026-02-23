@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useFirestoreData } from "@/hooks/useFirestoreData";
 import { logSectionView, logLinkClick, logDownload, logResumeOpen } from "../utils/analytics";
+import { getResumeLinks } from "@/utils/urlHelpers";
 
 export default function Resume() {
   const [isOpen, setIsOpen] = useState(false);
@@ -41,9 +42,9 @@ export default function Resume() {
     }
   };
 
-  const fileId = resumeData?.resumeDriveLink?.match(/\/d\/(.*?)\//)?.[1] || null;
-  const embedLink = fileId ? `https://drive.google.com/file/d/${fileId}/preview` : null;
-  const downloadLink = fileId ? `https://drive.google.com/uc?export=download&id=${fileId}` : null;
+  const { preview: embedLink, download: downloadLink } = getResumeLinks(
+    resumeData?.resumeDriveLink
+  );
 
   const handleViewResume = () => {
     setIsOpen(true);

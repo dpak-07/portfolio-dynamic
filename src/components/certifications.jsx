@@ -19,6 +19,7 @@ import {
 import { useFirestoreData } from "@/hooks/useFirestoreData";
 import { useInView } from "framer-motion";
 import { logSectionView, logLinkClick, logDownload } from "../utils/analytics";
+import { normalizeSupabasePublicUrl } from "@/utils/urlHelpers";
 
 // Icon mapping
 const iconComponents = {
@@ -49,34 +50,35 @@ const cardVariants = {
 // Utility function to optimize OneDrive links for direct image access
 const optimizeOneDriveLink = (url) => {
   if (!url) return null;
+  const normalizedUrl = normalizeSupabasePublicUrl(url);
 
   try {
     // If it's already a direct image link, return as is
-    if (url.match(/\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i)) {
-      return url;
+    if (normalizedUrl.match(/\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i)) {
+      return normalizedUrl;
     }
 
     // Convert OneDrive share links to direct download links
-    if (url.includes('onedrive.live.com') || url.includes('1drv.ms')) {
+    if (normalizedUrl.includes('onedrive.live.com') || normalizedUrl.includes('1drv.ms')) {
       // For OneDrive share links, we need to convert them to direct download links
       // This is a basic conversion - you might need to adjust based on your OneDrive link structure
-      if (url.includes('1drv.ms')) {
+      if (normalizedUrl.includes('1drv.ms')) {
         // Shortened OneDrive link - we'll need to expand it first
-        return url; // Return original, will need server-side processing or manual conversion
+        return normalizedUrl; // Return original, will need server-side processing or manual conversion
       }
 
       // For direct OneDrive links, add download parameter
-      const urlObj = new URL(url);
+      const urlObj = new URL(normalizedUrl);
       if (!urlObj.searchParams.has('download')) {
         urlObj.searchParams.set('download', '1');
       }
       return urlObj.toString();
     }
 
-    return url;
+    return normalizedUrl;
   } catch (error) {
     console.error('Error optimizing OneDrive link:', error);
-    return url;
+    return normalizedUrl;
   }
 };
 
