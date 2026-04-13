@@ -76,8 +76,7 @@ export default function Footer() {
     <motion.footer
       className="relative backdrop-blur-2xl border-t border-white/10 text-white py-16 mt-0 overflow-hidden"
       initial="hidden"
-      whileInView="show"
-      viewport={{ once: true }}
+      animate="show"
     >
       {/* Subtle background glow */}
 

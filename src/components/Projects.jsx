@@ -185,13 +185,12 @@ export default function Projects() {
       <motion.div
         className="relative z-10 text-center mb-16"
         initial={{ opacity: 0, y: 50 }}
-        whileInView={{ opacity: 1, y: 0 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1, ease: "easeOut" }}
-        viewport={{ once: true }}
       >
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
-          whileInView={{ opacity: 1, scale: 1 }}
+          animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8, delay: 0.2, ease: "backOut" }}
           className="inline-block"
         >
@@ -215,7 +214,7 @@ export default function Projects() {
 
         <motion.p
           initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.4 }}
           className="text-white/60 text-base sm:text-lg"
         >
@@ -225,7 +224,7 @@ export default function Projects() {
         {/* Decorative Line */}
         <motion.div
           initial={{ width: 0, opacity: 0 }}
-          whileInView={{ width: 120, opacity: 1 }}
+          animate={{ width: 120, opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.6 }}
           className="h-1 bg-gradient-to-r from-cyan-400 to-purple-600 mx-auto mt-6 rounded-full"
         />
@@ -235,16 +234,15 @@ export default function Projects() {
       <motion.div
         className="flex flex-wrap justify-center gap-3 mb-12 relative z-10"
         initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 0.3 }}
-        viewport={{ once: true }}
       >
         {categoryKeys.map((cat, idx) => (
           <motion.button
             key={cat}
             onClick={() => handleCategoryChange(cat)}
             initial={{ opacity: 0, y: 20, scale: 0.8 }}
-            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{
               duration: 0.5,
               delay: 0.5 + idx * 0.05,

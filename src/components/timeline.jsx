@@ -47,7 +47,7 @@ const iconMap = {
 // Scroll reveal hook
 const useScrollReveal = (threshold = 0.2) => {
   const ref = useRef(null);
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -828,14 +828,13 @@ export default function AutoScrollCarouselTimeline() {
           {/* CTA Section */}
           <motion.div
             initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            viewport={{ once: true, margin: "0px 0px -100px 0px" }}
             className="mt-16 md:mt-32 p-8 md:p-16 rounded-2xl md:rounded-3xl bg-gradient-to-r from-cyan-500/15 to-purple-600/15 border border-white/15 backdrop-blur-xl text-center"
           >
             <motion.h2
               initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
+              animate={{ opacity: 1 }}
               transition={{ delay: 0.1 }}
               className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 md:mb-6"
             >
@@ -844,7 +843,7 @@ export default function AutoScrollCarouselTimeline() {
 
             <motion.p
               initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
+              animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
               className="text-sm md:text-lg text-gray-300 mb-8 md:mb-10 max-w-lg mx-auto px-4"
             >
@@ -856,7 +855,7 @@ export default function AutoScrollCarouselTimeline() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
+                animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
                 onClick={scrollToContact}
                 className="w-full sm:w-auto px-8 md:px-10 py-3 md:py-4 bg-gradient-to-r from-cyan-400 to-purple-600 text-white font-bold text-base md:text-lg rounded-xl hover:shadow-2xl transition-all inline-flex items-center justify-center gap-3 touch-manipulation"
@@ -870,7 +869,7 @@ export default function AutoScrollCarouselTimeline() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
+                animate={{ opacity: 1 }}
                 transition={{ delay: 0.4 }}
                 href="mailto:deepakofficial0103@gmail.com"
                 onClick={handleEmailClick}
