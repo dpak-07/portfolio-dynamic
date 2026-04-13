@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "../../firebase";
+import { clearAdminSession, touchAdminSession } from "../../utils/adminSession";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -90,9 +91,8 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const checkAuthAndLoadSections = async () => {
-      const isAdmin = localStorage.getItem("isAdmin") === "1";
-      if (!isAdmin) {
-        navigate("/");
+      if (!touchAdminSession()) {
+        navigate("/admin/login", { replace: true });
         return;
       }
 
@@ -127,8 +127,8 @@ export default function AdminDashboard() {
   };
 
   const logout = () => {
-    localStorage.removeItem("isAdmin");
-    navigate("/admin/login");
+    clearAdminSession();
+    navigate("/admin/login", { replace: true });
   };
 
   const routes = [

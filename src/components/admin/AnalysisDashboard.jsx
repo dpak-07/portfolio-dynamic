@@ -65,6 +65,7 @@ export default function AnalysisDashboard() {
     blogData: {},
     performanceData: {},
     errorsData: {},
+    summaryData: {},
   });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -86,7 +87,19 @@ export default function AnalysisDashboard() {
     fetchData();
   }, []);
 
-  const { totalsData, usersData, sectionData, linkData, dailyArr, devicesData, trafficData, blogData, performanceData, errorsData } = data;
+  const {
+    totalsData,
+    usersData,
+    sectionData,
+    linkData,
+    dailyArr,
+    devicesData,
+    trafficData,
+    blogData,
+    performanceData,
+    errorsData,
+    summaryData,
+  } = data;
 
   const filteredDaily =
     viewMode === "week"
@@ -101,10 +114,20 @@ export default function AnalysisDashboard() {
     const avgViews = recent.reduce((sum, d) => sum + (d.views || 0), 0) / (recent.length || 1);
     const avgClicks = recent.reduce((sum, d) => sum + (d.clicks || 0), 0) / (recent.length || 1);
     const avgUsers = recent.reduce((sum, d) => sum + (d.uniqueUsers || 0), 0) / (recent.length || 1);
-    const clickRate = totalsData.totalViews ? ((totalsData.totalClicks / totalsData.totalViews) * 100).toFixed(1) : 0;
-    const downloadRate = totalsData.totalViews ? ((totalsData.totalDownloads / totalsData.totalViews) * 100).toFixed(1) : 0;
+    const clickRate = summaryData.clickRate ?? (totalsData.totalViews ? ((totalsData.totalClicks / totalsData.totalViews) * 100) : 0);
+    const downloadRate = summaryData.downloadRate ?? (totalsData.totalViews ? ((totalsData.totalDownloads / totalsData.totalViews) * 100) : 0);
 
-    return { avgViews, avgClicks, avgUsers, clickRate, downloadRate };
+    return {
+      avgViews,
+      avgClicks,
+      avgUsers,
+      clickRate: Number(clickRate).toFixed(1),
+      downloadRate: Number(downloadRate).toFixed(1),
+      avgViewsPerVisitor: summaryData.avgViewsPerVisitor || 0,
+      avgViewsPerSession: summaryData.avgViewsPerSession || 0,
+      repeatVisitorRate: summaryData.repeatVisitorRate || 0,
+      interactionRate: summaryData.interactionRate || 0,
+    };
   };
 
   const insights = calculateInsights();
@@ -128,7 +151,7 @@ export default function AnalysisDashboard() {
   };
 
   const todayGrowth = getGrowth(usersData.uniqueToday, usersData.uniqueYesterday);
-  const weekGrowth = getGrowth(usersData.uniqueThisWeek, usersData.uniqueLastWeek);
+  const weekGrowth = summaryData.userTrend ?? getGrowth(usersData.uniqueThisWeek, usersData.uniqueLastWeek);
   const monthGrowth = getGrowth(usersData.uniqueThisMonth, usersData.uniqueLastMonth);
 
   // Radar chart data
@@ -216,6 +239,7 @@ export default function AnalysisDashboard() {
     .map(([id, error]) => ({
       id,
       message: error.message,
+      stack: error.stack,
       component: error.component,
       userAgent: error.userAgent,
       timestamp: error.timestamp,
@@ -338,6 +362,37 @@ export default function AnalysisDashboard() {
                 <QuickUserStat label="Yesterday" value={usersData.uniqueYesterday} />
                 <QuickUserStat label="This Week" value={usersData.uniqueThisWeek} growth={weekGrowth} />
                 <QuickUserStat label="This Month" value={usersData.uniqueThisMonth} growth={monthGrowth} />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+                <MetricCard
+                  icon={<UserPlus className="w-6 h-6" />}
+                  label="New Visitors Today"
+                  value={usersData.newToday || 0}
+                  color="from-sky-500 to-cyan-500"
+                  subtitle={`${usersData.returningToday || 0} returning today`}
+                />
+                <MetricCard
+                  icon={<Users className="w-6 h-6" />}
+                  label="Sessions Today"
+                  value={usersData.sessionsToday || 0}
+                  color="from-fuchsia-500 to-purple-500"
+                  subtitle={`${summaryData.sessionsThisWeek || 0} this week`}
+                />
+                <MetricCard
+                  icon={<Zap className="w-6 h-6" />}
+                  label="Views / Visitor"
+                  value={Number(insights.avgViewsPerVisitor || 0).toFixed(1)}
+                  color="from-emerald-500 to-lime-500"
+                  subtitle={`${Number(insights.avgViewsPerSession || 0).toFixed(1)} per session`}
+                />
+                <MetricCard
+                  icon={<Award className="w-6 h-6" />}
+                  label="Repeat Visitor Rate"
+                  value={`${Number(insights.repeatVisitorRate || 0).toFixed(1)}%`}
+                  color="from-amber-500 to-orange-500"
+                  subtitle={`${summaryData.activityStreak || 0} active-day streak`}
+                />
               </div>
 
               {/* Performance Radar */}
@@ -1404,31 +1459,31 @@ export default function AnalysisDashboard() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <InsightCard
                   icon={<Sparkles className="w-6 h-6 text-yellow-400" />}
-                  title="Engagement Rate"
-                  value={`${insights.clickRate}%`}
-                  description="Visitors who clicked on at least one link"
-                  trend={parseFloat(insights.clickRate) > 10 ? "positive" : "neutral"}
+                  title="Interaction Rate"
+                  value={`${Number(insights.interactionRate || 0).toFixed(1)}%`}
+                  description="Clicks, downloads, and resume opens per view"
+                  trend={Number(insights.interactionRate || 0) > 12 ? "positive" : "neutral"}
                 />
                 <InsightCard
                   icon={<Target className="w-6 h-6 text-cyan-400" />}
-                  title="Conversion Rate"
-                  value={`${insights.downloadRate}%`}
-                  description="Visitors who downloaded content"
-                  trend={parseFloat(insights.downloadRate) > 5 ? "positive" : "neutral"}
+                  title="Repeat Visitor Rate"
+                  value={`${Number(insights.repeatVisitorRate || 0).toFixed(1)}%`}
+                  description="Visitors who came back for another visit"
+                  trend={Number(insights.repeatVisitorRate || 0) > 20 ? "positive" : "neutral"}
                 />
                 <InsightCard
                   icon={<TrendingUp className="w-6 h-6 text-emerald-400" />}
                   title="Weekly Growth"
                   value={`${Math.abs(weekGrowth)}%`}
-                  description="Change in unique visitors (week over week)"
+                  description="Change in distinct visitors week over week"
                   trend={weekGrowth > 0 ? "positive" : weekGrowth < 0 ? "negative" : "neutral"}
                 />
                 <InsightCard
                   icon={<Activity className="w-6 h-6 text-purple-400" />}
-                  title="Daily Average"
-                  value={insights.avgViews.toFixed(0)}
-                  description="Average views per day (last 7 days)"
-                  trend="neutral"
+                  title="Views / Session"
+                  value={Number(insights.avgViewsPerSession || 0).toFixed(1)}
+                  description="Average content depth per active session"
+                  trend={Number(insights.avgViewsPerSession || 0) > 1.5 ? "positive" : "neutral"}
                 />
               </div>
 
@@ -1448,7 +1503,7 @@ export default function AnalysisDashboard() {
                       <li className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
                         <span className="text-gray-300">Best Day</span>
                         <span className="font-bold text-emerald-400">
-                          {dailyArr.length ? dailyArr.reduce((max, d) => (d.views > max.views ? d : max)).date : "N/A"}
+                          {summaryData.bestDay?.date || "N/A"}
                         </span>
                       </li>
                       <li className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
@@ -1465,20 +1520,20 @@ export default function AnalysisDashboard() {
                       <li className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
                         <span className="text-gray-300">Total Interactions</span>
                         <span className="font-bold text-orange-400">
-                          {(totalsData.totalClicks || 0) + (totalsData.totalDownloads || 0)}
+                          {(totalsData.totalClicks || 0) + (totalsData.totalDownloads || 0) + (totalsData.totalResumeOpens || 0)}
                         </span>
                       </li>
                       <li className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
                         <span className="text-gray-300">Active Days</span>
-                        <span className="font-bold text-pink-400">{dailyArr.length}</span>
+                        <span className="font-bold text-pink-400">{summaryData.activeDays || 0}</span>
                       </li>
                       <li className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
-                        <span className="text-gray-300">Avg. Daily Users</span>
-                        <span className="font-bold text-blue-400">{insights.avgUsers.toFixed(1)}</span>
+                        <span className="text-gray-300">This Week Returning</span>
+                        <span className="font-bold text-blue-400">{usersData.returningThisWeek || 0}</span>
                       </li>
                       <li className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
-                        <span className="text-gray-300">Total Blog Posts</span>
-                        <span className="font-bold text-purple-400">{blogPostsData.length}</span>
+                        <span className="text-gray-300">This Week New Visitors</span>
+                        <span className="font-bold text-purple-400">{usersData.newThisWeek || 0}</span>
                       </li>
                     </ul>
                   </div>

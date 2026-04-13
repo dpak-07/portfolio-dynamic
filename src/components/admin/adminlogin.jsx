@@ -3,24 +3,17 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../firebase";
+import { createAdminSession, getAdminSession } from "../../utils/adminSession";
 
 // Constants for better maintainability
 const CONSTANTS = {
-  STORAGE_KEYS: {
-    IS_ADMIN: "isAdmin",
-    LOGIN_TIMESTAMP: "loginTimestamp"
-  },
   ROUTES: {
     DASHBOARD: "/admindsh",
     HOME: "/"
   },
   TIMEOUTS: {
     NAVIGATION_DELAY: 800,
-    CREDENTIALS_LOAD_DELAY: 2000,
     ANIMATION_DELAY: 150
-  },
-  SECURITY: {
-    SESSION_DURATION: 2 * 60 * 60 * 1000 // 2 hours in milliseconds
   }
 };
 
@@ -35,20 +28,11 @@ export default function AdminLogin() {
 
   // Validate session on component mount
   const validateSession = useCallback(() => {
-    const isAdmin = localStorage.getItem(CONSTANTS.STORAGE_KEYS.IS_ADMIN);
-    const loginTime = localStorage.getItem(CONSTANTS.STORAGE_KEYS.LOGIN_TIMESTAMP);
-
-    if (isAdmin === "1" && loginTime) {
-      const sessionAge = Date.now() - parseInt(loginTime);
-      if (sessionAge < CONSTANTS.SECURITY.SESSION_DURATION) {
-        navigate(CONSTANTS.ROUTES.DASHBOARD);
-        return true;
-      } else {
-        // Session expired
-        localStorage.removeItem(CONSTANTS.STORAGE_KEYS.IS_ADMIN);
-        localStorage.removeItem(CONSTANTS.STORAGE_KEYS.LOGIN_TIMESTAMP);
-      }
+    if (getAdminSession()) {
+      navigate(CONSTANTS.ROUTES.DASHBOARD, { replace: true });
+      return true;
     }
+
     return false;
   }, [navigate]);
 
@@ -117,9 +101,7 @@ export default function AdminLogin() {
       const isPasswordValid = form.password === adminCredentials.password;
 
       if (isUsernameValid && isPasswordValid) {
-        // Set admin flag and login timestamp
-        localStorage.setItem(CONSTANTS.STORAGE_KEYS.IS_ADMIN, "1");
-        localStorage.setItem(CONSTANTS.STORAGE_KEYS.LOGIN_TIMESTAMP, Date.now().toString());
+        createAdminSession({ username: adminCredentials.user });
 
         // Success feedback before navigation
         setTimeout(() => {

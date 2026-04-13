@@ -1,101 +1,97 @@
-// ✅ src/utils/analytics.js
 import { db } from "../firebase";
+import { buildAnalyticsSummary, toDateKey } from "./analyticsSummary";
 import {
+  collection,
+  deleteDoc,
   doc,
   getDoc,
-  setDoc,
-  updateDoc,
+  getDocs,
   increment,
   serverTimestamp,
+  setDoc,
+  updateDoc,
 } from "firebase/firestore";
 
-/**
- * 📊 Google Analytics 4 & GTM Integration
- * Initialize Google Analytics and Google Tag Manager
- */
+const sessionCache = new Map();
+const STORAGE_KEYS = {
+  visitorId: "portfolio.analytics.visitor-id",
+  sessionId: "portfolio.analytics.session-id",
+};
+
+let uniqueUserPromise = null;
+
 export const initializeGA = () => {
   try {
     const gaId = import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || import.meta.env.VITE_GA_ID;
     if (!gaId) {
-      console.warn("⚠️ GA_ID not configured");
+      console.warn("GA_ID not configured");
       return;
     }
 
-    // Load Google Analytics script
     const script = document.createElement("script");
     script.async = true;
     script.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`;
     document.head.appendChild(script);
 
-    // Initialize gtag
     window.dataLayer = window.dataLayer || [];
     function gtag() {
       window.dataLayer.push(arguments);
     }
+
     gtag("js", new Date());
     gtag("config", gaId, {
       page_path: window.location.pathname,
     });
 
     window.gtag = gtag;
-    console.log("✅ Google Analytics initialized:", gaId);
-  } catch (err) {
-    console.error("❌ Failed to initialize Google Analytics:", err);
+    console.log("Google Analytics initialized:", gaId);
+  } catch (error) {
+    console.error("Failed to initialize Google Analytics:", error);
   }
 };
 
-/**
- * 🏷️ Google Tag Manager Integration
- * Initialize GTM container
- */
 export const initializeGTM = () => {
   try {
     const gtmId = import.meta.env.VITE_GTM_ID;
     if (!gtmId) {
-      console.warn("⚠️ GTM_ID not configured");
+      console.warn("GTM_ID not configured");
       return;
     }
 
-    // Load GTM script
     const script = document.createElement("script");
     script.async = true;
     script.src = `https://www.googletagmanager.com/gtm.js?id=${gtmId}`;
     document.head.appendChild(script);
 
-    // Initialize dataLayer
     window.dataLayer = window.dataLayer || [];
     window.dataLayer.push({
       event: "gtm.js",
-      "gtm.start": new Date().getTime(),
+      "gtm.start": Date.now(),
       "gtm.uniqueEventId": Math.random(),
     });
 
-    console.log("✅ Google Tag Manager initialized:", gtmId);
-  } catch (err) {
-    console.error("❌ Failed to initialize GTM:", err);
+    console.log("Google Tag Manager initialized:", gtmId);
+  } catch (error) {
+    console.error("Failed to initialize Google Tag Manager:", error);
   }
 };
 
-/**
- * 📈 Send custom events to Google Analytics
- */
 export const sendGAEvent = (eventName, eventData = {}) => {
-  if (window.gtag) {
+  if (typeof window !== "undefined" && window.gtag) {
     window.gtag("event", eventName, eventData);
   }
 };
 
-/**
- * Backward-compatible event tracking helper expected by App.jsx
- */
 export const trackEvent = (eventName, eventData = {}) => {
   sendGAEvent(eventName, eventData);
 };
 
-/**
- * Backward-compatible page view helper expected by App.jsx
- */
-export const logPageView = (pagePath = window.location.pathname, pageTitle = document.title) => {
+export const logPageView = (
+  pagePath = typeof window !== "undefined" ? window.location.pathname : "/",
+  pageTitle = typeof document !== "undefined" ? document.title : "Portfolio"
+) => {
+  if (typeof window === "undefined") return;
+
   sendGAEvent("page_view", {
     page_path: pagePath,
     page_title: pageTitle,
@@ -103,8 +99,48 @@ export const logPageView = (pagePath = window.location.pathname, pageTitle = doc
   });
 };
 
-const today = new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
-const sessionCache = new Map(); // 🧠 In-memory cache (cleared when tab closes)
+function getTodayDate() {
+  return toDateKey(new Date());
+}
+
+function createAnalyticsId(prefix) {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+
+  return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function getStorage(type) {
+  if (typeof window === "undefined") return null;
+
+  try {
+    return type === "session" ? window.sessionStorage : window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+function getOrCreateStoredId(storageType, storageKey, cacheKey) {
+  const storage = getStorage(storageType);
+
+  if (storage) {
+    const existing = storage.getItem(storageKey);
+    if (existing) return existing;
+
+    const created = createAnalyticsId(cacheKey);
+    storage.setItem(storageKey, created);
+    return created;
+  }
+
+  let fallback = sessionCache.get(cacheKey);
+  if (!fallback) {
+    fallback = createAnalyticsId(cacheKey);
+    sessionCache.set(cacheKey, fallback);
+  }
+
+  return fallback;
+}
 
 async function ensureAnalyticsDocs() {
   const refs = [
@@ -119,29 +155,29 @@ async function ensureAnalyticsDocs() {
     "performance",
     "errors",
   ].map((id) => doc(db, "analytics", id));
+
   await Promise.all(refs.map((ref) => setDoc(ref, {}, { merge: true })));
 }
 
-/* -------------------------------------------------------
-   🕒 Helper: Prevent double counts (e.g. spam reloads)
-------------------------------------------------------- */
 function isRecentEvent(key, limitMins = 2) {
   const now = Date.now();
   const last = sessionCache.get(key);
-  if (last && now - last < limitMins * 60 * 1000) return true;
+
+  if (last && now - last < limitMins * 60 * 1000) {
+    return true;
+  }
+
   sessionCache.set(key, now);
   return false;
 }
 
-/* -------------------------------------------------------
-   👁️ Log Section View (throttled)
-------------------------------------------------------- */
 export const logSectionView = async (sectionName = "unknown") => {
   try {
     await ensureAnalyticsDocs();
+    const currentDay = getTodayDate();
 
     if (isRecentEvent(`view_${sectionName}`)) {
-      console.log(`⚠️ Skipped duplicate section view: ${sectionName}`);
+      console.log(`Skipped duplicate section view: ${sectionName}`);
       return;
     }
 
@@ -153,24 +189,20 @@ export const logSectionView = async (sectionName = "unknown") => {
       updateDoc(totalsRef, { totalViews: increment(1) }),
       updateDoc(sectionsRef, { [sectionName]: increment(1) }),
       updateDoc(dailyRef, {
-        [`${today}.views`]: increment(1),
-        [`${today}.sectionViews.${sectionName}`]: increment(1),
-        [`${today}.lastUpdated`]: serverTimestamp(),
+        [`${currentDay}.views`]: increment(1),
+        [`${currentDay}.sectionViews.${sectionName}`]: increment(1),
+        [`${currentDay}.lastUpdated`]: serverTimestamp(),
       }),
     ]);
-
-    console.log(`👁️ Logged section view → ${sectionName}`);
-  } catch (err) {
-    console.error("❌ Error logging section view:", err);
+  } catch (error) {
+    console.error("Error logging section view:", error);
   }
 };
 
-/* -------------------------------------------------------
-   🔗 Log Link Click
-------------------------------------------------------- */
 export const logLinkClick = async (linkName = "unknown") => {
   try {
     await ensureAnalyticsDocs();
+    const currentDay = getTodayDate();
 
     const totalsRef = doc(db, "analytics", "totals");
     const linksRef = doc(db, "analytics", "links");
@@ -180,24 +212,20 @@ export const logLinkClick = async (linkName = "unknown") => {
       updateDoc(totalsRef, { totalClicks: increment(1) }),
       updateDoc(linksRef, { [linkName]: increment(1) }),
       updateDoc(dailyRef, {
-        [`${today}.clicks`]: increment(1),
-        [`${today}.linkClicks.${linkName}`]: increment(1),
-        [`${today}.lastUpdated`]: serverTimestamp(),
+        [`${currentDay}.clicks`]: increment(1),
+        [`${currentDay}.linkClicks.${linkName}`]: increment(1),
+        [`${currentDay}.lastUpdated`]: serverTimestamp(),
       }),
     ]);
-
-    console.log(`🔗 Logged link click → ${linkName}`);
-  } catch (err) {
-    console.error("❌ Error logging link click:", err);
+  } catch (error) {
+    console.error("Error logging link click:", error);
   }
 };
 
-/* -------------------------------------------------------
-   📄 Log Resume or File Download
-------------------------------------------------------- */
 export const logDownload = async (fileName = "resume") => {
   try {
     await ensureAnalyticsDocs();
+    const currentDay = getTodayDate();
 
     const totalsRef = doc(db, "analytics", "totals");
     const dailyRef = doc(db, "analytics", "daily");
@@ -205,27 +233,23 @@ export const logDownload = async (fileName = "resume") => {
     await Promise.all([
       updateDoc(totalsRef, { totalDownloads: increment(1) }),
       updateDoc(dailyRef, {
-        [`${today}.downloads`]: increment(1),
-        [`${today}.downloadedFiles.${fileName}`]: increment(1),
-        [`${today}.lastUpdated`]: serverTimestamp(),
+        [`${currentDay}.downloads`]: increment(1),
+        [`${currentDay}.downloadedFiles.${fileName}`]: increment(1),
+        [`${currentDay}.lastUpdated`]: serverTimestamp(),
       }),
     ]);
-
-    console.log(`📄 Logged download → ${fileName}`);
-  } catch (err) {
-    console.error("❌ Error logging download:", err);
+  } catch (error) {
+    console.error("Error logging download:", error);
   }
 };
 
-/* -------------------------------------------------------
-   📑 Log Resume Opens (throttled)
-------------------------------------------------------- */
 export const logResumeOpen = async () => {
   try {
     await ensureAnalyticsDocs();
+    const currentDay = getTodayDate();
 
     if (isRecentEvent("resume_open")) {
-      console.log("⚠️ Skipped duplicate resume open (within 2 mins)");
+      console.log("Skipped duplicate resume open");
       return;
     }
 
@@ -235,142 +259,162 @@ export const logResumeOpen = async () => {
     await Promise.all([
       updateDoc(totalsRef, { totalResumeOpens: increment(1) }),
       updateDoc(dailyRef, {
-        [`${today}.resumeOpens`]: increment(1),
-        [`${today}.lastUpdated`]: serverTimestamp(),
+        [`${currentDay}.resumeOpens`]: increment(1),
+        [`${currentDay}.lastUpdated`]: serverTimestamp(),
       }),
     ]);
-
-    console.log("📑 Logged resume open");
-  } catch (err) {
-    console.error("❌ Error logging resume open:", err);
+  } catch (error) {
+    console.error("Error logging resume open:", error);
   }
 };
 
-/* -------------------------------------------------------
-   🧍 Log Unique User (per session)
-------------------------------------------------------- */
 export const logUniqueUser = async () => {
-  try {
-    await ensureAnalyticsDocs();
-    const usersRef = doc(db, "analytics", "users");
-    const dailyRef = doc(db, "analytics", "daily");
-
-    // 🧠 Create random session-based visitor ID
-    let visitorId = sessionCache.get("visitor_id");
-    if (!visitorId) {
-      visitorId = crypto.randomUUID();
-      sessionCache.set("visitor_id", visitorId);
-    }
-
-    const snap = await getDoc(usersRef);
-    const data = snap.exists() ? snap.data() : {};
-    const lastSeen = data.lastSeen || {};
-
-    // Prevent double counting same session same day
-    if (lastSeen[visitorId] === today) {
-      console.log("⚠️ Session already logged today");
-      return;
-    }
-
-    lastSeen[visitorId] = today;
-
-    await Promise.all([
-      setDoc(
-        usersRef,
-        {
-          lastSeen,
-          lastUpdated: serverTimestamp(),
-        },
-        { merge: true }
-      ),
-      // Track daily unique user count
-      updateDoc(dailyRef, {
-        [`${today}.uniqueUsers`]: increment(1),
-        [`${today}.lastUpdated`]: serverTimestamp(),
-      }),
-    ]);
-
-    console.log("🧍 Logged unique user session");
-  } catch (err) {
-    console.error("❌ Error logging unique user:", err);
+  if (uniqueUserPromise) {
+    return uniqueUserPromise;
   }
+
+  uniqueUserPromise = (async () => {
+    try {
+      await ensureAnalyticsDocs();
+
+      const currentDay = getTodayDate();
+      const visitorId = getOrCreateStoredId("local", STORAGE_KEYS.visitorId, "visitor_id");
+      const sessionId = getOrCreateStoredId("session", STORAGE_KEYS.sessionId, "session_id");
+      const visitorRef = doc(db, "analytics_visitors", visitorId);
+      const usersRef = doc(db, "analytics", "users");
+      const dailyRef = doc(db, "analytics", "daily");
+
+      const visitorSnap = await getDoc(visitorRef);
+      const visitorData = visitorSnap.exists() ? visitorSnap.data() : {};
+      const visitDays = visitorData.visitDays || {};
+      const hasVisitedToday = Boolean(visitDays[currentDay]);
+      const isNewVisitor = !visitorSnap.exists();
+      const isNewSession = visitorData.lastSessionId !== sessionId;
+
+      const visitorUpdate = {
+        lastSeenAt: serverTimestamp(),
+        lastSeenDate: currentDay,
+        lastSessionId: sessionId,
+        visitDays: {
+          ...visitDays,
+          [currentDay]: true,
+        },
+      };
+
+      if (isNewVisitor) {
+        visitorUpdate.firstSeenAt = serverTimestamp();
+        visitorUpdate.firstSeenDate = currentDay;
+      }
+
+      if (!hasVisitedToday) {
+        visitorUpdate.visitCount = increment(1);
+      }
+
+      if (isNewSession) {
+        visitorUpdate.sessionCount = increment(1);
+      }
+
+      const usersSummaryUpdate = {
+        lastSeenDate: currentDay,
+        lastUpdated: serverTimestamp(),
+      };
+
+      if (isNewVisitor) {
+        usersSummaryUpdate.totalVisitors = increment(1);
+      }
+
+      if (isNewSession) {
+        usersSummaryUpdate.totalSessions = increment(1);
+      }
+
+      const dailyUpdate = {
+        [`${currentDay}.lastUpdated`]: serverTimestamp(),
+      };
+
+      if (!hasVisitedToday) {
+        dailyUpdate[`${currentDay}.uniqueUsers`] = increment(1);
+        dailyUpdate[`${currentDay}.${isNewVisitor ? "newUsers" : "returningUsers"}`] = increment(1);
+      }
+
+      if (isNewSession) {
+        dailyUpdate[`${currentDay}.sessions`] = increment(1);
+      }
+
+      await Promise.all([
+        setDoc(visitorRef, visitorUpdate, { merge: true }),
+        setDoc(usersRef, usersSummaryUpdate, { merge: true }),
+        updateDoc(dailyRef, dailyUpdate),
+      ]);
+    } catch (error) {
+      console.error("Error logging unique user:", error);
+    } finally {
+      uniqueUserPromise = null;
+    }
+  })();
+
+  return uniqueUserPromise;
 };
 
-/* -------------------------------------------------------
-   ⚡ Log Custom Events
-------------------------------------------------------- */
 export const logCustomEvent = async (category, eventName, meta = {}) => {
   try {
     await ensureAnalyticsDocs();
-
+    const currentDay = getTodayDate();
     const dailyRef = doc(db, "analytics", "daily");
-    await updateDoc(dailyRef, {
-      [`${today}.customEvents.${category}.${eventName}`]: increment(1),
-      [`${today}.customEventsMeta.${category}.${eventName}`]: meta,
-      [`${today}.lastUpdated`]: serverTimestamp(),
-    });
 
-    console.log(`⚡ Custom Event Logged: ${category}.${eventName}`, meta);
-  } catch (err) {
-    console.error("❌ Error logging custom event:", err);
+    await updateDoc(dailyRef, {
+      [`${currentDay}.customEvents.${category}.${eventName}`]: increment(1),
+      [`${currentDay}.customEventsMeta.${category}.${eventName}`]: meta,
+      [`${currentDay}.lastUpdated`]: serverTimestamp(),
+    });
+  } catch (error) {
+    console.error("Error logging custom event:", error);
   }
 };
 
-/* -------------------------------------------------------
-   📱 Device Detection & Tracking
-------------------------------------------------------- */
 function getDeviceInfo() {
   const ua = navigator.userAgent;
 
-  // Detect Browser
   let browser = "Other";
   if (ua.includes("Chrome") && !ua.includes("Edg")) browser = "Chrome";
   else if (ua.includes("Safari") && !ua.includes("Chrome")) browser = "Safari";
   else if (ua.includes("Firefox")) browser = "Firefox";
   else if (ua.includes("Edg")) browser = "Edge";
 
-  // Detect OS
   let os = "Other";
-  if (ua.includes("Win")) os = "Windows";
+  if (ua.includes("Android")) os = "Android";
+  else if (ua.includes("iPhone") || ua.includes("iPad") || ua.includes("iOS")) os = "iOS";
+  else if (ua.includes("Win")) os = "Windows";
   else if (ua.includes("Mac")) os = "macOS";
   else if (ua.includes("Linux")) os = "Linux";
-  else if (ua.includes("Android")) os = "Android";
-  else if (ua.includes("iOS") || ua.includes("iPhone") || ua.includes("iPad")) os = "iOS";
 
-  // Detect Device Type
   let deviceType = "Desktop";
-  if (/Mobi|Android/i.test(ua)) deviceType = "Mobile";
-  else if (/Tablet|iPad/i.test(ua)) deviceType = "Tablet";
+  if (/Tablet|iPad/i.test(ua)) deviceType = "Tablet";
+  else if (/Mobi|Android/i.test(ua)) deviceType = "Mobile";
 
   return { browser, os, deviceType };
 }
 
 export const logDeviceInfo = async () => {
   try {
-    if (isRecentEvent("device_info", 1440)) { // Once per day
+    if (isRecentEvent("device_info", 1440)) {
       return;
     }
 
     await ensureAnalyticsDocs();
     const { browser, os, deviceType } = getDeviceInfo();
-
     const devicesRef = doc(db, "analytics", "devices");
+
     await updateDoc(devicesRef, {
       [`browsers.${browser}`]: increment(1),
       [`os.${os}`]: increment(1),
       [`deviceTypes.${deviceType}`]: increment(1),
       lastUpdated: serverTimestamp(),
     });
-
-    console.log(`📱 Device info logged → ${browser}, ${os}, ${deviceType}`);
-  } catch (err) {
-    console.error("❌ Error logging device info:", err);
+  } catch (error) {
+    console.error("Error logging device info:", error);
   }
 };
 
-/* -------------------------------------------------------
-   🔗 Traffic Source Tracking
-------------------------------------------------------- */
 function getTrafficSource() {
   const params = new URLSearchParams(window.location.search);
   const utmSource = params.get("utm_source");
@@ -389,7 +433,7 @@ function getTrafficSource() {
       else if (refDomain.includes("twitter") || refDomain.includes("t.co")) source = "Twitter";
       else if (refDomain.includes("facebook")) source = "Facebook";
       else source = refDomain;
-    } catch (e) {
+    } catch {
       source = "Referral";
     }
   }
@@ -399,13 +443,12 @@ function getTrafficSource() {
 
 export const logTrafficSource = async () => {
   try {
-    if (isRecentEvent("traffic_source", 1440)) { // Once per day
+    if (isRecentEvent("traffic_source", 1440)) {
       return;
     }
 
     await ensureAnalyticsDocs();
     const { source, medium, campaign } = getTrafficSource();
-
     const trafficRef = doc(db, "analytics", "traffic");
     const updates = {
       [`sources.${source}`]: increment(1),
@@ -416,16 +459,11 @@ export const logTrafficSource = async () => {
     if (campaign) updates[`campaigns.${campaign}`] = increment(1);
 
     await updateDoc(trafficRef, updates);
-
-    console.log(`🔗 Traffic source logged → ${source}${medium ? ` (${medium})` : ""}${campaign ? ` [${campaign}]` : ""}`);
-  } catch (err) {
-    console.error("❌ Error logging traffic source:", err);
+  } catch (error) {
+    console.error("Error logging traffic source:", error);
   }
 };
 
-/* -------------------------------------------------------
-   📖 Blog Analytics
-------------------------------------------------------- */
 export const logBlogView = async (postSlug, postTitle) => {
   try {
     if (!postSlug) return;
@@ -438,10 +476,8 @@ export const logBlogView = async (postSlug, postTitle) => {
       [`${postSlug}.views`]: increment(1),
       [`${postSlug}.lastViewed`]: serverTimestamp(),
     });
-
-    console.log(`📖 Blog view logged → ${postSlug}`);
-  } catch (err) {
-    console.error("❌ Error logging blog view:", err);
+  } catch (error) {
+    console.error("Error logging blog view:", error);
   }
 };
 
@@ -455,16 +491,14 @@ export const logBlogLike = async (postSlug) => {
     await updateDoc(blogRef, {
       [`${postSlug}.likes`]: increment(1),
     });
-
-    console.log(`❤️ Blog like logged → ${postSlug}`);
-  } catch (err) {
-    console.error("❌ Error logging blog like:", err);
+  } catch (error) {
+    console.error("Error logging blog like:", error);
   }
 };
 
 export const logBlogReadTime = async (postSlug, seconds) => {
   try {
-    if (!postSlug || seconds < 5) return; // Only log if read for 5+ seconds
+    if (!postSlug || seconds < 5) return;
 
     await ensureAnalyticsDocs();
     const blogRef = doc(db, "analytics", "blog");
@@ -473,66 +507,55 @@ export const logBlogReadTime = async (postSlug, seconds) => {
       [`${postSlug}.totalReadTime`]: increment(Math.floor(seconds)),
       [`${postSlug}.readCount`]: increment(1),
     });
-
-    console.log(`⏱️ Blog read time logged → ${postSlug}: ${Math.floor(seconds)}s`);
-  } catch (err) {
-    console.error("❌ Error logging blog read time:", err);
+  } catch (error) {
+    console.error("Error logging blog read time:", error);
   }
 };
 
-/* -------------------------------------------------------
-   ⚡ Performance Tracking
-------------------------------------------------------- */
 export const logPageLoad = async (pageName, loadTimeMs) => {
   try {
     if (!pageName || loadTimeMs < 0) return;
 
     await ensureAnalyticsDocs();
-    const perfRef = doc(db, "analytics", "performance");
+    const performanceRef = doc(db, "analytics", "performance");
 
-    await updateDoc(perfRef, {
+    await updateDoc(performanceRef, {
       [`pageLoads.${pageName}.count`]: increment(1),
       [`pageLoads.${pageName}.totalTime`]: increment(Math.floor(loadTimeMs)),
       lastUpdated: serverTimestamp(),
     });
-
-    console.log(`⚡ Page load logged → ${pageName}: ${Math.floor(loadTimeMs)}ms`);
-  } catch (err) {
-    console.error("❌ Error logging page load:", err);
+  } catch (error) {
+    console.error("Error logging page load:", error);
   }
 };
 
 export const logPageDuration = async (pageName, durationMs) => {
   try {
-    if (!pageName || durationMs < 1000) return; // Only log if 1+ second
+    if (!pageName || durationMs < 1000) return;
 
     await ensureAnalyticsDocs();
-    const perfRef = doc(db, "analytics", "performance");
+    const performanceRef = doc(db, "analytics", "performance");
 
-    await updateDoc(perfRef, {
+    await updateDoc(performanceRef, {
       [`pageDurations.${pageName}.count`]: increment(1),
       [`pageDurations.${pageName}.totalTime`]: increment(Math.floor(durationMs)),
       lastUpdated: serverTimestamp(),
     });
-
-    console.log(`⏱️ Page duration logged → ${pageName}: ${Math.floor(durationMs / 1000)}s`);
-  } catch (err) {
-    console.error("❌ Error logging page duration:", err);
+  } catch (error) {
+    console.error("Error logging page duration:", error);
   }
 };
 
-/* -------------------------------------------------------
-   ❌ Error Tracking
-------------------------------------------------------- */
 export const logError = async (errorMessage, errorStack, componentName = "Unknown") => {
   try {
-    // Don't log errors from browser extensions
-    if (errorStack && errorStack.includes("chrome-extension://")) return;
+    if (errorStack && errorStack.includes("chrome-extension://")) {
+      return;
+    }
 
     await ensureAnalyticsDocs();
     const errorsRef = doc(db, "analytics", "errors");
-
     const errorId = `error_${Date.now()}`;
+
     await updateDoc(errorsRef, {
       [errorId]: {
         message: errorMessage || "Unknown error",
@@ -543,16 +566,11 @@ export const logError = async (errorMessage, errorStack, componentName = "Unknow
       },
       errorCount: increment(1),
     });
-
-    console.log(`❌ Error logged → ${componentName}: ${errorMessage}`);
-  } catch (err) {
-    console.error("❌ Error logging error (meta!):", err);
+  } catch (error) {
+    console.error("Error logging error:", error);
   }
 };
 
-/* -------------------------------------------------------
-   📊 Fetch Analytics Data (for dashboard) — Extended
-------------------------------------------------------- */
 export const getAnalyticsData = async () => {
   try {
     await ensureAnalyticsDocs();
@@ -562,131 +580,44 @@ export const getAnalyticsData = async () => {
       sectionsSnap,
       linksSnap,
       dailySnap,
-      usersSnap,
       devicesSnap,
       trafficSnap,
       blogSnap,
       performanceSnap,
       errorsSnap,
+      visitorsSnap,
     ] = await Promise.all([
       getDoc(doc(db, "analytics", "totals")),
       getDoc(doc(db, "analytics", "sections")),
       getDoc(doc(db, "analytics", "links")),
       getDoc(doc(db, "analytics", "daily")),
-      getDoc(doc(db, "analytics", "users")),
       getDoc(doc(db, "analytics", "devices")),
       getDoc(doc(db, "analytics", "traffic")),
       getDoc(doc(db, "analytics", "blog")),
       getDoc(doc(db, "analytics", "performance")),
       getDoc(doc(db, "analytics", "errors")),
+      getDocs(collection(db, "analytics_visitors")),
     ]);
 
-    const totals = totalsSnap.exists() ? totalsSnap.data() : {};
-    const sections = sectionsSnap.exists() ? sectionsSnap.data() : {};
-    const links = linksSnap.exists() ? linksSnap.data() : {};
-    const daily = dailySnap.exists() ? dailySnap.data() : {};
-    const users = usersSnap.exists() ? usersSnap.data() : {};
-    const devices = devicesSnap.exists() ? devicesSnap.data() : {};
-    const traffic = trafficSnap.exists() ? trafficSnap.data() : {};
-    const blog = blogSnap.exists() ? blogSnap.data() : {};
-    const performance = performanceSnap.exists() ? performanceSnap.data() : {};
-    const errors = errorsSnap.exists() ? errorsSnap.data() : {};
+    return buildAnalyticsSummary({
+      totals: totalsSnap.exists() ? totalsSnap.data() : {},
+      sections: sectionsSnap.exists() ? sectionsSnap.data() : {},
+      links: linksSnap.exists() ? linksSnap.data() : {},
+      daily: dailySnap.exists() ? dailySnap.data() : {},
+      visitors: visitorsSnap.docs.map((snapshot) => ({
+        id: snapshot.id,
+        ...snapshot.data(),
+      })),
+      devices: devicesSnap.exists() ? devicesSnap.data() : {},
+      traffic: trafficSnap.exists() ? trafficSnap.data() : {},
+      blog: blogSnap.exists() ? blogSnap.data() : {},
+      performance: performanceSnap.exists() ? performanceSnap.data() : {},
+      errors: errorsSnap.exists() ? errorsSnap.data() : {},
+      now: new Date(),
+    });
+  } catch (error) {
+    console.error("Error fetching analytics data:", error);
 
-    const dailyArr = Object.keys(daily)
-      .filter((k) => typeof daily[k] === "object")
-      .map((date) => ({
-        date,
-        views: daily[date]?.views || 0,
-        clicks: daily[date]?.clicks || 0,
-        downloads: daily[date]?.downloads || 0,
-        resumeOpens: daily[date]?.resumeOpens || 0,
-        uniqueUsers: daily[date]?.uniqueUsers || 0,
-      }))
-      .sort((a, b) => new Date(a.date) - new Date(b.date));
-
-    // 🧠 Extended user stats
-    const lastSeen = users.lastSeen || {};
-    const allDates = Object.values(lastSeen);
-    const now = new Date();
-
-    // Get today and yesterday dates
-    const todayDate = now.toISOString().split("T")[0];
-    const yesterday = new Date(now);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayDate = yesterday.toISOString().split("T")[0];
-
-    const getWeekStart = (date, offset = 0) => {
-      const d = new Date(date);
-      const diff = d.getDate() - d.getDay() + offset * 7;
-      const start = new Date(d.setDate(diff));
-      start.setHours(0, 0, 0, 0);
-      return start;
-    };
-
-    const thisWeekStart = getWeekStart(now);
-    const lastWeekStart = getWeekStart(now, -1);
-    const lastWeekEnd = new Date(thisWeekStart);
-    lastWeekEnd.setDate(thisWeekStart.getDate() - 1);
-
-    const thisMonth = now.getMonth();
-    const thisYear = now.getFullYear();
-    const lastMonth = thisMonth === 0 ? 11 : thisMonth - 1;
-    const lastMonthYear = thisMonth === 0 ? thisYear - 1 : thisYear;
-
-    const isToday = (d) => d === todayDate;
-    const isYesterday = (d) => d === yesterdayDate;
-    const isThisWeek = (d) => {
-      const date = new Date(d);
-      return date >= thisWeekStart && date <= now;
-    };
-    const isLastWeek = (d) => {
-      const date = new Date(d);
-      return date >= lastWeekStart && date <= lastWeekEnd;
-    };
-    const isThisMonth = (d) => {
-      const date = new Date(d);
-      return date.getMonth() === thisMonth && date.getFullYear() === thisYear;
-    };
-    const isLastMonth = (d) => {
-      const date = new Date(d);
-      return date.getMonth() === lastMonth && date.getFullYear() === lastMonthYear;
-    };
-
-    const uniqueOverall = new Set(Object.keys(lastSeen)).size;
-    const uniqueToday = allDates.filter(isToday).length;
-    const uniqueYesterday = allDates.filter(isYesterday).length;
-    const uniqueThisWeek = allDates.filter(isThisWeek).length;
-    const uniqueLastWeek = allDates.filter(isLastWeek).length;
-    const uniqueThisMonth = allDates.filter(isThisMonth).length;
-    const uniqueLastMonth = allDates.filter(isLastMonth).length;
-
-    return {
-      totalsData: {
-        totalViews: totals.totalViews || 0,
-        totalClicks: totals.totalClicks || 0,
-        totalDownloads: totals.totalDownloads || 0,
-        totalResumeOpens: totals.totalResumeOpens || 0,
-      },
-      usersData: {
-        uniqueToday,
-        uniqueYesterday,
-        uniqueThisWeek,
-        uniqueLastWeek,
-        uniqueThisMonth,
-        uniqueLastMonth,
-        uniqueOverall,
-      },
-      sectionData: sections,
-      linkData: links,
-      dailyArr,
-      devicesData: devices,
-      trafficData: traffic,
-      blogData: blog,
-      performanceData: performance,
-      errorsData: errors,
-    };
-  } catch (err) {
-    console.error("❌ Error fetching analytics data:", err);
     return {
       totalsData: {},
       usersData: {},
@@ -698,21 +629,33 @@ export const getAnalyticsData = async () => {
       blogData: {},
       performanceData: {},
       errorsData: {},
+      summaryData: {},
     };
   }
 };
 
-/* -------------------------------------------------------
-   🧹 Reset All Analytics (Admin Only)
-------------------------------------------------------- */
 export const resetAnalytics = async () => {
   try {
-    const refs = ["totals", "sections", "links", "daily", "users", "devices", "traffic", "blog", "performance", "errors"].map((id) =>
-      doc(db, "analytics", id)
-    );
-    await Promise.all(refs.map((ref) => setDoc(ref, {}, { merge: false })));
-    console.log("🧹 Analytics reset successfully");
-  } catch (err) {
-    console.error("❌ Error resetting analytics:", err);
+    const refs = [
+      "totals",
+      "sections",
+      "links",
+      "daily",
+      "users",
+      "devices",
+      "traffic",
+      "blog",
+      "performance",
+      "errors",
+    ].map((id) => doc(db, "analytics", id));
+
+    const visitorsSnap = await getDocs(collection(db, "analytics_visitors"));
+
+    await Promise.all([
+      ...refs.map((ref) => setDoc(ref, {}, { merge: false })),
+      ...visitorsSnap.docs.map((snapshot) => deleteDoc(snapshot.ref)),
+    ]);
+  } catch (error) {
+    console.error("Error resetting analytics:", error);
   }
 };

@@ -1,10 +1,19 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import "./index.css";
 
 // Analytics
-import { initializeGA, initializeGTM } from "./utils/analytics";
+import {
+  initializeGA,
+  initializeGTM,
+  logDeviceInfo,
+  logError,
+  logPageView,
+  logTrafficSource,
+  trackEvent,
+} from "./utils/analytics";
+import { isAdminAuthenticated, touchAdminSession } from "./utils/adminSession";
 
 // Components
 import Navbar from "./components/Navbar";
@@ -82,8 +91,49 @@ function SectionsConfigLoader({ children }) {
 
 /* ✅ AdminRoute — Protect admin pages */
 function AdminRoute({ children }) {
-  const isAdmin = localStorage.getItem("isAdmin") === "1";
-  if (!isAdmin) return <Navigate to="/admin/login" replace />;
+  const location = useLocation();
+  const [isAuthorized, setIsAuthorized] = useState(() => isAdminAuthenticated());
+  const lastTouchRef = useRef(0);
+
+  useEffect(() => {
+    const syncSession = ({ force = false } = {}) => {
+      const now = Date.now();
+      if (!force && now - lastTouchRef.current < 60 * 1000) {
+        return;
+      }
+
+      lastTouchRef.current = now;
+      setIsAuthorized(Boolean(touchAdminSession(now)));
+    };
+
+    syncSession({ force: true });
+
+    const handleActivity = () => syncSession();
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        syncSession({ force: true });
+      }
+    };
+
+    const interval = setInterval(() => {
+      setIsAuthorized(isAdminAuthenticated());
+    }, 60 * 1000);
+
+    window.addEventListener("pointerdown", handleActivity, { passive: true });
+    window.addEventListener("keydown", handleActivity);
+    window.addEventListener("scroll", handleActivity, { passive: true });
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("pointerdown", handleActivity);
+      window.removeEventListener("keydown", handleActivity);
+      window.removeEventListener("scroll", handleActivity);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [location.pathname]);
+
+  if (!isAuthorized) return <Navigate to="/admin/login" replace state={{ from: location.pathname }} />;
   return children;
 }
 
@@ -206,7 +256,7 @@ function App() {
     let cleanup = null;
 
     // Import analytics functions dynamically
-    import("./utils/analytics")
+    Promise.resolve({ logDeviceInfo, logTrafficSource, logError, trackEvent, logPageView })
       .then((mod) => {
         const logDeviceInfo = mod.logDeviceInfo || (() => { });
         const logTrafficSource = mod.logTrafficSource || (() => { });
