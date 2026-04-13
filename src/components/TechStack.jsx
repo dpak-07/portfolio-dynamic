@@ -286,8 +286,7 @@ export default function AnimatedTechStack() {
         className="max-w-6xl mx-auto px-6 md:px-10"
         variants={containerVariants}
         initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true }}
+        animate="visible"
       >
         {/* Header */}
         <div className="text-center mb-14">

@@ -703,8 +703,7 @@ export default function AboutWithDriveImage({ overrideConfig }) {
       className="relative w-full py-8 px-4 sm:py-14 sm:px-6 md:py-20 md:px-8 lg:px-10 overflow-hidden scroll-mt-20"
       variants={page}
       initial="hidden"
-      whileInView="enter"
-      viewport={{ once: true, amount: 0.12 }}
+      animate="enter"
       exit="exit"
       aria-busy={!imgLoaded}
       style={{ willChange: "transform" }}
@@ -750,7 +749,7 @@ export default function AboutWithDriveImage({ overrideConfig }) {
         <motion.div
           className="relative z-10 text-center mb-14"
           initial={{ opacity: 0, y: -30 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7 }}
         >
           <h2 className="text-5xl sm:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 animate-gradient">
