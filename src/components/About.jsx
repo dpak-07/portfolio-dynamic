@@ -946,7 +946,8 @@ export default function AboutWithDriveImage({ overrideConfig }) {
                           <img
                             src={imgSrc}
                             alt="Profile"
-                            loading="lazy"
+                            loading="eager"
+                            fetchPriority="high"
                             onError={onImgError}
                             onLoad={onImgLoad}
                             style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}

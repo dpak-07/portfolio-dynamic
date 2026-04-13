@@ -1,18 +1,17 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 
 export default function GlobalBackgroundEffects() {
     const canvasRef = useRef(null);
     const mousePositionRef = useRef({ x: 0, y: 0 });
-    const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
     // Mouse tracking for interactive effects
     useEffect(() => {
         const handleMouseMove = (e) => {
             mousePositionRef.current = { x: e.clientX, y: e.clientY };
-            setMousePosition({ x: e.clientX, y: e.clientY });
         };
-        window.addEventListener("mousemove", handleMouseMove);
+
+        window.addEventListener("mousemove", handleMouseMove, { passive: true });
         return () => window.removeEventListener("mousemove", handleMouseMove);
     }, []);
 
@@ -26,7 +25,7 @@ export default function GlobalBackgroundEffects() {
         canvas.height = window.innerHeight;
 
         const particles = [];
-        const particleCount = Math.min(200, Math.floor((canvas.width * canvas.height) / 8000));
+        const particleCount = Math.min(120, Math.floor((canvas.width * canvas.height) / 14000));
 
         class Particle {
             constructor() {
@@ -151,10 +150,6 @@ export default function GlobalBackgroundEffects() {
                         scale: [1, 1.2, 1],
                         opacity: [0.15, 0.25, 0.15],
                     }}
-                    style={{
-                        x: mousePosition.x * 0.02,
-                        y: mousePosition.y * 0.02,
-                    }}
                     transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
                     className="absolute top-0 left-0 w-[600px] h-[600px] bg-cyan-500 rounded-full blur-[120px]"
                 />
@@ -165,10 +160,6 @@ export default function GlobalBackgroundEffects() {
                         y: [0, 100, 0],
                         scale: [1, 1.3, 1],
                         opacity: [0.15, 0.3, 0.15],
-                    }}
-                    style={{
-                        x: -mousePosition.x * 0.02,
-                        y: -mousePosition.y * 0.02,
                     }}
                     transition={{ duration: 25, repeat: Infinity, ease: "easeInOut", delay: 2 }}
                     className="absolute bottom-0 right-0 w-[700px] h-[700px] bg-purple-500 rounded-full blur-[130px]"
@@ -182,10 +173,6 @@ export default function GlobalBackgroundEffects() {
                         scale: [1, 1.25, 1],
                         opacity: [0.1, 0.15, 0.1],
                     }}
-                    style={{
-                        x: mousePosition.x * 0.015,
-                        y: -mousePosition.y * 0.015,
-                    }}
                     transition={{ duration: 22, repeat: Infinity, ease: "easeInOut", delay: 1 }}
                     className="absolute top-1/4 right-1/4 w-[400px] h-[400px] bg-indigo-500 rounded-full blur-[90px]"
                 />
@@ -196,10 +183,6 @@ export default function GlobalBackgroundEffects() {
                         y: [0, -60, 0],
                         scale: [1, 1.15, 1],
                         opacity: [0.1, 0.2, 0.1],
-                    }}
-                    style={{
-                        x: -mousePosition.x * 0.01,
-                        y: mousePosition.y * 0.01,
                     }}
                     transition={{ duration: 18, repeat: Infinity, ease: "easeInOut", delay: 3 }}
                     className="absolute bottom-1/3 left-1/3 w-[500px] h-[500px] bg-blue-500 rounded-full blur-[100px]"
@@ -212,33 +195,10 @@ export default function GlobalBackgroundEffects() {
                         scale: [1, 1.2, 1],
                         opacity: [0.08, 0.15, 0.08],
                     }}
-                    style={{
-                        x: mousePosition.x * 0.025,
-                        y: mousePosition.y * 0.025,
-                    }}
                     transition={{ duration: 24, repeat: Infinity, ease: "easeInOut", delay: 4 }}
                     className="absolute top-1/2 left-1/2 w-[450px] h-[450px] bg-pink-500 rounded-full blur-[110px]"
                 />
             </div>
-
-            {/* Mouse Glow Effect */}
-            <motion.div
-                className="absolute w-[600px] h-[600px] rounded-full pointer-events-none"
-                style={{
-                    left: mousePosition.x,
-                    top: mousePosition.y,
-                    transform: "translate(-50%, -50%)",
-                    background: "radial-gradient(circle, rgba(6, 182, 212, 0.2) 0%, transparent 70%)",
-                }}
-                animate={{
-                    scale: [1, 1.1, 1],
-                }}
-                transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                }}
-            />
 
             {/* Grid Overlay */}
             <div

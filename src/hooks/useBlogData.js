@@ -1,6 +1,16 @@
 import { useState, useEffect } from "react";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "../firebase";
+import { fetchFirestoreEntry, readFirestoreCache } from "../utils/firestoreCache";
+
+function normalizeBlogPosts(posts = [], publishedOnly = true) {
+    const list = Array.isArray(posts) ? posts.map((post) => ({ ...post })) : [];
+
+    const filtered = publishedOnly
+        ? list.filter((post) => post.published === true)
+        : list;
+
+    filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+    return filtered;
+}
 
 /**
  * Custom hook to fetch blog posts from Firestore
@@ -8,33 +18,25 @@ import { db } from "../firebase";
  * @returns {Object} { posts, loading, error, refetch }
  */
 export function useBlogData(publishedOnly = true) {
-    const [posts, setPosts] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const cachedPosts = readFirestoreCache("blog");
+    const [posts, setPosts] = useState(() => normalizeBlogPosts(cachedPosts, publishedOnly));
+    const [loading, setLoading] = useState(() => cachedPosts === undefined);
     const [error, setError] = useState(null);
 
-    const fetchPosts = async () => {
+    const fetchPosts = async (force = false) => {
         try {
-            setLoading(true);
             setError(null);
+            const cached = !force ? readFirestoreCache("blog") : undefined;
 
-            const blogRef = collection(db, "blog");
-
-            // Fetch all posts and filter in-memory to avoid composite index
-            const snapshot = await getDocs(blogRef);
-            let postsData = snapshot.docs.map((doc) => ({
-                id: doc.id,
-                ...doc.data(),
-            }));
-
-            // Filter by published status if needed
-            if (publishedOnly) {
-                postsData = postsData.filter(post => post.published === true);
+            if (cached !== undefined) {
+                setPosts(normalizeBlogPosts(cached, publishedOnly));
+                setLoading(false);
+                return;
             }
 
-            // Sort by date (newest first)
-            postsData.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-            setPosts(postsData);
+            setLoading(true);
+            const postsData = await fetchFirestoreEntry("blog", undefined, { force });
+            setPosts(normalizeBlogPosts(postsData, publishedOnly));
         } catch (err) {
             console.error("Error fetching blog posts:", err);
             setError(err.message);
@@ -47,7 +49,7 @@ export function useBlogData(publishedOnly = true) {
         fetchPosts();
     }, [publishedOnly]);
 
-    return { posts, loading, error, refetch: fetchPosts };
+    return { posts, loading, error, refetch: () => fetchPosts(true) };
 }
 
 /**
@@ -55,22 +57,27 @@ export function useBlogData(publishedOnly = true) {
  * @returns {Object} { linkedInData, loading, error, refetch }
  */
 export function useLinkedInData() {
-    const [linkedInData, setLinkedInData] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const cachedLinkedIn = readFirestoreCache("linkedin");
+    const [linkedInData, setLinkedInData] = useState(() =>
+        Array.isArray(cachedLinkedIn) && cachedLinkedIn.length > 0 ? cachedLinkedIn[0] : null
+    );
+    const [loading, setLoading] = useState(() => cachedLinkedIn === undefined);
     const [error, setError] = useState(null);
 
-    const fetchLinkedInData = async () => {
+    const fetchLinkedInData = async (force = false) => {
         try {
-            setLoading(true);
             setError(null);
+            const cached = !force ? readFirestoreCache("linkedin") : undefined;
 
-            const linkedInRef = collection(db, "linkedin");
-            const snapshot = await getDocs(linkedInRef);
-
-            if (!snapshot.empty) {
-                const data = snapshot.docs[0].data();
-                setLinkedInData(data);
+            if (cached !== undefined) {
+                setLinkedInData(Array.isArray(cached) && cached.length > 0 ? cached[0] : null);
+                setLoading(false);
+                return;
             }
+
+            setLoading(true);
+            const data = await fetchFirestoreEntry("linkedin", undefined, { force });
+            setLinkedInData(Array.isArray(data) && data.length > 0 ? data[0] : null);
         } catch (err) {
             console.error("Error fetching LinkedIn data:", err);
             setError(err.message);
@@ -83,5 +90,5 @@ export function useLinkedInData() {
         fetchLinkedInData();
     }, []);
 
-    return { linkedInData, loading, error, refetch: fetchLinkedInData };
+    return { linkedInData, loading, error, refetch: () => fetchLinkedInData(true) };
 }

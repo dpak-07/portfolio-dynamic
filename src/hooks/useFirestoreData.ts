@@ -1,98 +1,106 @@
-  import { useEffect, useState, useCallback, useRef } from "react";
-  import { db } from "@/firebase";
-  import { collection, getDoc, getDocs, doc } from "firebase/firestore";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { fetchFirestoreEntry, readFirestoreCache } from "@/utils/firestoreCache";
 
-  interface UseFirestoreDataOptions {
-    /** Optional polling interval in milliseconds */
-    refetchInterval?: number;
-  }
+interface UseFirestoreDataOptions {
+  refetchInterval?: number;
+}
 
-  interface UseFirestoreDataReturn<T = any> {
-    data: T | null;
-    loading: boolean;
-    error: string | null;
-    refetch: () => Promise<void>;
-  }
-  export function useFirestoreData<T = any>(
-    collectionName: string,
-    docId?: string,
-    options?: UseFirestoreDataOptions
-  ): UseFirestoreDataReturn<T> {
-    const [data, setData] = useState<T | null>(null);
-    const [loading, setLoading] = useState<boolean>(true);
-    const [error, setError] = useState<string | null>(null);
+interface UseFirestoreDataReturn<T = any> {
+  data: T | null;
+  loading: boolean;
+  error: string | null;
+  refetch: () => Promise<void>;
+}
 
-    const { refetchInterval } = options || {};
-    const mountedRef = useRef(true);
+export function useFirestoreData<T = any>(
+  collectionName: string | null,
+  docId?: string,
+  options?: UseFirestoreDataOptions
+): UseFirestoreDataReturn<T> {
+  const [data, setData] = useState<T | null>(() => {
+    if (!collectionName) return null;
+    return (readFirestoreCache(collectionName, docId) ?? null) as T | null;
+  });
+  const [loading, setLoading] = useState<boolean>(() => {
+    if (!collectionName) return false;
+    return readFirestoreCache(collectionName, docId) === undefined;
+  });
+  const [error, setError] = useState<string | null>(null);
 
-    const fetchData = useCallback(async () => {
+  const { refetchInterval } = options || {};
+  const mountedRef = useRef(true);
+
+  const fetchData = useCallback(
+    async (force = false) => {
       if (!collectionName) {
-        const msg = "Collection name is required";
-        if (import.meta.env.DEV) console.error("❌", msg);
-        setError(msg);
+        setError(null);
         setLoading(false);
         return;
       }
 
       try {
-        setLoading(true);
         setError(null);
 
-        if (docId) {
-          // Fetch single document
-          const docRef = doc(db, collectionName, docId);
-          const snap = await getDoc(docRef);
-
-          if (snap.exists()) {
-            const docData = { id: snap.id, ...snap.data() } as T;
-            if (mountedRef.current) setData(docData);
-            if (import.meta.env.DEV) console.log(`done`);
-          } else {
-            const msg = `Document not found: ${collectionName}/${docId}`;
-            if (import.meta.env.DEV) console.warn(`⚠️ ${msg}`);
-            if (mountedRef.current) {
-              setData(null);
-              setError(msg);
-            }
-          }
-        } else {
-          // Fetch entire collection
-          const colRef = collection(db, collectionName);
-          const snap = await getDocs(colRef);
-          const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() })) as T;
-
+        const cached = !force ? readFirestoreCache(collectionName, docId) : undefined;
+        if (cached !== undefined) {
           if (mountedRef.current) {
-            setData(docs);
-            if (import.meta.env.DEV)
-              console.log(`✅ Loaded collection: ${collectionName} (${snap.docs.length} docs)`);
+            setData(cached as T | null);
+            setLoading(false);
           }
+          return;
+        }
+
+        setLoading(true);
+        const result = await fetchFirestoreEntry(collectionName, docId, { force });
+
+        if (docId && !result) {
+          const message = `Document not found: ${collectionName}/${docId}`;
+          if (mountedRef.current) {
+            setData(null);
+            setError(message);
+          }
+          return;
+        }
+
+        if (mountedRef.current) {
+          setData((result ?? null) as T | null);
         }
       } catch (err: unknown) {
         const errorMessage =
           err instanceof Error ? err.message : String(err ?? "Unknown error");
-        const msg = `Failed to load ${collectionName}/${docId || "collection"}: ${errorMessage}`;
-        console.error("❌ Firestore Error:", msg);
-        if (mountedRef.current) setError(msg);
+        const message = `Failed to load ${collectionName}/${docId || "collection"}: ${errorMessage}`;
+        console.error("Firestore Error:", message);
+        if (mountedRef.current) setError(message);
       } finally {
         if (mountedRef.current) setLoading(false);
       }
-    }, [collectionName, docId]);
+    },
+    [collectionName, docId]
+  );
 
-    useEffect(() => {
-      mountedRef.current = true;
-      fetchData();
+  useEffect(() => {
+    mountedRef.current = true;
+    void fetchData();
 
-      // Optional polling
-      let interval: NodeJS.Timeout | null = null;
-      if (refetchInterval && refetchInterval > 0) {
-        interval = setInterval(fetchData, refetchInterval);
-      }
+    let interval: ReturnType<typeof setInterval> | null = null;
+    if (refetchInterval && refetchInterval > 0) {
+      interval = setInterval(() => {
+        void fetchData(true);
+      }, refetchInterval);
+    }
 
-      return () => {
-        mountedRef.current = false;
-        if (interval) clearInterval(interval);
-      };
-    }, [collectionName, docId, refetchInterval, fetchData]);
+    return () => {
+      mountedRef.current = false;
+      if (interval) clearInterval(interval);
+    };
+  }, [collectionName, docId, refetchInterval, fetchData]);
 
-    return { data, loading, error, refetch: fetchData };
-  }
+  return {
+    data,
+    loading,
+    error,
+    refetch: async () => {
+      await fetchData(true);
+    },
+  };
+}

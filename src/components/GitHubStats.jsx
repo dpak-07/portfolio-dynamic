@@ -85,15 +85,26 @@ export default function GitHubStats() {
     };
   }, [githubConfig]);
 
-  const [stats, setStats] = useState({
-    ...emptyStats,
-    totalCommits: "...",
-    currentStreak: "...",
-    longestStreak: "...",
-    totalRepos: "...",
-    totalStars: "...",
-    loading: true,
-    error: null,
+  const [stats, setStats] = useState(() => {
+    const cached = readCachedStats(DEFAULT_CONFIG.username);
+    if (cached) {
+      return {
+        ...cached,
+        loading: false,
+        error: null,
+      };
+    }
+
+    return {
+      ...emptyStats,
+      totalCommits: "...",
+      currentStreak: "...",
+      longestStreak: "...",
+      totalRepos: "...",
+      totalStars: "...",
+      loading: true,
+      error: null,
+    };
   });
 
   const [imageVisible, setImageVisible] = useState({
@@ -163,7 +174,15 @@ export default function GitHubStats() {
       }
 
       try {
-        setStats((prev) => ({ ...prev, loading: true, error: null }));
+        if (cachedStats) {
+          setStats({
+            ...cachedStats,
+            loading: true,
+            error: null,
+          });
+        } else {
+          setStats((prev) => ({ ...prev, loading: true, error: null }));
+        }
 
         const userResponse = await fetchJson(`https://api.github.com/users/${config.username}`);
         if (userResponse.status === 403) {

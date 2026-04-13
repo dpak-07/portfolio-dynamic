@@ -14,6 +14,7 @@ import {
   trackEvent,
 } from "./utils/analytics";
 import { isAdminAuthenticated, touchAdminSession } from "./utils/adminSession";
+import { preloadFirestoreEntries } from "./utils/firestoreCache";
 
 // Components
 import Navbar from "./components/Navbar";
@@ -70,6 +71,21 @@ const DEFAULT_SECTIONS_CONFIG = {
   contact: true,
   blog: true,
 };
+
+const INITIAL_FIRESTORE_ENTRIES = [
+  { collectionName: "sections", docId: "visibility" },
+  { collectionName: "portfolio", docId: "profile" },
+  { collectionName: "resume", docId: "data" },
+  { collectionName: "aboutpage", docId: "main" },
+  { collectionName: "techStack", docId: "categories" },
+  { collectionName: "portfolio", docId: "githubStats" },
+  { collectionName: "projects", docId: "data" },
+  { collectionName: "certifications", docId: "data" },
+  { collectionName: "timeline", docId: "data" },
+  { collectionName: "footer", docId: "details" },
+  { collectionName: "blog" },
+  { collectionName: "linkedin" },
+];
 
 /* ✅ Fetch Sections Configuration from Firestore */
 function SectionsConfigLoader({ children }) {
@@ -218,11 +234,30 @@ function App() {
   const [minTimePassed, setMinTimePassed] = useState(false);
   const [fadeOut, setFadeOut] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [bootstrapReady, setBootstrapReady] = useState(false);
 
   // ⏱ Force loader to stay for at least 500ms (optimized for instant loading)
   useEffect(() => {
     const timer = setTimeout(() => setMinTimePassed(true), 500);
     return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    preloadFirestoreEntries(INITIAL_FIRESTORE_ENTRIES)
+      .catch((error) => {
+        console.error("Initial Firestore preload failed:", error);
+      })
+      .finally(() => {
+        if (active) {
+          setBootstrapReady(true);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   // 🌐 Detect offline / online
@@ -356,7 +391,7 @@ function App() {
   return (
     <SectionsConfigLoader>
       {(sectionsConfig, sectionsLoading) => {
-        const stillLoading = !minTimePassed || sectionsLoading;
+        const stillLoading = !minTimePassed || sectionsLoading || !bootstrapReady;
 
         useEffect(() => {
           if (!stillLoading) {

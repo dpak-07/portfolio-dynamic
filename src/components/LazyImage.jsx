@@ -1,11 +1,11 @@
-import { useState, useEffect, useRef, memo } from 'react';
+import { useState, memo } from 'react';
 import { motion } from 'framer-motion';
 
 /**
- * LazyImage - Optimized image component with lazy loading and blur-up effect
+ * LazyImage - Optimized image component with eager loading and blur-up effect
  * 
  * Features:
- * - Intersection Observer for lazy loading
+ * - Immediate loading to avoid scroll-triggered pop-in
  * - Blur-up placeholder effect
  * - Automatic fade-in animation
  * - Error handling with fallback
@@ -18,37 +18,10 @@ const LazyImage = memo(({
     placeholderClassName = '',
     onLoad,
     onError,
-    threshold = 0.1,
-    rootMargin = '50px',
     ...props
 }) => {
     const [isLoaded, setIsLoaded] = useState(false);
-    const [isInView, setIsInView] = useState(false);
     const [hasError, setHasError] = useState(false);
-    const imgRef = useRef(null);
-
-    useEffect(() => {
-        if (!imgRef.current) return;
-
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                if (entry.isIntersecting) {
-                    setIsInView(true);
-                    observer.disconnect();
-                }
-            },
-            {
-                threshold,
-                rootMargin,
-            }
-        );
-
-        observer.observe(imgRef.current);
-
-        return () => {
-            observer.disconnect();
-        };
-    }, [threshold, rootMargin]);
 
     const handleLoad = (e) => {
         setIsLoaded(true);
@@ -61,7 +34,7 @@ const LazyImage = memo(({
     };
 
     return (
-        <div ref={imgRef} className={`relative overflow-hidden ${className}`}>
+        <div className={`relative overflow-hidden ${className}`}>
             {/* Placeholder */}
             {!isLoaded && !hasError && (
                 <div
@@ -70,7 +43,7 @@ const LazyImage = memo(({
             )}
 
             {/* Actual Image */}
-            {isInView && !hasError && (
+            {!hasError && (
                 <motion.img
                     src={src}
                     alt={alt}
@@ -80,7 +53,7 @@ const LazyImage = memo(({
                     animate={{ opacity: isLoaded ? 1 : 0 }}
                     transition={{ duration: 0.3 }}
                     className={className}
-                    loading="lazy"
+                    loading="eager"
                     {...props}
                 />
             )}
