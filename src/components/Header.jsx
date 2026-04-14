@@ -16,7 +16,6 @@ import {
 } from "react-icons/fa";
 import { useRef, useState, useEffect, useMemo } from "react";
 import { useFirestoreData } from "@/hooks/useFirestoreData";
-import { useInView } from "framer-motion";
 import { logSectionView, logLinkClick, logDownload } from "../utils/analytics";
 import { getResumeLinks } from "@/utils/urlHelpers";
 
@@ -29,11 +28,9 @@ export default function Header() {
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [visible, setVisible] = useState(true);
   const [showResume, setShowResume] = useState(false);
   const [showAllRoles, setShowAllRoles] = useState(false);
   const sectionRef = useRef(null);
-  const sectionInView = useInView(sectionRef, { once: true, amount: 0.3 });
   const loggedOnce = useRef(false);
 
   useEffect(() => {
@@ -65,15 +62,6 @@ export default function Header() {
   }, [resumeDocData?.resumeDriveLink, profileData?.resumeDriveLink]);
 
   // ✅ Fade-in trigger
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => setVisible(entry.isIntersecting),
-      { threshold: 0.1 }
-    );
-    if (sectionRef.current) observer.observe(sectionRef.current);
-    return () => observer.disconnect();
-  }, []);
-
   // ✅ Process roles for mobile display
   const processedRoles = useMemo(() => {
     if (!profileData?.roles) return { first2: "", remaining: "", hasMore: false };
@@ -150,8 +138,7 @@ export default function Header() {
     <header
       id="home"
       ref={sectionRef}
-      className={`relative w-full min-h-screen flex flex-col items-center justify-center text-white overflow-hidden transition-opacity duration-700 ${visible ? "opacity-100" : "opacity-0"
-        }`}
+      className="relative w-full min-h-screen flex flex-col items-center justify-center text-white overflow-hidden"
     >
       {/* 🌈 Animated Gradient Background */}
       <div className="absolute inset-0 -z-10 overflow-hidden">
@@ -232,8 +219,6 @@ export default function Header() {
         <motion.h1
           className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-cyansoft drop-shadow-lg leading-tight mb-4 sm:mb-6"
           variants={itemVariants}
-          animate={{ y: [0, -10, 0] }}
-          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
         >
           Hi, I'm {profileData.name}
         </motion.h1>
@@ -378,8 +363,6 @@ export default function Header() {
         <motion.div
           className="mt-12 sm:mt-16 w-full flex justify-center"
           variants={itemVariants}
-          animate={{ y: [0, 10, 0] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
         >
           <button
             onClick={(e) => {
