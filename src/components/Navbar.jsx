@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useFirestoreData } from "@/hooks/useFirestoreData";
-import { Home, User, Code, Briefcase, Award, Clock, FileText, Mail, BookOpen, Menu, X, BarChart3, MoreVertical } from "lucide-react";
+import { Home, User, Code, Briefcase, Award, Clock, FileText, Mail, BookOpen, Menu, X, BarChart3 } from "lucide-react";
 import { logLinkClick } from "../utils/analytics";
 
 export default function Navbar() {
@@ -47,50 +47,6 @@ export default function Navbar() {
 
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState("home");
-  const [isVisible, setIsVisible] = useState(true);
-  const [lastScroll, setLastScroll] = useState(0);
-  const [scrollProgress, setScrollProgress] = useState(0);
-
-  // Scroll progress and navbar visibility - optimized
-  useEffect(() => {
-    let ticking = false;
-    let hideTimer = null;
-
-    const handleScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          const scrolled = window.scrollY;
-          const height = document.body.scrollHeight - window.innerHeight;
-          setScrollProgress((scrolled / height) * 100);
-
-          // Hide navbar on scroll down, show on scroll up
-          if (scrolled > lastScroll && scrolled > 100) {
-            setIsVisible(false);
-          } else {
-            setIsVisible(true);
-          }
-          setLastScroll(scrolled);
-
-          // Clear previous timer
-          if (hideTimer) clearTimeout(hideTimer);
-
-          // Show navbar after 2 seconds of no scrolling
-          hideTimer = setTimeout(() => {
-            setIsVisible(true);
-          }, 2000);
-
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      if (hideTimer) clearTimeout(hideTimer);
-    };
-  }, [lastScroll]);
 
   // Active section observer - optimized for instant detection
   useEffect(() => {
@@ -138,21 +94,11 @@ export default function Navbar() {
 
   return (
     <>
-      {/* Scroll Progress Bar */}
-      <motion.div
-        className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 origin-left z-[1000]"
-        style={{ scaleX: scrollProgress / 100 }}
-        initial={{ scaleX: 0 }}
-      />
-
       {/* Desktop Navbar */}
       <motion.header
         initial={{ y: -100, opacity: 0 }}
-        animate={{
-          y: isVisible ? 0 : -100,
-          opacity: isVisible ? 1 : 0
-        }}
-        transition={{ duration: 0.15, ease: "easeOut" }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.25, ease: "easeOut" }}
         className="fixed top-0 left-0 right-0 z-[999] pt-1 hidden lg:block"
       >
         <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -213,7 +159,7 @@ export default function Navbar() {
         </nav>
       </motion.header>
 
-      {/* Mobile Floating Bottom Navigation */}
+      {/* Mobile Navigation */}
       <div className="lg:hidden">
         {/* Floating Menu Button */}
         <motion.button
@@ -240,7 +186,7 @@ export default function Navbar() {
                 exit={{ rotate: 90, opacity: 0 }}
                 transition={{ duration: 0.2 }}
               >
-                <MoreVertical size={24} />
+                <Menu size={24} />
               </motion.div>
             )}
           </AnimatePresence>

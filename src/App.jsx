@@ -18,7 +18,6 @@ import { preloadFirestoreEntries } from "./utils/firestoreCache";
 
 // Components
 import Navbar from "./components/Navbar";
-import FloatingFAB from "./components/FloatingFAB";
 import GlobalBackgroundEffects from "./components/GlobalBackgroundEffects";
 import Header from "./components/Header";
 import About from "./components/About";
@@ -208,9 +207,6 @@ function HomeShell({ sectionsConfig }) {
       {/* Desktop Navbar */}
       <Navbar />
 
-      {/* Mobile FAB Menu */}
-      <FloatingFAB />
-
       {sectionsConfig.home && <Header />}
 
       <main className="relative z-10">
@@ -232,7 +228,6 @@ function HomeShell({ sectionsConfig }) {
 /* ✅ Main App */
 function App() {
   const [minTimePassed, setMinTimePassed] = useState(false);
-  const [fadeOut, setFadeOut] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [bootstrapReady, setBootstrapReady] = useState(false);
 
@@ -278,7 +273,7 @@ function App() {
       document.body.style.setProperty("--mouse-x", `${e.clientX}px`);
       document.body.style.setProperty("--mouse-y", `${e.clientY}px`);
     };
-    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mousemove", handleMouseMove, { passive: true });
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
 
@@ -332,15 +327,22 @@ function App() {
         document.addEventListener("visibilitychange", handleVisibilityChange);
 
         // ✅ Track user interactions
+        let lastInteractionAt = 0;
         const handleInteraction = () => {
+          const now = Date.now();
+          if (now - lastInteractionAt < 15000) {
+            return;
+          }
+
+          lastInteractionAt = now;
           trackEvent("user_interaction", {
             event_category: "engagement",
             event_label: "user_active",
-            timestamp: new Date().toISOString(),
+            timestamp: new Date(now).toISOString(),
           });
         };
-        window.addEventListener("click", handleInteraction);
-        window.addEventListener("scroll", handleInteraction);
+        window.addEventListener("pointerdown", handleInteraction, { passive: true });
+        window.addEventListener("keydown", handleInteraction);
 
         // ✅ Global error tracking
         const handleError = (event) => {
@@ -370,8 +372,8 @@ function App() {
 
         cleanup = () => {
           document.removeEventListener("visibilitychange", handleVisibilityChange);
-          window.removeEventListener("click", handleInteraction);
-          window.removeEventListener("scroll", handleInteraction);
+          window.removeEventListener("pointerdown", handleInteraction);
+          window.removeEventListener("keydown", handleInteraction);
           window.removeEventListener("error", handleError);
           window.removeEventListener("unhandledrejection", handleUnhandledRejection);
         };
@@ -392,14 +394,6 @@ function App() {
     <SectionsConfigLoader>
       {(sectionsConfig, sectionsLoading) => {
         const stillLoading = !minTimePassed || sectionsLoading || !bootstrapReady;
-
-        useEffect(() => {
-          if (!stillLoading) {
-            setFadeOut(true);
-            const t = setTimeout(() => setFadeOut(false), 800);
-            return () => clearTimeout(t);
-          }
-        }, [stillLoading]);
 
         return (
           <>

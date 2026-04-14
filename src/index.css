@@ -62,7 +62,6 @@ body::before {
   background-size: 400% 400%, 600px 200px, 500px 180px;
   background-position: 0% 50%, 10% 10%, 90% 90%;
   background-repeat: no-repeat;
-  backdrop-filter: blur(6px);
   animation:
     gradientShift 18s ease-in-out infinite,
     radialPulse 8s ease-in-out infinite;
