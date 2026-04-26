@@ -15,9 +15,12 @@ export default function SEO({
     description = "Full Stack Developer specializing in React, Node.js, and modern web technologies. Explore my projects, skills, and experience.",
     keywords = "full stack developer, react developer, web developer, portfolio, javascript, typescript, node.js",
     image = "/og-image.jpg",
-    url = window.location.href,
+    url,
     type = "website",
 }) {
+    const resolvedUrl =
+        url || (typeof window !== "undefined" ? window.location.href : "https://deepakportfolio-0607.web.app/");
+
     useEffect(() => {
         // Update document title
         document.title = title;
@@ -43,7 +46,7 @@ export default function SEO({
         updateMetaTag('meta[property="og:title"]', title);
         updateMetaTag('meta[property="og:description"]', description);
         updateMetaTag('meta[property="og:image"]', image);
-        updateMetaTag('meta[property="og:url"]', url);
+        updateMetaTag('meta[property="og:url"]', resolvedUrl);
         updateMetaTag('meta[property="og:type"]', type);
 
         // Twitter Card tags
@@ -59,8 +62,8 @@ export default function SEO({
             canonical.setAttribute("rel", "canonical");
             document.head.appendChild(canonical);
         }
-        canonical.setAttribute("href", url);
-    }, [title, description, keywords, image, url, type]);
+        canonical.setAttribute("href", resolvedUrl);
+    }, [title, description, keywords, image, resolvedUrl, type]);
 
     return null;
 }

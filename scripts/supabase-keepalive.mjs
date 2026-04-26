@@ -13,19 +13,19 @@ function resolveEnv(primaryKey, fallbackKey) {
 const {
   value: supabaseUrl,
   source: supabaseUrlSource,
-} = resolveEnv("SUPABASE_URL", "VITE_SUPABASE_URL");
+} = resolveEnv("VITE_SUPABASE_URL", "SUPABASE_URL");
 const {
   value: supabaseAnonKey,
   source: supabaseAnonKeySource,
-} = resolveEnv("SUPABASE_ANON_KEY", "VITE_SUPABASE_ANON_KEY");
+} = resolveEnv("VITE_SUPABASE_ANON_KEY", "SUPABASE_ANON_KEY");
 
 if (!supabaseUrl) {
-  console.error("Missing Supabase URL. Set SUPABASE_URL or VITE_SUPABASE_URL.");
+  console.error("Missing Supabase URL. Set VITE_SUPABASE_URL or SUPABASE_URL.");
   process.exit(1);
 }
 
 if (!supabaseAnonKey) {
-  console.error("Missing Supabase anon key. Set SUPABASE_ANON_KEY or VITE_SUPABASE_ANON_KEY.");
+  console.error("Missing Supabase anon key. Set VITE_SUPABASE_ANON_KEY or SUPABASE_ANON_KEY.");
   process.exit(1);
 }
 

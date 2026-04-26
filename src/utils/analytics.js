@@ -22,7 +22,11 @@ let uniqueUserPromise = null;
 
 export const initializeGA = () => {
   try {
-    const gaId = import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || import.meta.env.VITE_GA_ID;
+    const gaId =
+      process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID ||
+      process.env.VITE_FIREBASE_MEASUREMENT_ID ||
+      process.env.NEXT_PUBLIC_GA_ID ||
+      process.env.VITE_GA_ID;
     if (!gaId) {
       console.warn("GA_ID not configured");
       return;
@@ -52,7 +56,7 @@ export const initializeGA = () => {
 
 export const initializeGTM = () => {
   try {
-    const gtmId = import.meta.env.VITE_GTM_ID;
+    const gtmId = process.env.NEXT_PUBLIC_GTM_ID || process.env.VITE_GTM_ID;
     if (!gtmId) {
       console.warn("GTM_ID not configured");
       return;

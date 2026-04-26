@@ -4,7 +4,7 @@ const LEGACY_SUPABASE_HOSTS = [
 
 function getCurrentSupabaseHost() {
   try {
-    const envUrl = import.meta?.env?.VITE_SUPABASE_URL;
+    const envUrl = process.env.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
     if (!envUrl) return null;
     return new URL(envUrl).host;
   } catch {

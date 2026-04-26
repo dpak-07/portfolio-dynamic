@@ -1,7 +1,10 @@
 import ReactGA from 'react-ga4';
 
-const GA_MEASUREMENT_ID = import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || '';
-const GTM_ID = import.meta.env.VITE_GTM_ID || '';
+const GA_MEASUREMENT_ID =
+    process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID ||
+    process.env.VITE_FIREBASE_MEASUREMENT_ID ||
+    '';
+const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID || process.env.VITE_GTM_ID || '';
 
 /**
  * ✅ Initialize Google Analytics 4

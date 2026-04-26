@@ -7,13 +7,16 @@
 
 export const GA_CONFIG = {
   // Google Analytics 4 Measurement ID (from Firebase)
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || 'G-XXXXXXXXXX',
+  measurementId:
+    process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID ||
+    process.env.VITE_FIREBASE_MEASUREMENT_ID ||
+    'G-XXXXXXXXXX',
   
   // Google Tag Manager ID
-  gtmId: import.meta.env.VITE_GTM_ID || 'GTM-XXXXXXXX',
+  gtmId: process.env.NEXT_PUBLIC_GTM_ID || process.env.VITE_GTM_ID || 'GTM-XXXXXXXX',
   
   // Enable debug mode (set to true to see analytics in console)
-  debugMode: import.meta.env.MODE === 'development',
+  debugMode: process.env.NODE_ENV === 'development',
   
   // Anonymous user tracking
   anonymousUserTracking: true,
