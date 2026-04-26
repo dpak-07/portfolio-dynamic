@@ -11,9 +11,8 @@ import {
   Code,
   Star,
 } from "lucide-react";
-import { useFirestoreData } from "@/hooks/useFirestoreData";
 import { logSectionView, logLinkClick, logDownload, logResumeOpen } from "../utils/analytics";
-import { getResumeLinks } from "@/utils/urlHelpers";
+import { useResumeResource } from "@/hooks/useResumeResource";
 
 export default function Resume() {
   const [isOpen, setIsOpen] = useState(false);
@@ -26,7 +25,8 @@ export default function Resume() {
     }
   }, [sectionInView]);
 
-  const { data: resumeData, loading, error } = useFirestoreData("resume", "data");
+  const { resumeData, loading, error, preview: embedLink, download: downloadLink } =
+    useResumeResource();
 
   const formatDate = (dateString) => {
     if (!dateString) return "Unknown";
@@ -42,11 +42,8 @@ export default function Resume() {
     }
   };
 
-  const { preview: embedLink, download: downloadLink } = getResumeLinks(
-    resumeData?.resumeDriveLink
-  );
-
   const handleViewResume = () => {
+    if (!embedLink) return;
     setIsOpen(true);
     logResumeOpen();
     logLinkClick("view_resume");
@@ -196,15 +193,22 @@ export default function Resume() {
         >
           <motion.button
             onClick={handleViewResume}
+            disabled={!embedLink}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="group relative w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold text-base sm:text-lg rounded-xl overflow-hidden shadow-lg shadow-cyan-500/50"
+            className={`group relative w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 text-white font-bold text-base sm:text-lg rounded-xl overflow-hidden shadow-lg ${
+              embedLink
+                ? "bg-gradient-to-r from-cyan-500 to-blue-600 shadow-cyan-500/50"
+                : "bg-slate-700/80 shadow-slate-900/30 cursor-not-allowed"
+            }`}
           >
-            <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-              animate={{ x: ["-100%", "200%"] }}
-              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            />
+            {embedLink && (
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                animate={{ x: ["-100%", "200%"] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+              />
+            )}
             <span className="relative flex items-center justify-center gap-2 sm:gap-3">
               <Eye className="w-5 h-5 sm:w-6 sm:h-6" />
               View Resume

@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
-// Analytics
 import {
   initializeGA,
   initializeGTM,
@@ -15,7 +14,6 @@ import {
 import { isAdminAuthenticated, touchAdminSession } from "./utils/adminSession";
 import { preloadFirestoreEntries } from "./utils/firestoreCache";
 
-// Components
 import Navbar from "./components/Navbar";
 import GlobalBackgroundEffects from "./components/GlobalBackgroundEffects";
 import Header from "./components/Header";
@@ -29,9 +27,8 @@ import Certifications from "./components/certifications";
 import TimelineSection from "./components/timeline";
 import Footer from "./components/Footer";
 import Loader from "./components/LoadingScreen";
-import OfflinePage from "./components/offiline"; // ✅ NEW
+import OfflinePage from "./components/offiline";
 
-// Admin pages
 import AdminLogin from "./components/admin/adminlogin";
 import AdminDashboard from "./components/admin/admindashboard";
 import HeaderEditor from "./components/admin/headeradmin";
@@ -44,19 +41,15 @@ import TimelineEditor from "./components/admin/timelineadmin";
 import GitHubStatsEditor from "./components/admin/githubstatsadmin";
 import AnalysisDashboard from "./components/admin/AnalysisDashboard";
 
-// Blog page
 import MassiveAnimatedBlogPage from "./components/blogpage";
 import BlogEditor from "./components/admin/BlogEditor";
 import LinkedInEditor from "./components/admin/LinkedInEditor";
+import AdminResponsiveStyles from "./components/admin/AdminResponsiveStyles";
 
-// Firestore hook
 import { useFirestoreData } from "./hooks/useFirestoreData";
 
-/* ✅ FIREBASE TOGGLE CONFIGURATION - Set to true to fetch from Firebase, false to use defaults */
-/* ⚡ Set to false for faster development - no Firebase calls */
 const SHOULD_FETCH_FROM_FIREBASE = false;
 
-/* ✅ Default sections configuration (used when Firebase fetching is disabled) */
 const DEFAULT_SECTIONS_CONFIG = {
   home: true,
   about: true,
@@ -85,25 +78,21 @@ const INITIAL_FIRESTORE_ENTRIES = [
   { collectionName: "linkedin" },
 ];
 
-/* ✅ Fetch Sections Configuration from Firestore */
 function SectionsConfigLoader({ children }) {
   const { data: sectionsData, loading: sectionsLoading } = useFirestoreData(
     SHOULD_FETCH_FROM_FIREBASE ? "sections" : null,
     SHOULD_FETCH_FROM_FIREBASE ? "visibility" : null
   );
 
-  /* ✅ Use Firebase data if fetching is enabled, otherwise use default config */
   const sectionsConfig = SHOULD_FETCH_FROM_FIREBASE
     ? sectionsData || DEFAULT_SECTIONS_CONFIG
     : DEFAULT_SECTIONS_CONFIG;
 
-  /* ✅ If Firebase is disabled, sections are loaded instantly */
   const actualLoading = SHOULD_FETCH_FROM_FIREBASE ? sectionsLoading : false;
 
   return children(sectionsConfig, actualLoading);
 }
 
-/* ✅ AdminRoute — Protect admin pages */
 function AdminRoute({ children }) {
   const location = useLocation();
   const [isAuthorized, setIsAuthorized] = useState(() => isAdminAuthenticated());
@@ -147,13 +136,16 @@ function AdminRoute({ children }) {
     };
   }, [location.pathname]);
 
-  if (!isAuthorized) return <Navigate to="/admin/login" replace state={{ from: location.pathname }} />;
+  if (!isAuthorized) {
+    return <Navigate to="/admin/login" replace state={{ from: location.pathname }} />;
+  }
+
   return children;
 }
 
-/* ✅ Shared Admin Navbar */
 function AdminNavbar() {
   const location = useLocation();
+  const [mobileOpen, setMobileOpen] = useState(false);
   const links = [
     { name: "Dashboard", path: "/admindsh" },
     { name: "Header", path: "/admin/header" },
@@ -164,47 +156,86 @@ function AdminNavbar() {
     { name: "Resume", path: "/admin/resume" },
     { name: "Certifications", path: "/admin/certifications" },
     { name: "Timeline", path: "/admin/timeline" },
+    { name: "Blog", path: "/admin/blog" },
+    { name: "LinkedIn", path: "/admin/linkedin" },
     { name: "Analysis", path: "/admin/analysis" },
   ];
+  const currentLink = links.find((link) => link.path === location.pathname);
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
 
   return (
-    <div className="p-4 border-b border-white/10 bg-[#0a0a0a] sticky top-0 z-50">
-      <div className="max-w-6xl mx-auto flex items-center justify-between">
-        <div className="text-white/80 font-semibold">Admin Panel</div>
-        <div className="flex gap-3 flex-wrap">
-          {links.map((link) => (
-            <a
-              key={link.path}
-              href={link.path}
-              className={`text-sm px-3 py-1 rounded transition-all ${location.pathname === link.path
-                ? "bg-white/20 text-white"
-                : "bg-white/5 text-white/70 hover:bg-white/10"
+    <div className="sticky top-0 z-50 border-b border-white/10 bg-[#0a0a0a] p-4">
+      <div className="mx-auto max-w-6xl">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="font-semibold text-white/80">Admin Panel</div>
+            <div className="text-xs text-white/45 md:hidden">
+              {currentLink?.name || "Editor"}
+            </div>
+          </div>
+
+          <div className="hidden flex-wrap gap-3 md:flex">
+            {links.map((link) => (
+              <Link
+                key={link.path}
+                to={link.path}
+                className={`rounded px-3 py-1 text-sm transition-all ${
+                  location.pathname === link.path
+                    ? "bg-white/20 text-white"
+                    : "bg-white/5 text-white/70 hover:bg-white/10"
                 }`}
+              >
+                {link.name}
+              </Link>
+            ))}
+            <Link to="/" className="rounded bg-white/5 px-3 py-1 text-sm text-white/70 hover:bg-white/10">
+              Back to site
+            </Link>
+          </div>
+
+          <div className="flex items-center gap-2 md:hidden">
+            <button
+              onClick={() => setMobileOpen((open) => !open)}
+              className="rounded bg-white/10 px-3 py-2 text-sm text-white/80 transition-colors hover:bg-white/15"
             >
-              {link.name}
-            </a>
-          ))}
-          <a
-            href="/"
-            className="text-sm px-3 py-1 rounded bg-white/5 hover:bg-white/10 text-white/70"
-          >
-            Back to site
-          </a>
+              {mobileOpen ? "Close" : "Modules"}
+            </button>
+            <Link to="/" className="rounded bg-white/5 px-3 py-2 text-sm text-white/70 hover:bg-white/10">
+              Site
+            </Link>
+          </div>
         </div>
+
+        {mobileOpen && (
+          <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 md:hidden">
+            {links.map((link) => (
+              <Link
+                key={link.path}
+                to={link.path}
+                className={`rounded px-3 py-2 text-sm transition-all ${
+                  location.pathname === link.path
+                    ? "bg-white/20 text-white"
+                    : "bg-white/5 text-white/70 hover:bg-white/10"
+                }`}
+              >
+                {link.name}
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-/* ✅ Public Home Page Shell */
 function HomeShell({ sectionsConfig }) {
   return (
     <div className="relative overflow-x-hidden text-white">
-      {/* Global Background Effects */}
       <GlobalBackgroundEffects />
-
-      {/* Desktop Navbar */}
-      <Navbar />
+      <Navbar sectionsConfig={sectionsConfig} />
 
       {sectionsConfig.home && <Header />}
 
@@ -224,13 +255,129 @@ function HomeShell({ sectionsConfig }) {
   );
 }
 
-/* ✅ Main App */
-function App() {
-  const [minTimePassed, setMinTimePassed] = useState(false);
-  const [isOffline, setIsOffline] = useState(!navigator.onLine);
-  const [bootstrapReady, setBootstrapReady] = useState(false);
+function AppRoutes({ sectionsConfig }) {
+  return (
+    <Routes>
+      <Route path="/" element={<HomeShell sectionsConfig={sectionsConfig} />} />
+      <Route
+        path="/blog"
+        element={
+          sectionsConfig.blog ? <MassiveAnimatedBlogPage /> : <Navigate to="/" replace />
+        }
+      />
 
-  // ⏱ Force loader to stay for at least 500ms (optimized for instant loading)
+      <Route
+        path="/admin/login"
+        element={
+          <div className="admin-mobile-shell relative min-h-screen">
+            <GlobalBackgroundEffects />
+            <div className="relative z-10">
+              <AdminLogin />
+            </div>
+          </div>
+        }
+      />
+
+      <Route
+        path="/admindsh"
+        element={
+          <AdminRoute>
+            <div className="admin-mobile-shell relative min-h-screen">
+              <GlobalBackgroundEffects />
+              <div className="relative z-10">
+                <AdminDashboard />
+              </div>
+            </div>
+          </AdminRoute>
+        }
+      />
+
+      {[
+        ["header", HeaderEditor],
+        ["about", AboutEditor],
+        ["techadmin", TechStackEditor],
+        ["projects", ProjectsEditor],
+        ["githubstats", GitHubStatsEditor],
+        ["resume", ResumeEditor],
+        ["certifications", CertificationsEditor],
+        ["timeline", TimelineEditor],
+        ["blog", BlogEditor],
+        ["linkedin", LinkedInEditor],
+        ["analysis", AnalysisDashboard],
+      ].map(([path, Component]) => (
+        <Route
+          key={path}
+          path={`/admin/${path}`}
+          element={
+            <AdminRoute>
+              <div className="admin-mobile-shell relative min-h-screen bg-[#000] text-white">
+                <GlobalBackgroundEffects />
+                <AdminNavbar />
+                <div className="relative z-10">
+                  <Component />
+                </div>
+              </div>
+            </AdminRoute>
+          }
+        />
+      ))}
+
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
+function AppContent({ sectionsConfig, sectionsLoading, bootstrapReady, minTimePassed, ssrRendered }) {
+  const appReady = minTimePassed && !sectionsLoading && bootstrapReady;
+  const [showLoader, setShowLoader] = useState(() => !ssrRendered);
+
+  useEffect(() => {
+    if (!appReady) {
+      setShowLoader(true);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setShowLoader(false);
+    }, 550);
+
+    return () => clearTimeout(timer);
+  }, [appReady]);
+
+  return (
+    <>
+      <AnimatePresence>
+        {showLoader && (
+          <motion.div
+            key="loader"
+            initial={{ opacity: 1 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.7, ease: "easeInOut" }}
+            className="fixed inset-0 z-[9999]"
+          >
+            <Loader ready={appReady} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {appReady && !showLoader && (
+        <motion.div key="main" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.9 }}>
+          <AdminResponsiveStyles />
+          <AppRoutes sectionsConfig={sectionsConfig} />
+        </motion.div>
+      )}
+    </>
+  );
+}
+
+function App({ ssrRendered = false }) {
+  const [minTimePassed, setMinTimePassed] = useState(() => ssrRendered);
+  const [isOffline, setIsOffline] = useState(() =>
+    typeof navigator === "undefined" ? false : !navigator.onLine
+  );
+  const [bootstrapReady, setBootstrapReady] = useState(() => ssrRendered);
+
   useEffect(() => {
     const timer = setTimeout(() => setMinTimePassed(true), 500);
     return () => clearTimeout(timer);
@@ -254,119 +401,97 @@ function App() {
     };
   }, []);
 
-  // 🌐 Detect offline / online
   useEffect(() => {
     const handleOnline = () => setIsOffline(false);
     const handleOffline = () => setIsOffline(true);
+
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
+
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
   }, []);
 
-  // ✨ Mouse glow UI
   useEffect(() => {
-    const handleMouseMove = (e) => {
-      document.body.style.setProperty("--mouse-x", `${e.clientX}px`);
-      document.body.style.setProperty("--mouse-y", `${e.clientY}px`);
+    const handleMouseMove = (event) => {
+      document.body.style.setProperty("--mouse-x", `${event.clientX}px`);
+      document.body.style.setProperty("--mouse-y", `${event.clientY}px`);
     };
+
     window.addEventListener("mousemove", handleMouseMove, { passive: true });
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
 
-  // 📊 Analytics tracking & Google Analytics initialization
   useEffect(() => {
-    // ✅ Initialize Google Analytics 4 and Google Tag Manager
     initializeGA();
     initializeGTM();
 
     let cleanup = null;
 
-    // Import analytics functions dynamically
     Promise.resolve({ logDeviceInfo, logTrafficSource, logError, trackEvent, logPageView })
       .then((mod) => {
-        const logDeviceInfo = mod.logDeviceInfo || (() => { });
-        const logTrafficSource = mod.logTrafficSource || (() => { });
-        const logError = mod.logError || (() => { });
-        const trackEvent = mod.trackEvent || mod.sendGAEvent || (() => { });
-        const logPageView =
+        const safeLogDeviceInfo = mod.logDeviceInfo || (() => {});
+        const safeLogTrafficSource = mod.logTrafficSource || (() => {});
+        const safeLogError = mod.logError || (() => {});
+        const safeTrackEvent = mod.trackEvent || mod.sendGAEvent || (() => {});
+        const safeLogPageView =
           mod.logPageView ||
           ((path, title) =>
-            trackEvent("page_view", {
+            safeTrackEvent("page_view", {
               page_path: path,
               page_title: title,
               page_location: window.location.href,
             }));
 
-        // Log device and traffic info on mount
-        logDeviceInfo();
-        logTrafficSource();
+        safeLogDeviceInfo();
+        safeLogTrafficSource();
+        safeLogPageView(window.location.pathname, "Portfolio Homepage");
 
-        // ✅ Track initial page view
-        logPageView(window.location.pathname, "Portfolio Homepage");
-
-        // ✅ Track page visibility changes
         const handleVisibilityChange = () => {
-          if (document.hidden) {
-            trackEvent("user_engagement", {
-              event_category: "engagement",
-              event_label: "page_hidden",
-              value: new Date().getTime(),
-            });
-          } else {
-            trackEvent("user_engagement", {
-              event_category: "engagement",
-              event_label: "page_visible",
-              value: new Date().getTime(),
-            });
-          }
+          safeTrackEvent("user_engagement", {
+            event_category: "engagement",
+            event_label: document.hidden ? "page_hidden" : "page_visible",
+            value: Date.now(),
+          });
         };
-        document.addEventListener("visibilitychange", handleVisibilityChange);
 
-        // ✅ Track user interactions
         let lastInteractionAt = 0;
         const handleInteraction = () => {
           const now = Date.now();
-          if (now - lastInteractionAt < 15000) {
-            return;
-          }
+          if (now - lastInteractionAt < 15000) return;
 
           lastInteractionAt = now;
-          trackEvent("user_interaction", {
+          safeTrackEvent("user_interaction", {
             event_category: "engagement",
             event_label: "user_active",
             timestamp: new Date(now).toISOString(),
           });
         };
-        window.addEventListener("pointerdown", handleInteraction, { passive: true });
-        window.addEventListener("keydown", handleInteraction);
 
-        // ✅ Global error tracking
         const handleError = (event) => {
-          logError(event.message, event.error?.stack, "Global");
-          trackEvent("error_occurred", {
+          safeLogError(event.message, event.error?.stack, "Global");
+          safeTrackEvent("error_occurred", {
             event_category: "error",
             event_label: event.message,
             error_stack: event.error?.stack,
           });
         };
-        window.addEventListener("error", handleError);
 
-        // ✅ Unhandled promise rejection tracking
         const handleUnhandledRejection = (event) => {
-          logError(
-            "Unhandled Promise Rejection",
-            event.reason?.toString(),
-            "UnhandledPromise"
-          );
-          trackEvent("error_unhandled_promise", {
+          safeLogError("Unhandled Promise Rejection", event.reason?.toString(), "UnhandledPromise");
+          safeTrackEvent("error_unhandled_promise", {
             event_category: "error",
             event_label: "unhandled_promise",
             reason: event.reason?.toString(),
           });
         };
+
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+        window.addEventListener("pointerdown", handleInteraction, { passive: true });
+        window.addEventListener("keydown", handleInteraction);
+        window.addEventListener("error", handleError);
         window.addEventListener("unhandledrejection", handleUnhandledRejection);
 
         cleanup = () => {
@@ -386,118 +511,21 @@ function App() {
     };
   }, []);
 
-  // 🚨 If offline, show offline page
-  if (isOffline) return <OfflinePage />;
+  if (isOffline) {
+    return <OfflinePage />;
+  }
 
   return (
     <SectionsConfigLoader>
-      {(sectionsConfig, sectionsLoading) => {
-        const stillLoading = !minTimePassed || sectionsLoading || !bootstrapReady;
-
-        return (
-          <>
-            <AnimatePresence>
-              {stillLoading && (
-                <motion.div
-                  key="loader"
-                  initial={{ opacity: 1 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.8, ease: "easeInOut" }}
-                  className="fixed inset-0 z-[9999]"
-                >
-                  <Loader onFinish={() => setMinTimePassed(true)} />
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {!stillLoading && (
-              <motion.div
-                key="main"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 1 }}
-              >
-                <BrowserRouter>
-                  <Routes>
-                    {/* 🌍 Public Routes */}
-                    <Route path="/" element={<HomeShell sectionsConfig={sectionsConfig} />} />
-
-                    {/* 📰 Blog Page */}
-                    <Route
-                      path="/blog"
-                      element={
-                        sectionsConfig.blog ? (
-                          <MassiveAnimatedBlogPage />
-                        ) : (
-                          <Navigate to="/" replace />
-                        )
-                      }
-                    />
-
-                    {/* 🔐 Admin Routes */}
-                    <Route path="/admin/login" element={
-                      <div className="relative min-h-screen">
-                        <GlobalBackgroundEffects />
-                        <div className="relative z-10">
-                          <AdminLogin />
-                        </div>
-                      </div>
-                    } />
-                    <Route
-                      path="/admindsh"
-                      element={
-                        <AdminRoute>
-                          <div className="relative min-h-screen">
-                            <GlobalBackgroundEffects />
-                            <div className="relative z-10">
-                              <AdminDashboard />
-                            </div>
-                          </div>
-                        </AdminRoute>
-                      }
-                    />
-
-                    {/* 🧭 Admin Editor Routes */}
-                    {[
-                      ["header", HeaderEditor],
-                      ["about", AboutEditor],
-                      ["techadmin", TechStackEditor],
-                      ["projects", ProjectsEditor],
-                      ["githubstats", GitHubStatsEditor],
-                      ["resume", ResumeEditor],
-                      ["certifications", CertificationsEditor],
-                      ["timeline", TimelineEditor],
-                      ["blog", BlogEditor],
-                      ["linkedin", LinkedInEditor],
-                      ["analysis", AnalysisDashboard],
-                    ].map(([path, Component]) => (
-                      <Route
-                        key={path}
-                        path={`/admin/${path}`}
-                        element={
-                          <AdminRoute>
-                            <div className="min-h-screen bg-[#000] text-white relative">
-                              <GlobalBackgroundEffects />
-                              <AdminNavbar />
-                              <div className="relative z-10">
-                                <Component />
-                              </div>
-                            </div>
-                          </AdminRoute>
-                        }
-                      />
-                    ))}
-
-                    {/* 🧭 Catch-all redirect */}
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                  </Routes>
-                </BrowserRouter>
-              </motion.div>
-            )}
-          </>
-        );
-      }}
+      {(sectionsConfig, sectionsLoading) => (
+        <AppContent
+          sectionsConfig={sectionsConfig}
+          sectionsLoading={sectionsLoading}
+          bootstrapReady={bootstrapReady}
+          minTimePassed={minTimePassed}
+          ssrRendered={ssrRendered}
+        />
+      )}
     </SectionsConfigLoader>
   );
 }

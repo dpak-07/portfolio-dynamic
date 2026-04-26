@@ -4,7 +4,7 @@ import ErrorBoundary from "@/components/ErrorBoundary.jsx";
 import SEO from "@/components/SEO.jsx";
 import { logUniqueUser } from "@/utils/analytics";
 
-function RootApp() {
+function RootApp({ ssrRendered = false }) {
   useEffect(() => {
     logUniqueUser();
   }, []);
@@ -12,16 +12,16 @@ function RootApp() {
   return (
     <>
       <SEO />
-      <App />
+      <App ssrRendered={ssrRendered} />
     </>
   );
 }
 
-export default function ClientApp() {
+export default function ClientApp({ ssrRendered = false }) {
   return (
     <StrictMode>
       <ErrorBoundary>
-        <RootApp />
+        <RootApp ssrRendered={ssrRendered} />
       </ErrorBoundary>
     </StrictMode>
   );

@@ -1,14 +1,11 @@
 "use client";
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useFirestoreData } from "@/hooks/useFirestoreData";
 import { Home, User, Code, Briefcase, Award, Clock, FileText, Mail, BookOpen, Menu, X, BarChart3 } from "lucide-react";
 import { logLinkClick } from "../utils/analytics";
+import { scrollToSection } from "@/utils/scrollToSection";
 
-export default function Navbar() {
-  // Firestore data for section visibility
-  const { data: firestoreSectionsData } = useFirestoreData("sections", "visibility");
-
+export default function Navbar({ sectionsConfig }) {
   // Navigation items with modern icons
   const navItems = [
     { id: "home", label: "Home", icon: Home },
@@ -22,10 +19,9 @@ export default function Navbar() {
     { id: "contact", label: "Contact", icon: Mail },
   ];
 
-  // Sections configuration from Firestore or defaults
-  const sectionsConfig = useMemo(
+  const resolvedSectionsConfig = useMemo(
     () =>
-      firestoreSectionsData || {
+      sectionsConfig || {
         home: true,
         about: true,
         "tech-stack": true,
@@ -35,14 +31,15 @@ export default function Navbar() {
         certifications: true,
         timeline: true,
         contact: true,
+        blog: true,
       },
-    [firestoreSectionsData]
+    [sectionsConfig]
   );
 
   // Filter visible sections based on config
   const visibleNavItems = useMemo(
-    () => navItems.filter((item) => sectionsConfig[item.id]),
-    [sectionsConfig]
+    () => navItems.filter((item) => resolvedSectionsConfig[item.id]),
+    [resolvedSectionsConfig]
   );
 
   const [open, setOpen] = useState(false);
@@ -53,12 +50,15 @@ export default function Navbar() {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting && sectionsConfig[entry.target.id]) {
+          if (entry.isIntersecting && resolvedSectionsConfig[entry.target.id]) {
             setActive(entry.target.id);
           }
         });
       },
-      { threshold: 0.2 } // Reduced threshold for faster detection
+      {
+        threshold: 0.2,
+        rootMargin: "-72px 0px -35% 0px",
+      }
     );
 
     visibleNavItems.forEach(({ id }) => {
@@ -67,17 +67,26 @@ export default function Navbar() {
     });
 
     return () => observer.disconnect();
-  }, [visibleNavItems, sectionsConfig]);
+  }, [visibleNavItems, resolvedSectionsConfig]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY <= 120) {
+        setActive("home");
+      }
+    };
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // Smooth scroll with analytics
   const scrollTo = (id) => {
-    if (!sectionsConfig[id]) return;
+    if (!resolvedSectionsConfig[id]) return;
 
-    const el = document.getElementById(id);
-    if (el) {
-      const navHeight = 80;
-      const y = el.getBoundingClientRect().top + window.scrollY - navHeight;
-      window.scrollTo({ top: y, behavior: "smooth" });
+    if (scrollToSection(id, { offset: 88 })) {
+      setActive(id);
       setOpen(false);
     }
 
@@ -144,7 +153,7 @@ export default function Navbar() {
             </div>
 
             {/* Blog Link (Desktop) - Conditional */}
-            {sectionsConfig.blog && (
+            {resolvedSectionsConfig.blog && (
               <motion.a
                 href="/blog"
                 whileHover={{ scale: 1.05 }}
@@ -236,7 +245,7 @@ export default function Navbar() {
                 ))}
 
                 {/* Blog Link (Mobile) - Conditional */}
-                {sectionsConfig.blog && (
+                {resolvedSectionsConfig.blog && (
                   <motion.a
                     href="/blog"
                     initial={{ opacity: 0, x: -20 }}

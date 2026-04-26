@@ -1,1 +1,1 @@
-export { default } from "../src/next/AppPage";
+export { default, getServerSideProps } from "../src/next/AppPage";

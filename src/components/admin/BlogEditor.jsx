@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     collection,
@@ -164,10 +164,10 @@ export default function BlogEditor() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-white p-6">
+        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 p-4 text-white sm:p-6">
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
-                <div className="flex justify-between items-center mb-8">
+                <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
                             Blog Editor
@@ -176,18 +176,18 @@ export default function BlogEditor() {
                             Manage your blog posts - {posts.length} total
                         </p>
                     </div>
-                    <div className="flex gap-3">
+                    <div className="flex flex-col gap-3 sm:flex-row">
                         <button
                             onClick={refetch}
                             disabled={loading}
-                            className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+                            className="flex items-center justify-center gap-2 rounded-lg bg-white/10 px-4 py-2 transition-colors hover:bg-white/20"
                         >
                             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
                             Refresh
                         </button>
                         <button
                             onClick={() => setIsEditing(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-lg font-semibold hover:shadow-lg transition-all"
+                            className="flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 px-4 py-2 font-semibold transition-all hover:shadow-lg"
                         >
                             <Plus className="w-4 h-4" />
                             New Post
@@ -213,11 +213,11 @@ export default function BlogEditor() {
                                     key={post.id}
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6 hover:bg-white/10 transition-all"
+                                    className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm transition-all hover:bg-white/10 sm:p-6"
                                 >
-                                    <div className="flex justify-between items-start">
+                                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                                         <div className="flex-1">
-                                            <div className="flex items-center gap-3 mb-2">
+                                            <div className="mb-2 flex flex-wrap items-center gap-3">
                                                 <h3 className="text-xl font-bold">{post.title}</h3>
                                                 <span
                                                     className={`px-2 py-1 rounded-full text-xs ${post.published
@@ -229,14 +229,14 @@ export default function BlogEditor() {
                                                 </span>
                                             </div>
                                             <p className="text-gray-400 text-sm mb-3">{post.excerpt}</p>
-                                            <div className="flex items-center gap-4 text-xs text-gray-500">
+                                            <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
                                                 <span>{post.date}</span>
                                                 <span>{post.readTime}</span>
                                                 <span>{post.author}</span>
                                                 <span>{post.tags?.join(", ")}</span>
                                             </div>
                                         </div>
-                                        <div className="flex gap-2">
+                                        <div className="flex flex-wrap gap-2 lg:justify-end">
                                             <button
                                                 onClick={() => handleTogglePublish(post)}
                                                 className="p-2 hover:bg-white/10 rounded-lg transition-colors"
@@ -277,9 +277,9 @@ export default function BlogEditor() {
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
-                            className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6"
+                            className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm sm:p-6"
                         >
-                            <div className="flex justify-between items-center mb-6">
+                            <div className="mb-6 flex items-start justify-between gap-3">
                                 <h2 className="text-2xl font-bold">
                                     {editingPost ? "Edit Post" : "New Post"}
                                 </h2>
@@ -374,7 +374,7 @@ export default function BlogEditor() {
                                 {/* Tags */}
                                 <div>
                                     <label className="block text-sm font-medium mb-2">Tags *</label>
-                                    <div className="flex gap-2 mb-2">
+                                    <div className="mb-2 flex flex-col gap-2 sm:flex-row">
                                         <input
                                             type="text"
                                             value={tagInput}
@@ -385,7 +385,7 @@ export default function BlogEditor() {
                                         />
                                         <button
                                             onClick={handleAddTag}
-                                            className="px-4 py-2 bg-cyan-500 rounded-lg hover:bg-cyan-600 transition-colors"
+                                            className="rounded-lg bg-cyan-500 px-4 py-2 transition-colors hover:bg-cyan-600"
                                         >
                                             Add
                                         </button>
@@ -409,7 +409,7 @@ export default function BlogEditor() {
                                 </div>
 
                                 {/* Published Toggle */}
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-start gap-3 sm:items-center">
                                     <input
                                         type="checkbox"
                                         id="published"
@@ -425,18 +425,18 @@ export default function BlogEditor() {
                                 </div>
 
                                 {/* Actions */}
-                                <div className="flex gap-3 pt-4">
+                                <div className="flex flex-col gap-3 pt-4 sm:flex-row">
                                     <button
                                         onClick={handleSave}
                                         disabled={saving}
-                                        className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50"
+                                        className="flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 px-6 py-3 font-semibold transition-all hover:shadow-lg disabled:opacity-50"
                                     >
                                         <Save className="w-4 h-4" />
                                         {saving ? "Saving..." : editingPost ? "Update Post" : "Create Post"}
                                     </button>
                                     <button
                                         onClick={resetForm}
-                                        className="px-6 py-3 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+                                        className="rounded-lg bg-white/10 px-6 py-3 transition-colors hover:bg-white/20"
                                     >
                                         Cancel
                                     </button>

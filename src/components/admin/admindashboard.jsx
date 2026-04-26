@@ -147,7 +147,7 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="h-screen bg-black flex items-center justify-center relative overflow-hidden">
+      <div className="min-h-screen bg-black flex items-center justify-center relative overflow-hidden px-4">
         <MatrixRain />
         <motion.div
           initial={{ opacity: 0 }}
@@ -185,7 +185,7 @@ export default function AdminDashboard() {
   const totalSections = Object.keys(sections).length;
 
   return (
-    <div className="h-screen bg-black text-green-400 relative overflow-hidden flex flex-col">
+    <div className="min-h-screen bg-black text-green-400 relative overflow-hidden flex flex-col">
       <MatrixRain />
 
       {/* Scanline effect */}
@@ -208,7 +208,7 @@ export default function AdminDashboard() {
         }}
       />
 
-      <div className="relative z-10 flex flex-col h-full">
+      <div className="relative z-10 flex flex-col min-h-screen lg:h-screen">
         {/* Compact Top Bar */}
         <motion.div
           initial={{ y: -50 }}
@@ -216,8 +216,8 @@ export default function AdminDashboard() {
           className="border-b border-green-500/30 bg-black/90 backdrop-blur-sm"
         >
           <div className="px-4 py-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap items-center gap-3">
                 <motion.div
                   animate={{
                     boxShadow: [
@@ -252,8 +252,8 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-4">
-                <div className="text-right font-mono text-xs">
+              <div className="flex items-center justify-between gap-3 sm:justify-end sm:gap-4">
+                <div className="font-mono text-xs sm:text-right">
                   <div className="text-green-600">TIME</div>
                   <div className="text-green-400 font-bold">
                     {currentTime.toLocaleTimeString()}
@@ -277,10 +277,10 @@ export default function AdminDashboard() {
         </motion.div>
 
         {/* Main Content - Single Screen */}
-        <div className="flex-1 px-4 py-3 overflow-hidden">
-          <div className="h-full grid grid-cols-12 gap-3">
+        <div className="flex-1 overflow-y-auto px-3 py-3 sm:px-4">
+          <div className="grid grid-cols-1 gap-3 xl:h-full xl:grid-cols-12">
             {/* Left Column - Stats & Sections */}
-            <div className="col-span-3 flex flex-col gap-3">
+            <div className="flex flex-col gap-3 xl:col-span-3">
               {/* Stats */}
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
@@ -329,7 +329,7 @@ export default function AdminDashboard() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.1 }}
-                className="flex-1 bg-black/60 border border-green-500/30 backdrop-blur-sm p-3 overflow-y-auto"
+                className="bg-black/60 border border-green-500/30 backdrop-blur-sm p-3 xl:flex-1 xl:overflow-y-auto"
               >
                 <div className="font-mono text-xs mb-2 text-green-400 font-bold flex items-center justify-between">
                   <span>{'>'} SECTIONS</span>
@@ -388,18 +388,18 @@ export default function AdminDashboard() {
             </div>
 
             {/* Right Column - Control Modules */}
-            <div className="col-span-9">
+            <div className="xl:col-span-9">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="h-full bg-black/60 border border-green-500/30 backdrop-blur-sm p-4"
+                className="bg-black/60 border border-green-500/30 backdrop-blur-sm p-4 xl:h-full"
               >
                 <div className="font-mono text-sm mb-3 text-green-400 font-bold">
                   {'>'} CONTROL.MODULES <span className="text-green-600 text-xs ml-2">[{routes.length}]</span>
                 </div>
 
-                <div className="grid grid-cols-4 gap-3 h-[calc(100%-2rem)]">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 xl:h-[calc(100%-2rem)]">
                   {routes.map((route, index) => (
                     <motion.button
                       key={route.path}
@@ -413,7 +413,7 @@ export default function AdminDashboard() {
                       }}
                       whileTap={{ scale: 0.97 }}
                       onClick={() => navigate(route.path)}
-                      className="bg-black/60 border border-green-500/30 backdrop-blur-sm p-3 text-left font-mono relative overflow-hidden group hover:bg-green-900/20 transition-all flex flex-col justify-between"
+                      className="bg-black/60 border border-green-500/30 backdrop-blur-sm p-3 text-left font-mono relative overflow-hidden group hover:bg-green-900/20 transition-all flex min-h-[140px] flex-col justify-between"
                     >
                       <motion.div
                         className="absolute inset-0 bg-green-500/10"
