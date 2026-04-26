@@ -25,7 +25,7 @@ const personJsonLd = {
   url: "https://deepakportfolio-0607.web.app/",
   image: "https://deepakportfolio-0607.web.app/preview.png",
   jobTitle: "Full Stack Developer",
-  worksFor: {
+  worksFor: { 
     "@type": "Organization",
     name: "Freelance / Personal Projects",
   },
