@@ -1,1 +1,3 @@
-export { default, getServerSideProps } from "../../src/next/AppPage";
+import { createStaticAppPage } from "../../src/next/AppPage";
+
+export default createStaticAppPage("/admin/analysis");

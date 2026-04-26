@@ -1,16 +1,6 @@
-import { useRouter } from "next/router";
 import { BrowserRouter, MemoryRouter } from "react-router-dom";
 
 import ClientApp from "./ClientApp";
-
-export async function getServerSideProps(context) {
-  return {
-    props: {
-      initialPath: context.resolvedUrl || context.req?.url || "/",
-      ssrRendered: true,
-    },
-  };
-}
 
 function RouterShell({ initialPath, children }) {
   if (typeof window === "undefined") {
@@ -20,12 +10,23 @@ function RouterShell({ initialPath, children }) {
   return <BrowserRouter>{children}</BrowserRouter>;
 }
 
-export default function AppPage({ initialPath = "/", ssrRendered = false }) {
-  const router = useRouter();
-  const resolvedPath = initialPath || router.asPath || router.pathname || "/";
+export function createStaticAppPage(initialPath = "/", { ssrRendered = true } = {}) {
+  function StaticAppPage() {
+    return (
+      <RouterShell initialPath={initialPath}>
+        <ClientApp ssrRendered={ssrRendered} />
+      </RouterShell>
+    );
+  }
 
+  StaticAppPage.displayName = `StaticAppPage(${initialPath})`;
+
+  return StaticAppPage;
+}
+
+export default function AppPage({ initialPath = "/", ssrRendered = true }) {
   return (
-    <RouterShell initialPath={resolvedPath}>
+    <RouterShell initialPath={initialPath}>
       <ClientApp ssrRendered={ssrRendered} />
     </RouterShell>
   );

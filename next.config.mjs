@@ -30,6 +30,7 @@ const env = Object.fromEntries(
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: "export",
   reactStrictMode: true,
   trailingSlash: true,
   env,
