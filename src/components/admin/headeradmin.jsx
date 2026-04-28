@@ -4,11 +4,11 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Eye, Save, RotateCcw, Download, Upload,
-  Plus, X, ArrowUp, ArrowDown, Link as LinkIcon, FileText, Type, KeyRound,
+  Plus, X, ArrowUp, ArrowDown, FileText, Type, KeyRound,
   Loader, AlertCircle, CheckCircle, Wifi, WifiOff
 } from "lucide-react";
 import { Typewriter } from "react-simple-typewriter";
-import { doc, setDoc, getDoc, Timestamp } from "firebase/firestore";
+import { deleteField, doc, setDoc, getDoc, Timestamp } from "firebase/firestore";
 import { db } from "@/firebase";
 
 /* ================================
@@ -66,7 +66,6 @@ const defaultConfig = {
     "Automating tasks with Linux scripts 🐧",
     "Building scalable full-stack apps with React & Node ⚙️",
   ],
-  resumeDriveLink: "https://drive.google.com/file/d/1BazHbJLKXz0xJFrsd9ZgJkAB0aR9d8nW_/view?usp=sharing",
   socials: {
     github: "https://github.com/dpak-07",
     linkedin: "https://www.linkedin.com/in/deepak-saminathan/",
@@ -84,12 +83,27 @@ const defaultConfig = {
 ================================== */
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
+function sanitizeHeaderConfig(config = {}) {
+  const { resumeDriveLink: _legacyResumeLink, ...rest } = config || {};
+
+  return {
+    ...defaultConfig,
+    ...rest,
+    socials: {
+      ...(defaultConfig.socials || {}),
+      ...(rest.socials || {}),
+    },
+    typewriterLines: Array.isArray(rest.typewriterLines)
+      ? rest.typewriterLines
+      : defaultConfig.typewriterLines,
+  };
+}
+
 function computeChanges(prev = {}, next = {}) {
   const diff = [];
   if ((prev.name || "") !== (next.name || "")) diff.push("name");
   if ((prev.roles || "") !== (next.roles || "")) diff.push("roles");
   if (!same(prev.typewriterLines || [], next.typewriterLines || [])) diff.push("typewriterLines");
-  if ((prev.resumeDriveLink || "") !== (next.resumeDriveLink || "")) diff.push("resumeDriveLink");
   if (!same(prev.socials || {}, next.socials || {})) diff.push("socials");
   return diff;
 }
@@ -220,7 +234,7 @@ export default function HeaderAdminCRT() {
       
       if (headerSnap.exists()) {
         // Use data from Firestore
-        initialDraft = headerSnap.data();
+        initialDraft = sanitizeHeaderConfig(headerSnap.data());
         setStatus("✓ Config loaded from Firestore");
       } else {
         // Fallback to localStorage or default
@@ -228,13 +242,13 @@ export default function HeaderAdminCRT() {
         const session = sessionStorage.getItem(STORAGE_DRAFT_KEY);
         
         if (session) {
-          initialDraft = JSON.parse(session);
+          initialDraft = sanitizeHeaderConfig(JSON.parse(session));
           setStatus("✓ Draft loaded from session");
         } else if (saved) {
-          initialDraft = JSON.parse(saved);
+          initialDraft = sanitizeHeaderConfig(JSON.parse(saved));
           setStatus("✓ Config loaded from cache");
         } else {
-          initialDraft = defaultConfig;
+          initialDraft = sanitizeHeaderConfig(defaultConfig);
           setStatus("✓ Using default config");
         }
       }
@@ -248,9 +262,10 @@ export default function HeaderAdminCRT() {
       console.error("Init error:", error);
       setStatus("⚠ Using offline mode");
       setStatusType("error");
-      setDraft(defaultConfig);
-      committedRef.current = defaultConfig;
-      prevDraftRef.current = JSON.stringify(defaultConfig);
+      const fallbackDraft = sanitizeHeaderConfig(defaultConfig);
+      setDraft(fallbackDraft);
+      committedRef.current = fallbackDraft;
+      prevDraftRef.current = JSON.stringify(fallbackDraft);
       setAdminCode("69");
     }
   }, []);
@@ -310,11 +325,13 @@ export default function HeaderAdminCRT() {
 
     setIsSyncing(true);
     try {
+      const sanitizedConfig = sanitizeHeaderConfig(config);
       const enrichedConfig = {
-        ...config,
+        ...sanitizedConfig,
         lastUpdated: new Date().toISOString(),
         updatedBy: "kavshick",
         updatedAt: Timestamp.now(),
+        resumeDriveLink: deleteField(),
       };
 
       await setDoc(
@@ -428,11 +445,13 @@ export default function HeaderAdminCRT() {
     }
     
     try {
-      localStorage.setItem(STORAGE_SAVED_KEY, JSON.stringify(draft));
+      const sanitizedDraft = sanitizeHeaderConfig(draft);
+      localStorage.setItem(STORAGE_SAVED_KEY, JSON.stringify(sanitizedDraft));
       sessionStorage.removeItem(STORAGE_DRAFT_KEY);
-      committedRef.current = JSON.parse(JSON.stringify(draft));
+      committedRef.current = JSON.parse(JSON.stringify(sanitizedDraft));
+      setDraft(sanitizedDraft);
 
-      const success = await saveToFirebase(draft);
+      const success = await saveToFirebase(sanitizedDraft);
       
       if (success) {
         setChangesPopupOpen(false);
@@ -446,12 +465,14 @@ export default function HeaderAdminCRT() {
 
   const quickSave = async () => {
     try {
-      localStorage.setItem(STORAGE_SAVED_KEY, JSON.stringify(draft));
+      const sanitizedDraft = sanitizeHeaderConfig(draft);
+      localStorage.setItem(STORAGE_SAVED_KEY, JSON.stringify(sanitizedDraft));
       sessionStorage.removeItem(STORAGE_DRAFT_KEY);
-      committedRef.current = JSON.parse(JSON.stringify(draft));
+      committedRef.current = JSON.parse(JSON.stringify(sanitizedDraft));
+      setDraft(sanitizedDraft);
 
       if (isOnline) {
-        await saveToFirebase(draft);
+        await saveToFirebase(sanitizedDraft);
       } else {
         setStatus("✓ Saved locally (offline)");
         setStatusType("info");
@@ -464,7 +485,10 @@ export default function HeaderAdminCRT() {
 
   const resetDefaults = () => {
     if (window.confirm("Reset to default configuration?")) {
-      setDraft(defaultConfig);
+      const cleanDefaults = sanitizeHeaderConfig(defaultConfig);
+      setDraft(cleanDefaults);
+      committedRef.current = cleanDefaults;
+      prevDraftRef.current = JSON.stringify(cleanDefaults);
       setStatus("Reset to default");
       setStatusType("info");
       setHasChanges(false);
@@ -499,7 +523,7 @@ export default function HeaderAdminCRT() {
           socials: { ...(defaultConfig.socials || {}), ...(imported.socials || {}) },
           typewriterLines: imported.typewriterLines || defaultConfig.typewriterLines,
         };
-        setDraft(merged);
+        setDraft(sanitizeHeaderConfig(merged));
         setStatus("Imported successfully");
         setStatusType("success");
       } catch {
@@ -721,16 +745,11 @@ export default function HeaderAdminCRT() {
                         </div>
                       </div>
 
-                      <div>
-                        <label className="block text-sm crt-text mb-2 opacity-60">
-                          <span className="inline-flex items-center gap-2"><LinkIcon size={14}/> RESUME DRIVE LINK</span>
-                        </label>
-                        <input
-                          className="w-full crt-input px-4 py-2 rounded"
-                          value={draft.resumeDriveLink || ""}
-                          onChange={(e) => update("resumeDriveLink", e.target.value)}
-                          placeholder="https://drive.google.com/file/d/..."
-                        />
+                      <div className="crt-panel rounded p-4">
+                        <div className="crt-text text-sm">Resume is managed only in the Resume admin page.</div>
+                        <div className="mt-2 text-xs crt-text opacity-60">
+                          Upload or replace the PDF from <code>/admin/resume</code>.
+                        </div>
                       </div>
 
                       {/* Metadata Section */}
@@ -918,7 +937,7 @@ export default function HeaderAdminCRT() {
                         onChange={(e) => {
                           try {
                             const parsed = JSON.parse(e.target.value);
-                            setDraft(parsed);
+                            setDraft(sanitizeHeaderConfig(parsed));
                             setStatus("JSON updated");
                           } catch {
                             setStatus("Invalid JSON");
@@ -951,11 +970,11 @@ export default function HeaderAdminCRT() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4">
                     <div className="crt-panel p-4 rounded">
-                      <div className="text-lg mb-2">Resume</div>
+                      <div className="text-lg mb-2">Resume Source</div>
                       <div className="text-sm opacity-80 break-all">
-                        {draft.resumeDriveLink || "—"}
+                        Managed in /admin/resume
                       </div>
                     </div>
 

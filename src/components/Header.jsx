@@ -54,7 +54,7 @@ export default function Header() {
     }
   }, [firestoreProfileData, firestoreError, firestoreLoading]);
 
-  const { preview, download } = useResumeResource(profileData?.resumeDriveLink);
+  const { preview, download } = useResumeResource();
 
   const processedRoles = useMemo(() => {
     if (!profileData?.roles) {

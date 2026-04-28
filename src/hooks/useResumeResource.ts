@@ -10,14 +10,13 @@ interface ResumeData {
   [key: string]: any;
 }
 
-export function useResumeResource(fallbackLink?: string) {
+export function useResumeResource() {
   const { data, loading, error, refetch } = useFirestoreData<ResumeData>("resume", "data");
 
-  const sourceResumeLink = useMemo(() => {
-    const primaryLink = typeof data?.resumeDriveLink === "string" ? data.resumeDriveLink.trim() : "";
-    const secondaryLink = typeof fallbackLink === "string" ? fallbackLink.trim() : "";
-    return primaryLink || secondaryLink || "";
-  }, [data?.resumeDriveLink, fallbackLink]);
+  const sourceResumeLink = useMemo(
+    () => (typeof data?.resumeDriveLink === "string" ? data.resumeDriveLink.trim() : ""),
+    [data?.resumeDriveLink]
+  );
 
   const links = useMemo(() => getResumeLinks(sourceResumeLink), [sourceResumeLink]);
 
