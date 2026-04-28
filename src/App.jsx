@@ -48,8 +48,6 @@ import AdminResponsiveStyles from "./components/admin/AdminResponsiveStyles";
 
 import { useFirestoreData } from "./hooks/useFirestoreData";
 
-const SHOULD_FETCH_FROM_FIREBASE = false;
-
 const DEFAULT_SECTIONS_CONFIG = {
   home: true,
   about: true,
@@ -79,16 +77,10 @@ const INITIAL_FIRESTORE_ENTRIES = [
 ];
 
 function SectionsConfigLoader({ children }) {
-  const { data: sectionsData, loading: sectionsLoading } = useFirestoreData(
-    SHOULD_FETCH_FROM_FIREBASE ? "sections" : null,
-    SHOULD_FETCH_FROM_FIREBASE ? "visibility" : null
-  );
+  const { data: sectionsData, loading: sectionsLoading } = useFirestoreData("sections", "visibility");
 
-  const sectionsConfig = SHOULD_FETCH_FROM_FIREBASE
-    ? sectionsData || DEFAULT_SECTIONS_CONFIG
-    : DEFAULT_SECTIONS_CONFIG;
-
-  const actualLoading = SHOULD_FETCH_FROM_FIREBASE ? sectionsLoading : false;
+  const sectionsConfig = sectionsData || DEFAULT_SECTIONS_CONFIG;
+  const actualLoading = sectionsLoading;
 
   return children(sectionsConfig, actualLoading);
 }
