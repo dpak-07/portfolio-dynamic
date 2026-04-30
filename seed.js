@@ -100,23 +100,20 @@ const resumeData = {
     title: "My Interactive Resume",
     gradient: "from-cyan-400 via-blue-400 to-purple-400",
   },
-  description: "Passionate 3rd-year AI & Data Science student at Velammal Engineering College, Chennai with expertise in full-stack development, cloud computing, AI/ML, and team leadership. Leading a 6-member team '404 Found US' for hackathons and projects, building innovative solutions that bridge technology and real-world problems through hands-on experience.",
+  description:
+    "Driven software engineer passionate about designing intelligent, scalable, and visually refined digital systems. Focused on merging AI, full-stack architecture, and human-centered design to craft seamless experiences that empower users and transform industries.",
   skills: [
     "Full-Stack Development",
     "AI & Machine Learning",
-    "Cloud Infrastructure (AWS)",
-    "Team Leadership & Management",
-    "Blockchain Systems",
-    "Project Coordination",
-    "Data Analytics & Visualization",
-    "Mobile App Development",
+    "Cloud Infrastructure",
     "DevOps & CI/CD",
-    "UI/UX Design",
-    "Database Management"
+    "Data Engineering",
+    "Product Design",
   ],
-  resumeDriveLink: "https://drive.google.com/file/d/1BazHbJLKXz0xJFrsd9ZgJkAB0aR9d8nW_/view?usp=sharing",
+  resumeDriveLink:
+    "https://drive.google.com/file/d/1BazHbJLKXz0xJFrsd9ZgJkAB0aR9d8nW_/view?usp=sharing",
   lastUpdated: "2025-10-21 19:09:56",
-  updatedBy: "deepak",
+  updatedBy: "kavshick",
 };
 
 /* -------------------------------------------------------
@@ -205,36 +202,36 @@ const aboutpageconfig = {
 ------------------------------------------------------- */
 const techStackData = [
   {
-    title: "Product Frontend",
-    tech: ["React 19", "Next.js 15", "JavaScript", "TypeScript", "Tailwind CSS", "Framer Motion", "Vite", "Responsive UI"]
+    title: "Programming Languages",
+    tech: ["Python", "C", "C++", "Java", "JavaScript", "Dart", "HTML5", "CSS3", "TypeScript"]
   },
   {
-    title: "Backend & APIs",
-    tech: ["Node.js", "Express.js", "Flask", "FastAPI", "REST APIs", "JWT Auth", "Nginx", "Python"]
+    title: "Frontend Development",
+    tech: ["React.js", "React Native", "Flutter", "Next.js", "Tailwind CSS", "Bootstrap", "Vite"]
   },
   {
-    title: "AI & Data Systems",
-    tech: ["Python", "TensorFlow", "PyTorch", "OpenCV", "Scikit-learn", "Pandas", "NumPy", "Llama 3"]
+    title: "Backend Development",
+    tech: ["Node.js", "Express.js", "Flask", "Django", "FastAPI", "Spring Boot"]
   },
   {
-    title: "Databases & Storage",
-    tech: ["MongoDB", "Firebase Firestore", "Supabase", "PostgreSQL", "MySQL", "SQLite", "Cloud Storage", "Data Modeling"]
+    title: "Databases",
+    tech: ["MongoDB", "MySQL", "SQLite", "PostgreSQL", "Firebase", "Firestore"]
   },
   {
     title: "Cloud & DevOps",
-    tech: ["AWS EC2", "AWS S3", "Docker", "GitHub Actions", "Vercel", "Firebase Hosting", "Linux", "CI/CD"]
+    tech: ["AWS EC2", "AWS S3", "Docker", "Git", "GitHub", "Linux", "Postman"]
   },
   {
-    title: "Trust & Blockchain",
-    tech: ["Web3 Concepts", "Cryptography", "Credential Verification", "Secure APIs", "OAuth", "Hashing", "Access Control", "Security Testing"]
+    title: "AI & Machine Learning",
+    tech: ["TensorFlow", "PyTorch", "OpenCV", "Keras", "NumPy", "Pandas", "Scikit-learn"]
   },
   {
-    title: "Mobile & Cross-Platform",
-    tech: ["Flutter", "React Native", "Dart", "Android", "Mobile UI", "API Integration", "Push-ready Flows", "Cross-platform UX"]
+    title: "Tools",
+    tech: ["VS Code", "Figma"]
   },
   {
-    title: "Design & Quality",
-    tech: ["Figma", "Postman", "VS Code", "Git", "Component Systems", "Accessibility Basics", "Performance Checks", "Documentation"]
+    title: "Mobile Development",
+    tech: ["Flutter", "React Native", "Dart", "Android", "iOS"]
   },
 ];
 
@@ -269,45 +266,11 @@ const footerData = [
 ------------------------------------------------------- */
 const projectsData = {
   categories: {
-    "AI Product Systems": [
-      {
-        title: "Study Spark - AI Learning OS",
-        desc: "AI-powered learning workspace for notes, Q&A, summaries, and mind maps.",
-        long: "Study Spark is an AI learning platform built around the real study loop: collect material, understand it, ask questions, and revise visually. The project uses a MERN foundation with AI-powered teaching, summarization, mind maps, and Q&A so learners can move from raw content to structured understanding inside one product.",
-        img: "https://1drv.ms/i/c/b09eaa48933f939d/IQTpahjpGGWAQKJi1JHgIrvLAeEe2Cq3wSvr6hD4E2vmw6g?width=1919&height=908",
-        tech: ["React", "Node.js", "MongoDB", "Llama 3", "Tailwind CSS", "AI Integration", "Team Project"],
-        url: "https://github.com/dpak-07/STUDY_SPARK_01.git",
-        live: null,
-        featured: true
-      },
-    ],
-    "Trust & Credentials": [
-      {
-        title: "CredsOne - Verifiable Credential Vault",
-        desc: "Blockchain-inspired credential system for secure certificate storage and sharing.",
-        long: "CredsOne is a credential management system focused on storing, generating, sharing, and verifying student certificates. The product is framed around trust: every credential should be easier to validate, harder to tamper with, and simpler for students to present during applications or events.",
-        img: "https://1drv.ms/i/c/b09eaa48933f939d/IQTEXq0hGFzPTKejy5q73gosAcPzbMWtgN1UDKtZJ_IhgGE?width=1919&height=897",
-        tech: ["Blockchain", "React", "Node.js", "MongoDB", "Cryptography", "Web3", "Team Leadership"],
-        url: "https://github.com/dpak-07/CredsOne",
-        live: null,
-        featured: true
-      },
-      {
-        title: "Phushit - Phishing Detection Suite",
-        desc: "Multi-platform security product for fake website and phishing detection.",
-        long: "Phushit is a security application direction for detecting fake websites and phishing attempts across multiple platforms. The project combines mobile-first alerts, dashboard visibility, an API layer, and browser extension thinking so detection can happen closer to where users actually encounter risky links.",
-        img: "",
-        tech: ["Flutter", "Python", "C++", "Dart", "Machine Learning", "Security", "Cross-Platform"],
-        url: "https://github.com/dpak-07/phushit",
-        live: null,
-        featured: true
-      },
-    ],
     "Cloud & Backend": [
       {
-        title: "Velammal Web Team Platform",
-        desc: "Production backend and cloud work for the college web team presence.",
-        long: "This project focused on backend and cloud engineering for the Velammal Engineering College web team website. The work covered API development, database integration, deployment on AWS EC2, Nginx setup, and production-oriented infrastructure decisions for a public-facing college platform.",
+        title: "Velammal College Website",
+        desc: "Backend & Cloud Engineering",
+        long: "Served as backend and cloud engineer for Velammal Engineering College website. Developed robust APIs, deployed on AWS cloud infrastructure, managed database systems, and integrated Nginx for production hosting. Ensured high availability, performance, and seamless user experience for the college platform.",
         img: "https://1drv.ms/i/c/b09eaa48933f939d/IQQeeY63WsZBT7i97geuaIFJAfvVVhGYRxBoUPfclR8q3SM?width=1919&height=910",
         tech: ["Flask", "MongoDB", "AWS EC2", "Nginx", "Python", "Cloud Deployment"],
         url: null,
@@ -315,28 +278,82 @@ const projectsData = {
         featured: true
       },
     ],
-    "Data Platforms": [
+    "Full-Stack Applications": [
       {
-        title: "DataLens Excel Analytics",
-        desc: "Upload-to-insight analytics platform with charting, history, and admin workflows.",
-        long: "DataLens is an Excel analysis platform built to make spreadsheet review faster and more repeatable. It supports file handling, stored upload history, dynamic charts, and an admin-oriented workflow so users can move from raw Excel files to visual analysis without rebuilding the same setup each time.",
+        title: "Study Spark - AI Learning Platform",
+        desc: "MERN Stack with Advanced AI Integration",
+        long: "Comprehensive educational platform built with MERN stack featuring AI-powered teaching bot, intelligent content summarizer, interactive mind map generator, and Q&A system powered by Llama 3 model. Developed during VECT Hackelite 2025 hackathon with team collaboration. Designed to revolutionize learning experiences through cutting-edge AI capabilities.",
+        img: "https://1drv.ms/i/c/b09eaa48933f939d/IQTpahjpGGWAQKJi1JHgIrvLAeEe2Cq3wSvr6hD4E2vmw6g?width=1919&height=908",
+        tech: ["React", "Node.js", "MongoDB", "Llama 3", "Tailwind CSS", "AI Integration", "Team Project"],
+        url: "https://github.com/dpak-07/STUDY_SPARK_01.git",
+        live: null,
+        featured: true
+      },
+      {
+        title: "Excel Analysis Platform",
+        desc: "Advanced Data Visualization & Analytics",
+        long: "Sophisticated Excel analysis platform with comprehensive file handling, data history management, dynamic chart generation, and admin portal. Developed during Zidio internship with backend focus. Supports multiple file formats and provides insightful data visualizations with user-friendly interface and robust backend processing.",
         img: "https://1drv.ms/i/c/b09eaa48933f939d/IQSfFeJUqQbrRaqAHHi2FNMPAch0Xke5MGUcAnDndptR9MY?width=1656&height=882",
         tech: ["Node.js", "Express", "MongoDB", "Chart.js", "Multer", "Data Analytics", "Backend"],
         url: "https://github.com/dpak-07/Data-visualization-analytics-web-application",
         live: null,
         featured: true
       },
-    ],
-    "Portfolio Infrastructure": [
       {
-        title: "Dynamic Portfolio CMS",
-        desc: "A portfolio system with Firestore-powered content and admin editing.",
-        long: "This portfolio is built as a dynamic content system rather than a static page. Firestore powers the editable content, admin pages manage portfolio sections, and the public experience presents projects, stack, timeline, resume, and contact content through a responsive React/Next interface.",
+        title: "Hotel Management System",
+        desc: "Complete Hospitality Solution",
+        long: "Full-stack hotel management system with comprehensive room booking capabilities, food ordering system, user authentication, and admin dashboard. Features real-time updates, inventory management, and complete administrative control for seamless hotel operations.",
+        img: "https://1drv.ms/i/c/b09eaa48933f939d/IQT1xX8YHvZTS5zDGlKXn0OJAWoo311nMlQg445SrTCfLNA?width=1876&height=910",
+        tech: ["Flask", "MongoDB", "HTML", "CSS", "JavaScript", "Full-Stack"],
+        url: "https://github.com/dpak-07/hotel-management",
+        live: null,
+        featured: false
+      },
+    ],
+    "AI/ML & Security": [
+      {
+        title: "Phushit - Fake Website Detection",
+        desc: "Multi-Platform Security Application",
+        long: "Comprehensive security application designed to detect fake websites and phishing attempts. Includes mobile app, dashboard, API, and browser extension built with cross-platform technologies. Provides real-time protection against online threats with intelligent detection algorithms and machine learning capabilities.",
         img: "",
-        tech: ["React", "Next.js", "Firebase", "Firestore", "Tailwind CSS", "Framer Motion", "Admin CMS"],
-        url: "https://github.com/dpak-07/portfolio-dynamic",
+        tech: ["Flutter", "Python", "C++", "Dart", "Machine Learning", "Security", "Cross-Platform"],
+        url: "https://github.com/dpak-07/phushit",
         live: null,
         featured: true
+      },
+    ],
+    "Blockchain & Innovation": [
+      {
+        title: "CredsOne - Blockchain Credential System",
+        desc: "SIH 2025 Project - Team Lead",
+        long: "Leading team '404 Found US' in developing innovative blockchain-based credential management system for students to securely store, share, and generate certificates. Features cryptographic verification, decentralized storage, and tamper-proof academic credentials. Selected for Smart India Hackathon 2025 with ongoing development and team coordination.",
+        img: "https://1drv.ms/i/c/b09eaa48933f939d/IQTEXq0hGFzPTKejy5q73gosAcPzbMWtgN1UDKtZJ_IhgGE?width=1919&height=897",
+        tech: ["Blockchain", "React", "Node.js", "MongoDB", "Cryptography", "Web3", "Team Leadership"],
+        url: "https://github.com/dpak-07/CredsOne",
+        live: null,
+        featured: true
+      },
+    ],
+    "Frontend & Tools": [
+      {
+        title: "Dynamic Portfolio",
+        desc: "Firestore Integrated Portfolio",
+        long: "Dynamic portfolio website with Firebase Firestore integration enabling real-time content updates without code changes. Features responsive design, seamless content management, and modern UI/UX for showcasing projects and achievements effectively.",
+        img: "",
+        tech: ["React", "Firebase", "Firestore", "CSS", "JavaScript", "Dynamic Content"],
+        url: "https://github.com/dpak-07/portfolio-dynamic",
+        live: null,
+        featured: false
+      },
+      {
+        title: "Interactive Calculator",
+        desc: "Web-based Calculator Application",
+        long: "Clean and responsive calculator application supporting basic arithmetic operations with intuitive user interface and smooth interactions. Built with pure web technologies during CodeSoft internship, demonstrating fundamental frontend development skills.",
+        img: "https://1drv.ms/i/c/b09eaa48933f939d/IQTDCptRh2osS4r80EztgPyNAdgBTB4pVgFnF7sVfXggexU?width=1918&height=902",
+        tech: ["HTML", "CSS", "JavaScript", "Frontend"],
+        url: "https://github.com/dpak-07/CODSOFT-TASK-3-CALCULATOR-PPROJECT",
+        live: null,
+        featured: false
       },
     ],
   },
@@ -470,131 +487,132 @@ const certificationsData = {
 const timelineData = {
   events: [
     {
-      year: "2026",
-      period: "Portfolio Refresh",
-      title: "Case-Study Portfolio System",
-      icon: "Rocket",
-      color: "from-cyan-400 to-emerald-500",
-      accentColor: "cyan",
-      description: "Rebuilt the portfolio narrative around focused projects, grouped capabilities, and recruiter-friendly case studies inspired by current high-performing developer portfolios.",
+      year: "2022",
+      period: "Started Learning",
+      title: "Full-Stack Certification HDHD in (CSC)",
+      icon: "Award",
+      color: "from-blue-400 to-indigo-500",
+      accentColor: "blue",
+      description: "Completed comprehensive Full Stack Web Development course at CSC - HDFC Skill Development Center, mastering C, C++, Java, and modern web technologies with extensive hands-on projects.",
       achievements: [
-        "Converted project cards into description-stack-proof case studies",
-        "Refreshed stack into product-focused capability groups",
-        "Reworked timeline into a clear current-to-foundation journey",
+        "Full-stack development certification",
+        "Mastered C, C++, Java",
+        "Built end-to-end web applications",
       ],
-      skills: ["Portfolio Strategy", "React", "Firestore", "Content Design", "UI Systems"],
-    },
-    {
-      year: "2025",
-      period: "Hackathon Leadership",
-      title: "CredsOne & Team 404 Found US",
-      icon: "Trophy",
-      color: "from-fuchsia-400 to-rose-500",
-      accentColor: "fuchsia",
-      description: "Led a 6-member team on CredsOne, a secure credential storage and verification system for student certificates and academic records.",
-      achievements: [
-        "Managed team coordination and project milestones",
-        "Defined credential verification and secure sharing flows",
-        "Built around Smart India Hackathon 2025 problem-solving",
-      ],
-      skills: ["Team Leadership", "Blockchain Concepts", "React", "Node.js", "MongoDB", "Project Management"],
-    },
-    {
-      year: "2025",
-      period: "AI Product Build",
-      title: "Study Spark Learning Platform",
-      icon: "Brain",
-      color: "from-indigo-400 to-blue-600",
-      accentColor: "indigo",
-      description: "Built Study Spark as an AI-powered learning workspace with teaching bot, summarizer, mind maps, and Q&A flows powered by modern full-stack tooling.",
-      achievements: [
-        "Integrated Llama 3-powered learning assistance",
-        "Created a MERN-based study workflow",
-        "Presented through VECT Hackelite 2025",
-      ],
-      skills: ["AI Integration", "Llama 3", "React", "Node.js", "MongoDB", "Product Thinking"],
-    },
-    {
-      year: "2025",
-      period: "Cloud & Campus Web",
-      title: "Velammal Web Team Platform",
-      icon: "Cloud",
-      color: "from-cyan-400 to-emerald-500",
-      accentColor: "cyan",
-      description: "Worked on backend and cloud engineering for the Velammal Engineering College web team platform, connecting APIs, MongoDB, AWS EC2, and Nginx for a production web presence.",
-      achievements: [
-        "Handled backend and deployment responsibilities",
-        "Configured AWS EC2 and Nginx hosting flow",
-        "Supported a live college web team platform",
-      ],
-      skills: ["Flask", "MongoDB", "AWS EC2", "Nginx", "Backend APIs", "Linux"],
-    },
-    {
-      year: "2025",
-      period: "Backend Internship",
-      title: "DataLens Excel Analytics",
-      icon: "Briefcase",
-      color: "from-violet-400 to-purple-600",
-      accentColor: "violet",
-      description: "Developed backend-heavy analytics workflows during Zidio internship work, including Excel upload handling, chart generation, history management, and admin-oriented data views.",
-      achievements: [
-        "Built upload-to-chart analytics flow",
-        "Practiced MERN backend architecture",
-        "Added history and admin data management patterns",
-      ],
-      skills: ["Node.js", "Express", "MongoDB", "Chart.js", "Multer", "Data Analytics"],
-    },
-    {
-      year: "2024",
-      period: "Frontend Internship",
-      title: "CodeSoft Web Development",
-      icon: "Code",
-      color: "from-emerald-400 to-teal-500",
-      accentColor: "emerald",
-      description: "Built foundational web projects including calculator, landing page, and portfolio-style tasks while strengthening responsive HTML, CSS, and JavaScript fundamentals.",
-      achievements: [
-        "Built interactive calculator UI",
-        "Practiced responsive layout and JavaScript interactions",
-        "Created a stronger frontend foundation for later full-stack work",
-      ],
-      skills: ["HTML", "CSS", "JavaScript", "Responsive Design", "Frontend Development"],
+      skills: ["C", "C++", "Java", "Full-Stack Development", "Web Technologies"],
     },
     {
       year: "2023",
       period: "AI & Data Science",
-      title: "Velammal Engineering College",
+      title: "College - Velammal Engineering",
       icon: "GraduationCap",
       color: "from-orange-400 to-red-500",
       accentColor: "orange",
-      description: "Started B.Tech in Artificial Intelligence and Data Science at Velammal Engineering College, focusing on machine learning, data systems, and applied software development.",
+      description: "Started B.Tech in AI & Data Science at Velammal Engineering College, Chennai. Specializing in Machine Learning, Deep Learning, and Data Mining.",
       achievements: [
-        "Focused on AI, machine learning, and data systems",
-        "Started applying coursework through product builds",
-        "Built a foundation for full-stack AI projects",
+        "3rd Year AI & Data Science",
+        "Specialized in ML & Deep Learning",
+        "Applied AI in real-world projects",
       ],
-      skills: ["Machine Learning", "Data Science", "Python", "Deep Learning", "Data Mining"],
+      skills: ["Machine Learning", "Deep Learning", "Data Mining", "Python", "TensorFlow", "PyTorch"],
     },
     {
-      year: "2022",
-      period: "Full-Stack Foundation",
-      title: "CSC / HDFC Skill Development",
-      icon: "Award",
-      color: "from-blue-400 to-indigo-500",
-      accentColor: "blue",
-      description: "Built the programming and web foundation through full-stack development training covering C, C++, Java, and core web technologies.",
+      year: "2024",
+      period: "CodeSoft Internship",
+      title: "Web Development Intern",
+      icon: "Briefcase",
+      color: "from-emerald-400 to-teal-500",
+      accentColor: "emerald",
+      description: "Completed web development internship at CodeSoft, building interactive calculators, responsive landing pages, and portfolio websites using HTML, CSS, and JavaScript.",
       achievements: [
-        "Completed full-stack development certification",
-        "Practiced C, C++, Java, and web development fundamentals",
-        "Started building complete web application workflows",
+        "Built interactive calculator app",
+        "Created responsive landing pages",
+        "Developed professional frontend skills",
       ],
-      skills: ["C", "C++", "Java", "Full-Stack Development", "Web Technologies"],
+      skills: ["HTML", "CSS", "JavaScript", "Frontend Development", "Responsive Design"],
+    },
+
+    {
+      year: "2024-2025",
+      period: "Leadership & Team Lead",
+      title: "Team Lead - 404 Found US",
+      icon: "Trophy",
+      color: "from-fuchsia-400 to-rose-500",
+      accentColor: "fuchsia",
+      description: "Leading 6-member team '404 Found US' for Smart India Hackathon 2025 with CredsOne project. Managing team coordination, project milestones, and mentoring members in technical domains.",
+      achievements: [
+        "Managing 6-member development team",
+        "SIH 2025 project leadership",
+        "Team coordination & mentorship",
+      ],
+      skills: ["Team Leadership", "Project Management", "Mentoring", "Coordination"],
+    },
+    {
+      year: "2025",
+      period: "Zidio Internship",
+      title: "Backend Developer",
+      icon: "Rocket",
+      color: "from-violet-400 to-purple-600",
+      accentColor: "violet",
+      description: "Developed MERN stack projects with comprehensive admin functionalities and advanced Excel data analysis platform. Gained expertise in backend architecture and database management.",
+      achievements: [
+        "Excel Analysis Platform built",
+        "Advanced data visualization",
+        "Backend architecture expertise",
+      ],
+      skills: ["React", "Node.js", "MongoDB", "Express", "Data Analytics", "Backend Development"],
+    },
+    {
+      year: "2025",
+      period: "AI & Blockchain Focus",
+      title: "Study Spark & CredsOne",
+      icon: "Zap",
+      color: "from-indigo-400 to-blue-600",
+      accentColor: "indigo",
+      description: "Building AI-powered learning platform Study Spark (VECT Hackelite 2025) with Llama 3 integration and CredsOne blockchain credential system for SIH 2025.",
+      achievements: [
+        "Study Spark AI platform developed",
+        "CredsOne blockchain system (SIH 2025)",
+        "Llama 3 AI integration",
+      ],
+      skills: ["AI/ML", "Llama 3", "Blockchain", "React", "Node.js", "Web3"],
+    },
+    {
+      year: "2025",
+      period: "Cloud & Security",
+      title: "Multi-Domain Expertise",
+      icon: "Cloud",
+      color: "from-cyan-400 to-emerald-500",
+      accentColor: "cyan",
+      description: "Working on Phushit security app for fake website detection and Velammal College website as backend & cloud engineer with AWS deployment.",
+      achievements: [
+        "Phushit multi-platform security app",
+        "Velammal website backend & cloud",
+        "AWS & Docker deployment",
+      ],
+      skills: ["AWS EC2", "AWS S3", "Flask", "Security", "Cloud Engineering"],
+    },
+    {
+      year: "2025",
+      period: "UI/UX & Design",
+      title: "Noviteck UI/UX Master Class",
+      icon: "Lightbulb",
+      color: "from-rose-400 to-pink-500",
+      accentColor: "rose",
+      description: "Completed intensive 30-day UI/UX Design Master Class covering Figma, WordPress, and modern design principles with practical project work.",
+      achievements: [
+        "30-day intensive UI/UX training",
+        "Figma & WordPress expertise",
+        "User-centered design skills",
+      ],
+      skills: ["Figma", "WordPress", "UI/UX Design", "Prototyping"],
     },
   ],
   stats: [
-    { label: "Active Journey", value: "2022-2026", icon: "TrendingUp" },
-    { label: "Focused Case Studies", value: "6", icon: "Target" },
+    { label: "Years Active", value: "5", icon: "TrendingUp" },
+    { label: "Projects Built", value: "15", icon: "Target" },
     { label: "Team Members Led", value: "6", icon: "Users" },
-    { label: "Core Domains", value: "5", icon: "Trophy" },
+    { label: "Hackathons", value: "6", icon: "Trophy" },
   ],
 };
 

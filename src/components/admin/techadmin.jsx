@@ -46,14 +46,14 @@ const CRTStyles = () => (
 // Default configuration matching your seed.js structure
 const defaultConfig = {
   techStackData: [
-    { title: "Languages & Fundamentals", color: "from-purple-400 to-pink-500", tech: ["Python", "JavaScript", "TypeScript", "Java", "C", "C++", "SQL", "HTML/CSS"] },
-    { title: "Frontend & Interface", color: "from-blue-500 to-cyan-400", tech: ["React", "Next.js", "Tailwind CSS", "Framer Motion", "Vite", "Responsive Design", "Component UI", "Accessibility"] },
-    { title: "Backend & APIs", color: "from-green-500 to-emerald-400", tech: ["Node.js", "Express.js", "Flask", "FastAPI", "REST APIs", "Authentication", "Nginx", "API Testing"] },
-    { title: "Data & Storage", color: "from-orange-400 to-amber-500", tech: ["MongoDB", "Firebase Firestore", "Supabase", "PostgreSQL", "MySQL", "SQLite", "Cloud Storage", "Data Modeling"] },
-    { title: "AI, ML & Analytics", color: "from-red-400 to-pink-400", tech: ["Machine Learning", "Deep Learning", "TensorFlow", "PyTorch", "OpenCV", "Scikit-learn", "Pandas", "NumPy"] },
-    { title: "Cloud & Deployment", color: "from-yellow-400 to-lime-400", tech: ["AWS EC2", "AWS S3", "Firebase Hosting", "Vercel", "Docker", "Linux", "GitHub Actions", "CI/CD"] },
-    { title: "Mobile & App Work", color: "from-teal-400 to-green-400", tech: ["Flutter", "React Native", "Dart", "Android", "Mobile UI", "API Integration", "Cross-platform Apps", "App Workflows"] },
-    { title: "Tools & Collaboration", color: "from-indigo-400 to-blue-400", tech: ["Git", "GitHub", "VS Code", "Postman", "Figma", "Documentation", "Debugging", "Team Leadership"] },
+    { title: "Languages", color: "from-purple-400 to-pink-500", tech: ["C", "Python", "Java", "JavaScript", "Dart", "HTML", "CSS", "TypeScript"] },
+    { title: "Frontend", color: "from-blue-500 to-cyan-400", tech: ["React", "Next.js", "Tailwind CSS", "Flutter", "Bootstrap", "Vite"] },
+    { title: "Backend", color: "from-green-500 to-emerald-400", tech: ["Node.js", "Express", "Flask", "FastAPI", "Spring Boot"] },
+    { title: "Databases", color: "from-orange-400 to-amber-500", tech: ["MongoDB", "MySQL", "SQLite", "PostgreSQL", "Firebase"] },
+    { title: "Cloud & DevOps", color: "from-yellow-400 to-lime-400", tech: ["AWS", "Google Cloud", "Docker", "Kubernetes", "Vercel"] },
+    { title: "AI & ML", color: "from-red-400 to-pink-400", tech: ["TensorFlow", "PyTorch", "OpenCV", "Keras", "NumPy", "Pandas"] },
+    { title: "Mobile", color: "from-teal-400 to-green-400", tech: ["React Native", "Flutter", "Android", "iOS", "Expo"] },
+    { title: "Tools", color: "from-indigo-400 to-blue-400", tech: ["Git", "GitHub", "VS Code", "Postman", "Linux", "Figma"] },
   ],
   lastUpdated: new Date().toISOString(),
   updatedBy: "deepak",

@@ -116,10 +116,10 @@ const defaultConfig = {
   ],
   resumeDriveLink: "https://drive.google.com/file/d/1BazHbJLKXz0xJFrsd9ZgJkAB0aR9d8nW_/view?usp=sharing",
   lastUpdated: "2025-10-21 19:09:56",
-  updatedBy: "deepak",
+  updatedBy: "kavshick",
 }
 
-const iconMap = { Eye, Download, Calendar, FileUp, FileDown, Palette, User, Clock }
+const MotionDiv = motion.div;
 
 export default function ResumeAdmin() {
   const [draft, setDraft] = useState(defaultConfig)
@@ -169,7 +169,7 @@ export default function ResumeAdmin() {
       }
 
       return "Invalid date"
-    } catch (err) {
+    } catch {
       return String(timestamp)
     }
   }
@@ -488,7 +488,7 @@ export default function ResumeAdmin() {
     <div className="w-screen h-screen crt-screen text-white">
       <CRTStyles />
       <div className="p-6 flex flex-col h-full gap-4 relative z-10">
-        <motion.div className="crt-panel flex justify-between items-center shrink-0">
+        <MotionDiv className="crt-panel flex justify-between items-center shrink-0">
           <div className="flex items-center gap-4">
             <h1 className="crt-text text-2xl font-bold">RESUME ADMIN PANEL</h1>
             <div className="flex items-center gap-2">
@@ -543,7 +543,7 @@ export default function ResumeAdmin() {
               <RotateCcw size={16} /> REFRESH
             </button>
           </div>
-        </motion.div>
+        </MotionDiv>
 
         {!preview ? (
           <div className="flex-1 flex gap-4 overflow-hidden">
@@ -584,7 +584,7 @@ export default function ResumeAdmin() {
             </div>
 
             {/* Editor */}
-            <motion.div
+            <MotionDiv
               className="flex-1 crt-panel overflow-y-auto hide-scrollbar"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -759,11 +759,11 @@ export default function ResumeAdmin() {
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </MotionDiv>
           </div>
         ) : (
           // Preview mode
-          <motion.div
+          <MotionDiv
             className="flex-1 crt-panel overflow-y-auto hide-scrollbar"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -827,20 +827,20 @@ export default function ResumeAdmin() {
                 </div>
               </div>
             </div>
-          </motion.div>
+          </MotionDiv>
         )}
       </div>
 
       {/* Save Modal */}
       <AnimatePresence>
         {saveOpen && (
-          <motion.div
+          <MotionDiv
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
           >
-            <motion.div
+            <MotionDiv
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
@@ -879,8 +879,8 @@ export default function ResumeAdmin() {
                   {isSyncing ? "SAVING..." : "Confirm & Save"}
                 </button>
               </div>
-            </motion.div>
-          </motion.div>
+            </MotionDiv>
+          </MotionDiv>
         )}
       </AnimatePresence>
     </div>
