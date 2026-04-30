@@ -5,11 +5,11 @@ import { AnimatePresence, motion, useInView } from "framer-motion";
 import {
   ArrowUpRight,
   Boxes,
-  Code2,
   ExternalLink,
   Github,
   Layers3,
   Loader2,
+  PanelTop,
   Sparkles,
   Star,
   X,
@@ -128,13 +128,12 @@ function ProjectLinks({ project, compact = false }) {
   );
 }
 
-function ProjectMetric({ label, value, icon, accent }) {
+function Metric({ label, value, icon, accent }) {
   const Icon = icon;
-
   return (
     <div className="portfolio-panel rounded-lg p-3 sm:p-4">
       <div className="mb-2 flex items-center justify-between gap-3">
-        {Icon && <Icon className="h-4 w-4" style={{ color: accent || "var(--color-accent-strong)" }} />}
+        {Icon && <Icon className="h-4 w-4" style={{ color: accent }} />}
         <span className="text-xl font-black text-[var(--color-text)] sm:text-2xl">{value}</span>
       </div>
       <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--color-faint)]">{label}</div>
@@ -142,10 +141,10 @@ function ProjectMetric({ label, value, icon, accent }) {
   );
 }
 
-function CategoryTabs({ categoryKeys, categories, active, onChange }) {
+function CategorySwitch({ categoryKeys, categories, active, onChange }) {
   return (
-    <div className="portfolio-panel mb-5 rounded-lg p-2">
-      <div className="no-scrollbar flex gap-2 overflow-x-auto lg:flex-wrap">
+    <div className="portfolio-panel rounded-lg p-2">
+      <div className="no-scrollbar flex gap-2 overflow-x-auto">
         {categoryKeys.map((category, index) => {
           const selected = active === category;
           const accent = PROJECT_ACCENTS[index % PROJECT_ACCENTS.length];
@@ -162,12 +161,11 @@ function CategoryTabs({ categoryKeys, categories, active, onChange }) {
               style={{
                 borderColor: selected ? `${accent}88` : "var(--color-border)",
                 background: selected ? `${accent}18` : "var(--color-surface-muted)",
-                color: "var(--color-text)",
               }}
             >
               <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: accent }} />
               <span className="min-w-0">
-                <span className="block max-w-[11rem] truncate text-xs font-black sm:max-w-none sm:text-sm">{category}</span>
+                <span className="block max-w-[11rem] truncate text-xs font-black text-[var(--color-text)] sm:text-sm">{category}</span>
                 <span className="block text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--color-faint)]">{categories[category]?.length || 0} builds</span>
               </span>
             </button>
@@ -178,53 +176,54 @@ function CategoryTabs({ categoryKeys, categories, active, onChange }) {
   );
 }
 
-function SpotlightProject({ project, active, onOpen }) {
-  const accent = getProjectAccent(project);
+function CaseStudyHero({ project, activeIndex, total, onOpen, onSelectNext, onSelectPrevious }) {
+  const accent = getProjectAccent(project, activeIndex);
 
   return (
     <MotionArticle
-      key={`${active}-${project.title}`}
+      key={project.title}
       initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35 }}
+      transition={{ duration: 0.35, ease: "easeOut" }}
       className="portfolio-panel relative overflow-hidden rounded-lg"
     >
       <div className="absolute inset-x-0 top-0 h-1" style={{ background: `linear-gradient(90deg, transparent, ${accent}, #fbbf24, transparent)` }} />
-      <div className="grid lg:grid-cols-[1.18fr_0.82fr]">
-        <button type="button" onClick={() => onOpen(project)} className="relative block min-h-[245px] overflow-hidden text-left sm:min-h-[330px] lg:min-h-[450px]">
+      <div className="grid lg:grid-cols-[minmax(0,1.18fr)_minmax(20rem,0.82fr)]">
+        <button type="button" onClick={onOpen} className="relative min-h-[265px] overflow-hidden text-left sm:min-h-[360px] lg:min-h-[520px]">
           <ProjectImage project={project} className="transition-transform duration-700 hover:scale-105" />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/88 via-slate-950/18 to-transparent" />
-          <div className="absolute bottom-4 left-4 right-4 sm:bottom-6 sm:left-6 sm:right-6">
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/18 to-transparent" />
+          <div className="absolute bottom-5 left-5 right-5 sm:bottom-7 sm:left-7 sm:right-7">
             <div className="mb-3 flex flex-wrap gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-300 px-3 py-1 text-xs font-black text-slate-950">
                 <Star className="h-3.5 w-3.5 fill-slate-950" />
-                Main Build
+                Case Study
               </span>
               <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold text-white backdrop-blur">
-                {project.category || active}
+                {project.category}
               </span>
             </div>
-            <h3 className="max-w-3xl text-3xl font-black leading-tight text-white sm:text-5xl">{project.title}</h3>
+            <h3 className="max-w-4xl text-3xl font-black leading-tight text-white sm:text-5xl">{project.title}</h3>
           </div>
         </button>
 
         <div className="flex min-w-0 flex-col p-5 sm:p-7">
           <div className="mb-5 flex items-center justify-between gap-3">
             <div>
-              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-faint)]">Build Brief</div>
-              <div className="text-lg font-black text-[var(--color-text)]">{project.featured ? "Featured project" : "Selected project"}</div>
+              <div className="text-xs font-black uppercase tracking-[0.18em] text-[var(--color-faint)]">Selected Build</div>
+              <div className="text-lg font-black text-[var(--color-text)]">
+                {String(activeIndex + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
+              </div>
             </div>
-            <div className="rounded-lg px-3 py-2 text-right" style={{ background: `${accent}18` }}>
-              <Code2 className="ml-auto h-4 w-4" style={{ color: accent }} />
-              <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--color-faint)]">active</div>
-            </div>
+            <span className="flex h-11 w-11 items-center justify-center rounded-lg border" style={{ borderColor: `${accent}66`, color: accent, background: `${accent}12` }}>
+              <PanelTop className="h-5 w-5" />
+            </span>
           </div>
 
           {project.desc && <p className="text-xl font-black leading-tight text-[var(--color-text)]">{project.desc}</p>}
-          <p className="mt-4 line-clamp-6 text-sm leading-relaxed text-[var(--color-muted)]">{project.long || project.desc}</p>
+          <p className="mt-4 line-clamp-7 text-sm leading-relaxed text-[var(--color-muted)]">{project.long || project.desc}</p>
 
           <div className="mt-5 grid grid-cols-2 gap-2">
-            {(project.tech || []).slice(0, 4).map((tool) => (
+            {(project.tech || []).slice(0, 6).map((tool) => (
               <div key={tool} className="rounded-lg border px-3 py-2 text-xs font-bold text-[var(--color-text)]" style={{ borderColor: "var(--color-border)", background: "var(--color-surface-muted)" }}>
                 <div className="mb-1 h-1.5 w-7 rounded-full" style={{ backgroundColor: accent }} />
                 {tool}
@@ -232,12 +231,20 @@ function SpotlightProject({ project, active, onOpen }) {
             ))}
           </div>
 
-          <div className="mt-auto flex flex-wrap items-center gap-2 pt-6">
-            <button type="button" onClick={() => onOpen(project)} className="portfolio-primary-button inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-bold sm:flex-none">
-              Explore Build
+          <div className="mt-auto flex items-center gap-2 pt-6">
+            <button type="button" onClick={onSelectPrevious} className="portfolio-secondary-button inline-flex h-10 w-10 items-center justify-center rounded-lg">
+              <span className="sr-only">Previous project</span>
+              <ArrowUpRight className="h-4 w-4 rotate-180" />
+            </button>
+            <button type="button" onClick={onSelectNext} className="portfolio-secondary-button inline-flex h-10 w-10 items-center justify-center rounded-lg">
+              <span className="sr-only">Next project</span>
               <ArrowUpRight className="h-4 w-4" />
             </button>
-            <ProjectLinks project={project} />
+            <button type="button" onClick={onOpen} className="portfolio-primary-button ml-auto inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-bold sm:flex-none">
+              Open Case
+              <ArrowUpRight className="h-4 w-4" />
+            </button>
+            <ProjectLinks project={project} compact />
           </div>
         </div>
       </div>
@@ -245,7 +252,50 @@ function SpotlightProject({ project, active, onOpen }) {
   );
 }
 
-function ProjectTile({ project, index, onOpen }) {
+function DeckRail({ projects, activeIndex, onSelect }) {
+  return (
+    <div className="portfolio-panel rounded-lg p-3 sm:p-4">
+      <div className="mb-3 flex items-center justify-between gap-3 border-b pb-3" style={{ borderColor: "var(--color-border)" }}>
+        <div>
+          <div className="text-xs font-black uppercase tracking-[0.18em] text-[var(--color-faint)]">Build Deck</div>
+          <div className="text-lg font-black text-[var(--color-text)]">{projects.length} projects</div>
+        </div>
+        <Layers3 className="h-5 w-5 text-cyan-500" />
+      </div>
+
+      <div className="no-scrollbar flex gap-2 overflow-x-auto lg:grid lg:grid-cols-2 lg:overflow-visible xl:grid-cols-4">
+        {projects.map((project, index) => {
+          const active = activeIndex === index;
+          const accent = getProjectAccent(project, index);
+
+          return (
+            <button
+              key={getProjectKey(project, index)}
+              type="button"
+              onClick={() => onSelect(index)}
+              className="min-w-[15rem] rounded-lg border p-3 text-left transition-transform hover:-translate-y-0.5 lg:min-w-0"
+              style={{
+                borderColor: active ? `${accent}88` : "var(--color-border)",
+                background: active ? `${accent}16` : "var(--color-surface-muted)",
+              }}
+            >
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <span className="rounded-full px-2.5 py-1 text-[10px] font-black text-slate-950" style={{ backgroundColor: accent }}>
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                {project.featured && <Star className="h-3.5 w-3.5 fill-amber-300 text-amber-300" />}
+              </div>
+              <div className="line-clamp-2 text-sm font-black leading-tight text-[var(--color-text)]">{project.title}</div>
+              <div className="mt-2 line-clamp-1 text-[11px] font-semibold text-[var(--color-faint)]">{project.tech?.slice(0, 3).join(" / ")}</div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ProjectCard({ project, index, onOpen, onSelect }) {
   const accent = getProjectAccent(project, index);
 
   return (
@@ -258,18 +308,12 @@ function ProjectTile({ project, index, onOpen }) {
     >
       <div className="absolute inset-x-0 top-0 h-1" style={{ backgroundColor: accent }} />
       <div className="grid min-h-[154px] grid-cols-[112px_minmax(0,1fr)] sm:block sm:min-h-0">
-        <button type="button" onClick={() => onOpen(project)} className="relative block h-full min-h-[154px] overflow-hidden text-left sm:aspect-[16/10] sm:min-h-0">
+        <button type="button" onClick={onSelect} className="relative block h-full min-h-[154px] overflow-hidden text-left sm:aspect-[16/10] sm:min-h-0">
           <ProjectImage project={project} className="transition-transform duration-500 group-hover:scale-105" />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/62 via-transparent to-transparent" />
           <span className="absolute left-2 top-2 rounded-full bg-slate-950/80 px-2 py-1 text-[10px] font-black text-white backdrop-blur">
-            {String(index + 2).padStart(2, "0")}
+            {String(index + 1).padStart(2, "0")}
           </span>
-          {project.featured && (
-            <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-amber-300 px-2 py-1 text-[10px] font-black text-slate-950">
-              <Star className="h-3 w-3 fill-slate-950" />
-              Pick
-            </span>
-          )}
         </button>
 
         <div className="flex min-w-0 flex-col p-3 sm:p-4">
@@ -278,7 +322,7 @@ function ProjectTile({ project, index, onOpen }) {
             <span className="truncate text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--color-faint)]">{project.category}</span>
           </div>
 
-          <button type="button" onClick={() => onOpen(project)} className="min-w-0 text-left">
+          <button type="button" onClick={onSelect} className="min-w-0 text-left">
             <h3 className="line-clamp-2 text-base font-black leading-tight text-[var(--color-text)] sm:text-xl">{project.title}</h3>
             {project.desc && <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[var(--color-muted)] sm:text-sm">{project.desc}</p>}
           </button>
@@ -292,7 +336,7 @@ function ProjectTile({ project, index, onOpen }) {
           </div>
 
           <div className="mt-auto flex items-center gap-2 pt-3">
-            <button type="button" onClick={() => onOpen(project)} className="portfolio-secondary-button inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-bold">
+            <button type="button" onClick={onOpen} className="portfolio-secondary-button inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-bold">
               Details
               <ArrowUpRight className="h-3.5 w-3.5 shrink-0" />
             </button>
@@ -374,6 +418,7 @@ export default function Projects() {
   const categories = useMemo(() => normalizeProjects(projectsData), [projectsData]);
   const categoryKeys = useMemo(() => Object.keys(categories).filter((key) => categories[key]?.length), [categories]);
   const [active, setActive] = useState("All");
+  const [activeProjectIndex, setActiveProjectIndex] = useState(0);
   const [open, setOpen] = useState(null);
 
   useEffect(() => {
@@ -385,8 +430,12 @@ export default function Projects() {
   }, [active, categoryKeys]);
 
   const visibleProjects = categories[active] || [];
-  const spotlight = visibleProjects[0];
-  const remaining = visibleProjects.slice(1);
+
+  useEffect(() => {
+    if (activeProjectIndex >= visibleProjects.length) setActiveProjectIndex(0);
+  }, [activeProjectIndex, visibleProjects.length]);
+
+  const selectedProject = visibleProjects[activeProjectIndex] || visibleProjects[0];
   const metrics = useMemo(() => {
     const allProjects = categories.All || [];
     return {
@@ -414,7 +463,7 @@ export default function Projects() {
     );
   }
 
-  if (error || categoryKeys.length === 0) {
+  if (error || categoryKeys.length === 0 || !selectedProject) {
     return (
       <section id="projects" ref={sectionRef} className="relative flex min-h-[70vh] items-center justify-center px-4 py-20">
         <div className="portfolio-panel max-w-xl rounded-lg p-6 text-center">
@@ -426,37 +475,65 @@ export default function Projects() {
     );
   }
 
+  const selectPrevious = () => setActiveProjectIndex((index) => (index - 1 + visibleProjects.length) % visibleProjects.length);
+  const selectNext = () => setActiveProjectIndex((index) => (index + 1) % visibleProjects.length);
+
   return (
     <section id="projects" ref={sectionRef} className="relative overflow-hidden px-4 py-14 scroll-mt-24 sm:px-6 lg:px-8 lg:py-20">
       <div className="mx-auto max-w-7xl">
         <div className="mb-7 text-center sm:mb-8">
           <div className="mb-3 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-faint)]" style={{ borderColor: "var(--color-border)" }}>
             <Sparkles className="h-3.5 w-3.5 text-cyan-500" />
-            Build Board
+            Case Study Deck
           </div>
           <h2 className="portfolio-gradient-text text-4xl font-extrabold sm:text-5xl">Featured Projects</h2>
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-[var(--color-muted)] sm:text-base">
-            A sharper board of shipped products, hackathon builds, backend systems, and creative experiments.
+            Interactive case studies from cloud, full-stack, AI, security, and product experiments.
           </p>
         </div>
 
         <div className="mb-4 grid grid-cols-3 gap-2 sm:gap-3">
-          <ProjectMetric label="Projects" value={metrics.total} icon={Layers3} accent={PROJECT_ACCENTS[0]} />
-          <ProjectMetric label="Featured" value={metrics.featured} icon={Star} accent={PROJECT_ACCENTS[1]} />
-          <ProjectMetric label="Tech" value={metrics.stacks} icon={Boxes} accent={PROJECT_ACCENTS[2]} />
+          <Metric label="Projects" value={metrics.total} icon={Layers3} accent={PROJECT_ACCENTS[0]} />
+          <Metric label="Featured" value={metrics.featured} icon={Star} accent={PROJECT_ACCENTS[1]} />
+          <Metric label="Tech" value={metrics.stacks} icon={Boxes} accent={PROJECT_ACCENTS[2]} />
         </div>
 
-        <CategoryTabs categoryKeys={categoryKeys} categories={categories} active={active} onChange={setActive} />
+        <div className="mb-4">
+          <CategorySwitch
+            categoryKeys={categoryKeys}
+            categories={categories}
+            active={active}
+            onChange={(category) => {
+              setActive(category);
+              setActiveProjectIndex(0);
+            }}
+          />
+        </div>
 
-        {spotlight && <SpotlightProject project={spotlight} active={active} onOpen={openProject} />}
+        <CaseStudyHero
+          project={selectedProject}
+          activeIndex={activeProjectIndex}
+          total={visibleProjects.length}
+          onOpen={() => openProject(selectedProject)}
+          onSelectNext={selectNext}
+          onSelectPrevious={selectPrevious}
+        />
 
-        {remaining.length > 0 && (
-          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {remaining.map((project, index) => (
-              <ProjectTile key={getProjectKey(project, index)} project={project} index={index} onOpen={openProject} />
-            ))}
-          </div>
-        )}
+        <div className="mt-4">
+          <DeckRail projects={visibleProjects} activeIndex={activeProjectIndex} onSelect={setActiveProjectIndex} />
+        </div>
+
+        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {visibleProjects.map((project, index) => (
+            <ProjectCard
+              key={getProjectKey(project, index)}
+              project={project}
+              index={index}
+              onOpen={() => openProject(project)}
+              onSelect={() => setActiveProjectIndex(index)}
+            />
+          ))}
+        </div>
       </div>
 
       <AnimatePresence>{open && <ProjectModal project={open} onClose={() => setOpen(null)} />}</AnimatePresence>
