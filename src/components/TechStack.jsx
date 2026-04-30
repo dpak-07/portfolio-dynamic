@@ -227,12 +227,12 @@ export default function AnimatedTechStack() {
 
               <ul className="flex flex-wrap gap-2.5 sm:grid sm:grid-cols-3 sm:gap-2">
                 {selected.tech.map((tool, index) => (
-                  <motion.li
+<motion.li
                     key={tool}
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.018 }}
-                    className="portfolio-chip inline-flex min-h-10 max-w-full items-center justify-center rounded-lg px-3 py-2 text-center text-xs font-semibold leading-tight sm:text-sm"
+                    className="portfolio-entry-chip inline-flex min-h-10 max-w-full items-center justify-center rounded-lg px-3 py-2 text-center text-xs font-semibold leading-tight sm:text-sm"
                   >
                     {tool}
                   </motion.li>
@@ -326,12 +326,12 @@ export default function AnimatedTechStack() {
 
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {selected.tech.map((tool, index) => (
-                  <MotionSpan
+<MotionSpan
                     key={tool}
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.018 }}
-                    className="portfolio-chip rounded-lg px-3 py-2 text-center text-xs font-semibold sm:text-sm"
+                    className="portfolio-entry-chip rounded-lg px-3 py-2 text-center text-xs font-semibold sm:text-sm"
                   >
                     {tool}
                   </MotionSpan>

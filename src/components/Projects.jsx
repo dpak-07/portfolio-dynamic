@@ -89,7 +89,7 @@ function ProjectCard({ project, index, onOpen }) {
       <div className="p-4">
         <div className="mb-4 flex flex-wrap gap-1.5">
           {project.tech?.slice(0, 5).map((tool) => (
-            <span key={tool} className="portfolio-chip rounded-md px-2 py-1 text-[11px] font-semibold">
+<span key={tool} className="portfolio-entry-chip rounded-md px-2 py-1 text-[11px] font-semibold">
               {tool}
             </span>
           ))}

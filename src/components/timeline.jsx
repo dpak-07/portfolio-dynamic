@@ -140,7 +140,7 @@ function EventModal({ event, accent, onClose }) {
         {event.skills.length > 0 && (
           <div className="mt-6 flex flex-wrap gap-2">
             {event.skills.map((skill) => (
-              <span key={skill} className="portfolio-chip rounded-lg px-3 py-2 text-xs font-semibold">
+<span key={skill} className="portfolio-entry-chip rounded-lg px-3 py-2 text-xs font-semibold">
                 {skill}
               </span>
             ))}
@@ -257,7 +257,7 @@ export default function AutoScrollCarouselTimeline() {
                     {event.description && <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-[var(--color-muted)]">{event.description}</p>}
                     <div className="mt-4 flex flex-wrap gap-1.5">
                       {event.skills.slice(0, 4).map((skill) => (
-                        <span key={skill} className="portfolio-chip rounded-md px-2 py-1 text-[11px] font-semibold">
+<span key={skill} className="portfolio-entry-chip rounded-md px-2 py-1 text-[11px] font-semibold">
                           {skill}
                         </span>
                       ))}
