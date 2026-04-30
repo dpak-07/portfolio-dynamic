@@ -474,6 +474,7 @@ export default function ProjectsAdminCRT() {
               tech: project.tech || [],
               url: project.url || null,
               live: project.live || null,
+              featured: Boolean(project.featured),
               buttonStyle: project.buttonStyle || "btn-html", // Include button style
             })).filter(project => project.title); // Remove empty projects
           }
@@ -666,6 +667,7 @@ export default function ProjectsAdminCRT() {
       img: "",
       url: "",
       live: "",
+      featured: false,
       buttonStyle: "btn-html" // Default button style
     });
     setProjects(copy);
