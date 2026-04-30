@@ -232,7 +232,7 @@ export default function Projects() {
 
       {/* Category Pills */}
       <motion.div
-        className="flex flex-wrap justify-center gap-3 mb-12 relative z-10"
+        className="relative z-10 mb-12 flex flex-nowrap justify-start gap-3 overflow-x-auto px-1 pb-2 md:flex-wrap md:justify-center md:overflow-visible"
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 0.3 }}
@@ -255,7 +255,7 @@ export default function Projects() {
               transition: { duration: 0.2 }
             }}
             whileTap={{ scale: 0.95 }}
-            className={`px-6 py-2.5 rounded-full font-semibold text-sm transition-all relative overflow-hidden ${active === cat
+            className={`relative shrink-0 overflow-hidden rounded-full px-5 py-2.5 text-sm font-semibold transition-all sm:px-6 ${active === cat
                 ? "bg-gradient-to-r from-cyan-500 to-purple-600 text-white shadow-lg shadow-cyan-500/30"
                 : "bg-white/5 text-white/70 border border-white/10 hover:border-cyan-400/40 hover:text-white hover:bg-white/10"
               }`}
@@ -778,7 +778,7 @@ function ProjectModal({ open, setOpen, handleImageError, defaultImage }) {
 
   return (
     <motion.div
-      className="fixed inset-0 z-[999] flex items-center justify-center p-4"
+      className="fixed inset-0 z-[1001] flex items-center justify-center p-3 sm:p-4"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -786,7 +786,7 @@ function ProjectModal({ open, setOpen, handleImageError, defaultImage }) {
     >
       {/* Backdrop with Blur Animation */}
       <motion.div
-        className="absolute inset-0 bg-black/90 backdrop-blur-xl"
+        className="portfolio-modal-backdrop absolute inset-0"
         onClick={() => setOpen(null)}
         initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
         animate={{ opacity: 1, backdropFilter: "blur(12px)" }}
@@ -796,8 +796,7 @@ function ProjectModal({ open, setOpen, handleImageError, defaultImage }) {
 
       {/* Modal Container */}
       <motion.div
-        className="relative z-10 bg-gradient-to-br from-gray-900 to-black border border-white/20 overflow-hidden max-w-5xl w-full shadow-2xl max-h-[90vh]"
-        style={{ borderRadius: '20px' }}
+        className="portfolio-modal-card relative z-10 max-h-[92svh] w-full max-w-5xl overflow-hidden rounded-lg"
         initial={{ scale: 0.8, y: 100, rotateX: 15 }}
         animate={{ scale: 1, y: 0, rotateX: 0 }}
         exit={{ scale: 0.8, y: 100, rotateX: 15 }}
@@ -828,7 +827,7 @@ function ProjectModal({ open, setOpen, handleImageError, defaultImage }) {
           }}
           whileTap={{ scale: 0.9 }}
           transition={{ duration: 0.3, type: "spring", stiffness: 300 }}
-          className="absolute top-4 right-4 z-30 p-2 rounded-full bg-black/80 backdrop-blur-sm border border-white/20 text-white hover:bg-white/10 transition-all"
+          className="portfolio-secondary-button absolute right-3 top-3 z-30 rounded-full p-2 transition-all sm:right-4 sm:top-4"
         >
           <X size={20} />
         </motion.button>
@@ -856,13 +855,13 @@ function ProjectModal({ open, setOpen, handleImageError, defaultImage }) {
         )}
 
         {/* Content */}
-        <div className="flex flex-col md:flex-row max-h-[90vh]">
+        <div className="flex max-h-[92svh] flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
           {/* Photo Section with Hover Zoom */}
           <motion.div
-            className="w-full md:w-1/2 relative bg-black min-h-[300px] overflow-hidden group/img"
+            className="group/img relative min-h-[220px] w-full overflow-hidden bg-black sm:min-h-[300px] lg:w-1/2"
             style={{
-              borderTopLeftRadius: '20px',
-              borderBottomLeftRadius: '20px',
+              borderTopLeftRadius: '8px',
+              borderTopRightRadius: '8px',
             }}
             initial={{ x: -100, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
@@ -897,13 +896,13 @@ function ProjectModal({ open, setOpen, handleImageError, defaultImage }) {
 
           {/* Details Section */}
           <motion.div
-            className="w-full md:w-1/2 p-6 overflow-y-auto"
+            className="w-full p-5 sm:p-6 lg:w-1/2 lg:overflow-y-auto"
             initial={{ x: 100, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
           >
             <motion.h2
-              className="text-2xl font-black text-white mb-3"
+              className="mb-3 pr-10 text-2xl font-black text-[var(--color-text)]"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
@@ -917,7 +916,7 @@ function ProjectModal({ open, setOpen, handleImageError, defaultImage }) {
             </motion.h2>
 
             <motion.p
-              className="text-white/80 text-sm leading-relaxed mb-5"
+              className="mb-5 text-sm leading-relaxed text-[var(--color-muted)]"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
@@ -933,7 +932,7 @@ function ProjectModal({ open, setOpen, handleImageError, defaultImage }) {
               transition={{ delay: 0.5 }}
             >
               <motion.h3
-                className="text-sm font-semibold text-cyan-400 mb-2"
+                className="mb-2 text-sm font-semibold text-cyan-400"
                 whileHover={{ x: 5, scale: 1.05 }}
               >
                 Technologies
@@ -956,7 +955,7 @@ function ProjectModal({ open, setOpen, handleImageError, defaultImage }) {
                       borderColor: "rgba(6, 182, 212, 0.6)",
                       transition: { duration: 0.4 }
                     }}
-                    className="px-2.5 py-1 rounded-lg bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 font-medium text-xs cursor-default"
+                    className="portfolio-chip cursor-default rounded-lg px-2.5 py-1 text-xs font-medium"
                   >
                     {t}
                   </motion.span>
@@ -983,7 +982,7 @@ function ProjectModal({ open, setOpen, handleImageError, defaultImage }) {
                     boxShadow: "0 10px 30px rgba(34, 197, 94, 0.4)",
                   }}
                   whileTap={{ scale: 0.95 }}
-                  className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-green-500 hover:bg-green-600 text-white font-semibold text-sm shadow-lg transition-colors relative overflow-hidden group"
+                  className="relative flex items-center justify-center gap-2 overflow-hidden rounded-lg bg-emerald-500 px-5 py-3 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-emerald-600"
                 >
                   <motion.div
                     className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
@@ -1013,7 +1012,7 @@ function ProjectModal({ open, setOpen, handleImageError, defaultImage }) {
                     boxShadow: "0 10px 30px rgba(6, 182, 212, 0.4)",
                   }}
                   whileTap={{ scale: 0.95 }}
-                  className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-cyan-500 hover:bg-cyan-600 text-black font-semibold text-sm shadow-lg transition-colors relative overflow-hidden group"
+                  className="portfolio-primary-button relative flex items-center justify-center gap-2 overflow-hidden rounded-lg px-5 py-3 text-sm font-semibold transition-colors"
                 >
                   <motion.div
                     className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"

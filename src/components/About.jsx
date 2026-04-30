@@ -11,8 +11,10 @@ import {
   FaEnvelope,
   FaGraduationCap,
   FaLaptopCode,
+  FaLink,
   FaMapMarkerAlt,
   FaTrophy,
+  FaUsers,
 } from "react-icons/fa";
 import { useFirestoreData } from "@/hooks/useFirestoreData";
 import { logLinkClick, logSectionView } from "../utils/analytics";
@@ -66,6 +68,8 @@ const iconMap = {
   laptop: FaLaptopCode,
   cloud: FaCloud,
   trophy: FaTrophy,
+  users: FaUsers,
+  link: FaLink,
   compass: FaCompass,
 };
 
@@ -208,6 +212,7 @@ export default function AboutWithDriveImage({ overrideConfig }) {
   const imageUrl = cfg.image?.url;
   const interests = cfg.holoSections?.find((section) => section.type === "interests")?.content;
   const learning = cfg.holoSections?.find((section) => section.type === "learning")?.content;
+  const leadership = cfg.holoSections?.find((section) => section.type === "leadership")?.content;
 
   return (
     <motion.section
@@ -239,7 +244,7 @@ export default function AboutWithDriveImage({ overrideConfig }) {
           </motion.div>
         )}
 
-        <div className="grid gap-5 lg:grid-cols-[0.78fr_1.22fr]">
+        <div className="grid gap-5 lg:grid-cols-[0.72fr_1.28fr]">
           <motion.aside variants={itemVariants} className="rounded-lg border p-4 sm:p-5" style={{ background: "var(--color-surface)", borderColor: "var(--color-border)", boxShadow: "var(--shadow-soft)" }}>
             <div className="overflow-hidden rounded-lg border" style={{ borderColor: "var(--color-border)", background: "var(--color-surface-muted)" }}>
               {imageUrl && !imgFailed ? (
@@ -256,13 +261,13 @@ export default function AboutWithDriveImage({ overrideConfig }) {
               <p className="mt-1 text-sm text-[var(--color-muted)]">Pre-final year - AI & DS</p>
             </div>
 
-            <div className="mt-5 grid grid-cols-2 gap-2">
+            <div className="mt-5 grid grid-cols-3 gap-2">
               {counters.map((counter) => (
                 <div key={counter.id || counter.label} className="rounded-lg border px-3 py-2 text-center" style={{ borderColor: "var(--color-border)", background: "var(--color-surface-muted)" }}>
                   <motion.div className="text-2xl font-black text-[var(--color-text)]" initial={{ opacity: 0, y: 8 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
                     {counter.value}
                   </motion.div>
-                  <div className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-faint)]">{counter.label}</div>
+                  <div className="text-[10px] font-semibold leading-tight text-[var(--color-faint)]">{counter.label}</div>
                 </div>
               ))}
             </div>
@@ -354,8 +359,8 @@ export default function AboutWithDriveImage({ overrideConfig }) {
                 <p className="text-sm text-[var(--color-muted)]">{interests || "Computer Vision, NLP, Cloud AI, MLOps"}</p>
               </div>
               <div className="rounded-lg border p-4" style={{ background: "var(--color-surface)", borderColor: "var(--color-border)" }}>
-                <div className="mb-2 text-sm font-bold text-[var(--color-text)]">Currently Learning</div>
-                <p className="text-sm text-[var(--color-muted)]">{learning || "Kubernetes for ML, transformer optimization, distributed training"}</p>
+                <div className="mb-2 text-sm font-bold text-[var(--color-text)]">{leadership ? "Leadership" : "Currently Learning"}</div>
+                <p className="text-sm text-[var(--color-muted)]">{leadership || learning || "Kubernetes for ML, transformer optimization, distributed training"}</p>
               </div>
             </motion.div>
 

@@ -64,15 +64,15 @@ export default function Header() {
     }
 
     const rolesArray = profileData.roles
-      .split("•")
+      .split(/\s*(?:\u2022|\u00e2\u20ac\u00a2|\|)\s*/)
       .map((role) => role.trim())
       .filter(Boolean);
 
     return {
-      first2: rolesArray.slice(0, 2).join(" • "),
-      remaining: rolesArray.slice(2).join(" • "),
+      first2: rolesArray.slice(0, 2).join(" / "),
+      remaining: rolesArray.slice(2).join(" / "),
       hasMore: rolesArray.length > 2,
-      full: rolesArray.join(" • "),
+      full: rolesArray.join(" / "),
     };
   }, [profileData?.roles]);
 
@@ -330,7 +330,7 @@ export default function Header() {
 
       {showResume && preview && (
         <div
-          className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/90 p-4 backdrop-blur-sm md:backdrop-blur-md"
+          className="portfolio-modal-backdrop fixed inset-0 z-[9999] flex flex-col items-center justify-center p-3 sm:p-4"
           onClick={(event) => {
             if (event.target === event.currentTarget) {
               setShowResume(false);
@@ -339,7 +339,7 @@ export default function Header() {
         >
           <motion.button
             onClick={() => setShowResume(false)}
-            className="absolute right-4 top-4 z-[10000] rounded-full border border-white/20 bg-black/80 p-3 text-white transition-all hover:border-cyansoft hover:bg-black hover:text-cyansoft sm:right-6 sm:top-6"
+            className="portfolio-secondary-button absolute right-4 top-4 z-[10000] rounded-full p-3 transition-all hover:border-cyansoft hover:text-cyansoft sm:right-6 sm:top-6"
             whileHover={lightweightMotion ? undefined : { scale: 1.1 }}
             whileTap={lightweightMotion ? undefined : { scale: 0.9 }}
           >
@@ -350,10 +350,10 @@ export default function Header() {
             initial={lightweightMotion ? { opacity: 1 } : { scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: lightweightMotion ? 0.12 : 0.4, ease: "easeOut" }}
-            className="mx-4 h-[80vh] w-full max-w-4xl overflow-hidden rounded-xl border border-white/10 bg-[#0a0a0a] shadow-2xl lg:max-w-5xl"
+            className="portfolio-modal-card h-[82svh] w-full max-w-4xl overflow-hidden rounded-lg shadow-2xl lg:max-w-5xl"
             onClick={(event) => event.stopPropagation()}
           >
-            <iframe src={preview} className="h-full w-full rounded-xl" title="Resume" />
+            <iframe src={preview} className="h-full w-full rounded-lg bg-white" title="Resume" />
           </motion.div>
         </div>
       )}

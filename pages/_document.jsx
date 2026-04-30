@@ -39,7 +39,7 @@ const personJsonLd = {
 
 export default function Document() {
   return (
-    <Html lang="en">
+    <Html lang="en" data-theme="dark">
       <Head>
         <meta charSet="UTF-8" />
         {GTM_ID ? <script dangerouslySetInnerHTML={{ __html: gtmBootstrap }} /> : null}

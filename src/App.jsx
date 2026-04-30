@@ -79,11 +79,11 @@ const INITIAL_FIRESTORE_ENTRIES = [
 
 function usePortfolioTheme() {
   const [theme, setTheme] = useState(() => {
-    if (typeof window === "undefined") return "light";
+    if (typeof window === "undefined") return "dark";
     try {
-      return window.localStorage.getItem("portfolio.theme") || "light";
+      return window.localStorage.getItem("portfolio.theme") || "dark";
     } catch {
-      return "light";
+      return "dark";
     }
   });
 
@@ -103,7 +103,13 @@ function usePortfolioTheme() {
 function SectionsConfigLoader({ children }) {
   const { data: sectionsData, loading: sectionsLoading } = useFirestoreData("sections", "visibility");
 
-  const sectionsConfig = sectionsData || DEFAULT_SECTIONS_CONFIG;
+  const sectionsConfig = sectionsData
+    ? {
+        ...DEFAULT_SECTIONS_CONFIG,
+        ...sectionsData,
+        "github-stats": sectionsData["github-stats"] ?? sectionsData.GITHUB ?? DEFAULT_SECTIONS_CONFIG["github-stats"],
+      }
+    : DEFAULT_SECTIONS_CONFIG;
   const actualLoading = sectionsLoading;
 
   return children(sectionsConfig, actualLoading);

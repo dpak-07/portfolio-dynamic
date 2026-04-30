@@ -124,7 +124,7 @@ const DetailModal = ({ event, isOpen, onClose }) => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50"
+            className="portfolio-modal-backdrop fixed inset-0 z-[1001]"
           />
 
           {/* Modal - Swipeable */}
@@ -133,7 +133,7 @@ const DetailModal = ({ event, isOpen, onClose }) => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: "100%" }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="fixed inset-0 z-50 flex items-end md:items-center justify-center pointer-events-none"
+            className="fixed inset-0 z-[1002] flex items-end justify-center pointer-events-none md:items-center"
           >
             <motion.div
               drag="y"
@@ -231,7 +231,7 @@ const DetailModal = ({ event, isOpen, onClose }) => {
                   {/* Achievements */}
                   <div>
                     <p className="text-xs md:text-sm font-bold text-white/70 uppercase tracking-wider mb-3 md:mb-4">
-                      ✓ Key Achievements
+                      Key Achievements
                     </p>
                     <div className="space-y-2 md:space-y-3">
                       {event.achievements && event.achievements.length > 0 ? (
@@ -256,7 +256,7 @@ const DetailModal = ({ event, isOpen, onClose }) => {
                   {/* Skills */}
                   <div>
                     <p className="text-xs md:text-sm font-bold text-white/70 uppercase tracking-wider mb-3 md:mb-4">
-                      🛠️ Skills & Tools
+                      Skills & Tools
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {event.skills && event.skills.length > 0 ? (
@@ -651,8 +651,8 @@ export default function AutoScrollCarouselTimeline() {
   };
 
   const visibleCards = getVisibleCards();
-  const visibleYears = visibleCards.map(event => event.year).join(" • ");
-  const visiblePeriods = visibleCards.map(event => event.period).join(" • ");
+  const visibleYears = visibleCards.map(event => event.year).join(" / ");
+  const visiblePeriods = visibleCards.map(event => event.period).join(" / ");
 
   const handleCardClick = (event) => {
     setSelectedEvent(event);
@@ -818,7 +818,7 @@ export default function AutoScrollCarouselTimeline() {
               transition={{ delay: 0.6 }}
               className="text-center mt-6 md:mt-10 text-xs md:text-sm text-gray-400"
             >
-              Auto-scrolling • Click dots or cards to explore
+              Auto-scrolling - tap a card to explore
             </motion.p>
           </div>
 

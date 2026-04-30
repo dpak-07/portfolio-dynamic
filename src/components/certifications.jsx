@@ -383,8 +383,8 @@ export default function CertificationsSection() {
       {/* Animated BG */}
 
       {/* Title */}
-      <h2 className="text-4xl md:text-5xl font-bold mb-10 text-center tracking-wide">
-        🪄 My Certifications & Milestones
+      <h2 className="portfolio-gradient-text mb-10 text-center text-4xl font-bold tracking-wide md:text-5xl">
+        Certifications & Milestones
       </h2>
 
       {/* Desktop Tabs */}
@@ -496,7 +496,7 @@ export default function CertificationsSection() {
                     setSelected(item);
                     setImageIndex(0);
                   }}
-                  className="cursor-pointer p-6 rounded-2xl border border-white/20 bg-white/10 backdrop-blur-lg text-left relative group overflow-hidden"
+                  className="portfolio-panel cursor-pointer rounded-lg p-5 text-left relative group overflow-hidden"
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/10 to-transparent opacity-0 group-hover:opacity-20 transition-all"></div>
 
@@ -536,7 +536,7 @@ export default function CertificationsSection() {
                     setSelected(item);
                     setImageIndex(0);
                   }}
-                  className="cursor-pointer p-6 rounded-2xl border border-white/20 bg-white/10 backdrop-blur-lg text-left relative group overflow-hidden"
+                  className="portfolio-panel cursor-pointer rounded-lg p-6 text-left relative group overflow-hidden"
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/10 to-transparent opacity-0 group-hover:opacity-20 transition-all"></div>
 
@@ -568,7 +568,7 @@ export default function CertificationsSection() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4"
+            className="portfolio-modal-backdrop fixed inset-0 z-[1001] flex items-center justify-center p-3 sm:p-4"
             onClick={() => setSelected(null)}
           >
             <motion.div
@@ -576,29 +576,29 @@ export default function CertificationsSection() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
               transition={{ type: "spring", damping: 12 }}
-              className="relative bg-white/10 border border-white/20 rounded-2xl p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto backdrop-blur-xl"
+              className="portfolio-modal-card relative max-h-[92svh] w-full max-w-4xl overflow-y-auto rounded-lg p-5 sm:p-6"
               onClick={(e) => e.stopPropagation()}
             >
               <button
                 onClick={() => setSelected(null)}
-                className="absolute top-3 right-3 text-white hover:text-gray-300 z-10 bg-black/50 rounded-full p-1"
+                className="portfolio-secondary-button absolute right-3 top-3 z-10 rounded-full p-2 transition-colors"
               >
-                <X size={24} />
+                <X size={20} />
               </button>
 
-              <h3 className="text-2xl font-semibold mb-2 pr-8">{selected.title}</h3>
-              <div className="flex items-center gap-2 mb-2 text-gray-300">
+              <h3 className="mb-2 pr-10 text-2xl font-semibold text-[var(--color-text)]">{selected.title}</h3>
+              <div className="mb-2 flex items-center gap-2 text-[var(--color-muted)]">
                 <Building2 className="w-4 h-4" />
                 <span>{selected.issuer}</span>
               </div>
-              <div className="flex items-center gap-2 mb-4 text-gray-400 text-sm">
+              <div className="mb-4 flex items-center gap-2 text-sm text-[var(--color-faint)]">
                 <CalendarDays className="w-4 h-4" />
                 <span>{selected.date}</span>
               </div>
-              <p className="text-gray-300 text-sm mb-6">{selected.desc}</p>
+              <p className="mb-6 text-sm text-[var(--color-muted)]">{selected.desc}</p>
 
               {selected.images && selected.images.length > 0 && (
-                <div className="relative flex justify-center items-center bg-black/30 rounded-lg p-4">
+                <div className="portfolio-panel-muted relative flex items-center justify-center rounded-lg p-3 sm:p-4">
                   {/* High Quality Image Component */}
                   <HighQualityImage
                     src={selected.images[imageIndex]}
@@ -614,13 +614,13 @@ export default function CertificationsSection() {
                     <>
                       <button
                         onClick={prevImage}
-                        className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 p-3 rounded-full border border-white/30 transition-all z-20"
+                        className="absolute left-3 top-1/2 z-20 -translate-y-1/2 rounded-full border border-white/30 bg-black/70 p-2.5 transition-all hover:bg-black/90 sm:left-4"
                       >
                         <ChevronLeft className="w-6 h-6 text-white" />
                       </button>
                       <button
                         onClick={nextImage}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 p-3 rounded-full border border-white/30 transition-all z-20"
+                        className="absolute right-3 top-1/2 z-20 -translate-y-1/2 rounded-full border border-white/30 bg-black/70 p-2.5 transition-all hover:bg-black/90 sm:right-4"
                       >
                         <ChevronRight className="w-6 h-6 text-white" />
                       </button>
@@ -637,7 +637,7 @@ export default function CertificationsSection() {
                   {/* View Original Button */}
                   <button
                     onClick={openOriginalLink}
-                    className="absolute top-4 right-4 bg-black/60 hover:bg-black/80 p-2 rounded-full border border-white/30 transition-all z-20 flex items-center gap-1 text-xs"
+                    className="absolute right-3 top-3 z-20 flex items-center gap-1 rounded-full border border-white/30 bg-black/70 p-2 text-xs transition-all hover:bg-black/90 sm:right-4 sm:top-4"
                     title="View original in OneDrive"
                   >
                     <ExternalLink className="w-4 h-4" />

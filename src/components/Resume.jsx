@@ -101,7 +101,7 @@ export default function Resume() {
           className="text-center mb-12 sm:mb-16"
         >
           <motion.h2
-            className="text-4xl sm:text-5xl md:text-7xl font-black text-white mb-4 sm:mb-6 px-4"
+            className="portfolio-gradient-text mb-4 px-4 text-4xl font-black sm:mb-6 sm:text-5xl md:text-6xl"
             animate={{
               backgroundImage: [
                 "linear-gradient(to right, #06b6d4, #8b5cf6)",
@@ -122,7 +122,7 @@ export default function Resume() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
-            className="text-lg sm:text-xl text-gray-300 max-w-2xl mx-auto px-4"
+            className="mx-auto max-w-2xl px-4 text-base text-[var(--color-muted)] sm:text-lg"
           >
             {resumeData?.description || "Explore my professional journey and skills"}
           </motion.p>
@@ -139,17 +139,17 @@ export default function Resume() {
               whileHover={{ scale: 1.05, y: -10 }}
               className="group relative"
             >
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-3xl opacity-0 group-hover:opacity-75 blur transition duration-500" />
-              <div className="relative bg-slate-800/50 backdrop-blur-xl border border-purple-400/20 rounded-3xl p-6 sm:p-8 h-full">
-                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <div className="absolute -inset-0.5 rounded-lg bg-gradient-to-r from-teal-400 to-amber-300 opacity-0 blur transition duration-500 group-hover:opacity-40" />
+              <div className="portfolio-panel relative h-full rounded-lg p-6 sm:p-8">
+                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-lg bg-gradient-to-br from-teal-400 to-cyan-500 transition-transform group-hover:scale-105 sm:h-16 sm:w-16">
                   <Code className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
                 </div>
-                <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">Skills</h3>
+                <h3 className="mb-2 text-xl font-bold text-[var(--color-text)] sm:text-2xl">Skills</h3>
                 <div className="flex flex-wrap gap-2 mt-4">
                   {(resumeData?.skills || ["React", "Node.js", "Python", "JavaScript", "TypeScript", "CSS"]).slice(0, 6).map((skill, i) => (
                     <span
                       key={i}
-                      className="px-2.5 sm:px-3 py-1 bg-purple-500/20 text-purple-300 rounded-full text-xs sm:text-sm border border-purple-400/30"
+                      className="portfolio-chip rounded-md px-2.5 py-1 text-xs sm:px-3 sm:text-sm"
                     >
                       {skill}
                     </span>
@@ -166,13 +166,13 @@ export default function Resume() {
               whileHover={{ scale: 1.05, y: -10 }}
               className="group relative"
             >
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-orange-500 to-yellow-500 rounded-3xl opacity-0 group-hover:opacity-75 blur transition duration-500" />
-              <div className="relative bg-slate-800/50 backdrop-blur-xl border border-orange-400/20 rounded-3xl p-6 sm:p-8 h-full">
-                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-orange-500 to-yellow-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <div className="absolute -inset-0.5 rounded-lg bg-gradient-to-r from-amber-400 to-orange-500 opacity-0 blur transition duration-500 group-hover:opacity-40" />
+              <div className="portfolio-panel relative h-full rounded-lg p-6 sm:p-8">
+                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 transition-transform group-hover:scale-105 sm:h-16 sm:w-16">
                   <Award className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
                 </div>
-                <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">Achievements</h3>
-                <p className="text-sm sm:text-base text-gray-300">
+                <h3 className="mb-2 text-xl font-bold text-[var(--color-text)] sm:text-2xl">Achievements</h3>
+                <p className="text-sm text-[var(--color-muted)] sm:text-base">
                   {resumeData?.achievements || "Multiple awards and certifications"}
                 </p>
                 <div className="mt-4 flex items-center gap-2 text-orange-400">
@@ -196,9 +196,9 @@ export default function Resume() {
             disabled={!embedLink}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className={`group relative w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 text-white font-bold text-base sm:text-lg rounded-xl overflow-hidden shadow-lg ${
+            className={`group relative w-full overflow-hidden rounded-lg px-6 py-3 text-base font-bold shadow-lg sm:w-auto sm:px-8 sm:py-4 sm:text-lg ${
               embedLink
-                ? "bg-gradient-to-r from-cyan-500 to-blue-600 shadow-cyan-500/50"
+                ? "portfolio-primary-button"
                 : "bg-slate-700/80 shadow-slate-900/30 cursor-not-allowed"
             }`}
           >
@@ -221,7 +221,7 @@ export default function Resume() {
               onClick={handleDownload}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="group relative w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-purple-500 to-pink-600 text-white font-bold text-base sm:text-lg rounded-xl overflow-hidden shadow-lg shadow-purple-500/50"
+              className="portfolio-secondary-button group relative w-full overflow-hidden rounded-lg px-6 py-3 text-base font-bold shadow-lg sm:w-auto sm:px-8 sm:py-4 sm:text-lg"
             >
               <motion.div
                 className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
@@ -246,7 +246,7 @@ export default function Resume() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsOpen(false)}
-              className="fixed inset-0 bg-black/90 z-[9998] backdrop-blur-md"
+              className="portfolio-modal-backdrop fixed inset-0 z-[9998]"
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
@@ -258,13 +258,13 @@ export default function Resume() {
                 onClick={() => setIsOpen(false)}
                 whileHover={{ scale: 1.1, rotate: 90 }}
                 whileTap={{ scale: 0.9 }}
-                className="absolute top-2 right-2 sm:top-6 sm:right-6 text-white hover:text-cyan-400 transition-all z-[10000] bg-black/80 hover:bg-black rounded-full p-3 sm:p-4 border border-white/20 hover:border-cyan-400"
+                className="portfolio-secondary-button absolute right-2 top-2 z-[10000] rounded-full p-3 transition-all hover:border-cyan-400 hover:text-cyan-400 sm:right-6 sm:top-6 sm:p-4"
               >
                 <X className="w-6 h-6 sm:w-8 sm:h-8" />
               </motion.button>
               <iframe
                 src={embedLink}
-                className="w-full max-w-5xl h-[85vh] sm:h-[80vh] rounded-xl sm:rounded-2xl shadow-2xl border-2 border-cyan-400/30"
+                className="h-[86svh] w-full max-w-5xl rounded-lg border border-cyan-400/30 bg-white shadow-2xl sm:h-[82vh]"
                 title="Resume Preview"
               />
             </motion.div>

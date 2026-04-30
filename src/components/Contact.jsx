@@ -47,11 +47,11 @@ export default function Contact() {
         EMAILJS_PUBLIC_KEY
       );
 
-      setStatus({ type: "success", text: "✓ Message sent successfully!" });
+      setStatus({ type: "success", text: "Message sent successfully." });
       logLinkClick("contact");
       setForm({ name: "", email: "", message: "" });
     } catch (err) {
-      setStatus({ type: "error", text: "✗ Failed to send. Try again!" });
+      setStatus({ type: "error", text: "Failed to send. Try again." });
     } finally {
       setLoading(false);
     }
@@ -77,7 +77,8 @@ export default function Contact() {
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 px-3 py-1.5 bg-cyan-500/10 border border-cyan-500/30 rounded-full mb-4"
+            className="mb-4 inline-flex items-center gap-2 rounded-full border px-3 py-1.5"
+            style={{ background: "var(--color-accent-soft)", borderColor: "var(--color-border-strong)" }}
           >
             <motion.div
               animate={{ rotate: 360 }}
@@ -89,10 +90,10 @@ export default function Contact() {
               Get In Touch
             </span>
           </motion.div>
-          <h2 className="text-5xl md:text-7xl font-black text-white mb-2 bg-gradient-to-r from-white via-cyan-200 to-cyan-500 bg-clip-text text-transparent">
+          <h2 className="portfolio-gradient-text mb-2 text-5xl font-black md:text-6xl">
             Let's Talk
           </h2>
-          <p className="text-white/50 text-lg">Drop me a line →</p>
+          <p className="text-lg text-[var(--color-muted)]">Drop me a line</p>
         </motion.div>
 
         {/* Bento Grid Layout */}
@@ -106,9 +107,9 @@ export default function Contact() {
             className="md:col-span-2 relative group"
           >
             {/* Glow Effect on Hover */}
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-3xl blur opacity-0 group-hover:opacity-20 transition duration-1000" />
+            <div className="absolute -inset-0.5 rounded-lg bg-gradient-to-r from-teal-400 to-amber-300 opacity-0 blur transition duration-1000 group-hover:opacity-20" />
 
-            <div className="relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-8 space-y-5 hover:border-cyan-500/30 transition-all">
+            <div className="portfolio-panel relative space-y-5 rounded-lg p-5 transition-all hover:border-cyan-500/30 sm:p-8">
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="relative">
                   <motion.input
@@ -123,7 +124,7 @@ export default function Contact() {
                     placeholder="Full Name"
                     value={form.name}
                     onChange={update("name")}
-                    className="w-full bg-black/40 border px-4 py-3.5 rounded-xl text-white placeholder-white/40 outline-none transition-all focus:bg-black/60"
+                    className="portfolio-input w-full rounded-lg px-4 py-3.5 outline-none transition-all"
                   />
                 </div>
 
@@ -140,7 +141,7 @@ export default function Contact() {
                     placeholder="Email Address"
                     value={form.email}
                     onChange={update("email")}
-                    className="w-full bg-black/40 border px-4 py-3.5 rounded-xl text-white placeholder-white/40 outline-none transition-all focus:bg-black/60"
+                    className="portfolio-input w-full rounded-lg px-4 py-3.5 outline-none transition-all"
                   />
                 </div>
               </div>
@@ -157,10 +158,10 @@ export default function Contact() {
                 placeholder="Tell me about your project or just say hi..."
                 value={form.message}
                 onChange={update("message")}
-                className="w-full bg-black/40 border px-4 py-3.5 rounded-xl text-white placeholder-white/40 outline-none resize-none transition-all focus:bg-black/60"
+                className="portfolio-input w-full resize-none rounded-lg px-4 py-3.5 outline-none transition-all"
               />
 
-              <div className="flex items-center justify-between pt-2">
+              <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
                 <AnimatePresence>
                   {status && (
                     <motion.span
@@ -180,7 +181,7 @@ export default function Contact() {
                   whileTap={{ scale: 0.95 }}
                   disabled={loading}
                   type="submit"
-                  className="ml-auto bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold px-8 py-3 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-cyan-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="portfolio-primary-button flex w-full items-center justify-center gap-2 rounded-lg px-8 py-3 font-bold transition-all disabled:cursor-not-allowed disabled:opacity-50 sm:ml-auto sm:w-auto"
                 >
                   {loading ? (
                     <>
@@ -206,45 +207,39 @@ export default function Contact() {
             className="relative group"
           >
             {/* Glow Effect */}
-            <div className="absolute -inset-0.5 bg-gradient-to-br from-cyan-500 to-purple-500 rounded-3xl blur opacity-20 group-hover:opacity-40 transition duration-1000" />
+            <div className="absolute -inset-0.5 rounded-lg bg-gradient-to-br from-teal-400 to-amber-300 opacity-20 blur transition duration-1000 group-hover:opacity-35" />
 
-            <div className="relative bg-gradient-to-br from-cyan-500/10 via-purple-500/10 to-blue-500/10 backdrop-blur-sm border border-white/10 rounded-3xl p-8 flex flex-col justify-between hover:border-cyan-500/30 transition-all h-full">
+            <div className="portfolio-panel relative flex h-full flex-col justify-between rounded-lg p-6 transition-all hover:border-cyan-500/30 sm:p-8">
               <div>
                 <motion.h3
-                  className="text-2xl font-bold text-white mb-4 flex items-center gap-2"
+                  className="mb-4 flex items-center gap-2 text-2xl font-bold text-[var(--color-text)]"
                   animate={{ opacity: [1, 0.7, 1] }}
                   transition={{ duration: 2, repeat: Infinity }}
                 >
                   Contact Info
-                  <motion.span
-                    animate={{ rotate: [0, 10, -10, 0] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    ✨
-                  </motion.span>
                 </motion.h3>
 
                 {/* Email */}
-                <div className="mb-4 p-3 bg-black/30 rounded-lg hover:bg-black/40 transition-colors">
+                <div className="portfolio-panel-muted mb-4 rounded-lg p-3 transition-colors">
                   <div className="flex items-center gap-2 mb-1">
                     <Mail className="w-4 h-4 text-cyan-400" />
                     <span className="text-cyan-400 text-xs font-semibold uppercase">Email</span>
                   </div>
                   <a
                     href="mailto:deepakofficial0103@gmail.com"
-                    className="text-white/80 text-sm hover:text-cyan-400 transition-colors break-all"
+                    className="break-all text-sm text-[var(--color-muted)] transition-colors hover:text-cyan-400"
                   >
                     deepakofficial0103@gmail.com
                   </a>
                 </div>
 
                 {/* Response Time */}
-                <div className="mb-4 p-3 bg-black/30 rounded-lg hover:bg-black/40 transition-colors">
+                <div className="portfolio-panel-muted mb-4 rounded-lg p-3 transition-colors">
                   <div className="flex items-center gap-2 mb-1">
                     <Clock className="w-4 h-4 text-purple-400" />
                     <span className="text-purple-400 text-xs font-semibold uppercase">Response</span>
                   </div>
-                  <p className="text-white/80 text-sm">Usually within 24 hours</p>
+                  <p className="text-sm text-[var(--color-muted)]">Usually within 24 hours</p>
                 </div>
               </div>
 
@@ -259,7 +254,7 @@ export default function Contact() {
                     animate={{ scale: [1, 1.2, 1] }}
                     transition={{ duration: 2, repeat: Infinity }}
                   />
-                  <span className="text-white/70 text-sm">Available for work</span>
+                  <span className="text-sm text-[var(--color-muted)]">Available for work</span>
                 </motion.div>
                 <motion.div
                   className="flex items-center gap-2"
@@ -270,14 +265,14 @@ export default function Contact() {
                     animate={{ opacity: [1, 0.5, 1] }}
                     transition={{ duration: 1.5, repeat: Infinity }}
                   />
-                  <span className="text-white/70 text-sm">Open to collaborations</span>
+                  <span className="text-sm text-[var(--color-muted)]">Open to collaborations</span>
                 </motion.div>
                 <motion.div
                   className="flex items-center gap-2"
                   whileHover={{ x: 5 }}
                 >
                   <motion.div className="w-2 h-2 bg-purple-400 rounded-full" />
-                  <span className="text-white/70 text-sm">Freelance projects</span>
+                  <span className="text-sm text-[var(--color-muted)]">Freelance projects</span>
                 </motion.div>
               </div>
             </div>

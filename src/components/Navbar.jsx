@@ -107,9 +107,9 @@ export default function Navbar({ sectionsConfig, theme = "light", onThemeToggle 
 
   // Prevent background scroll when mobile menu open
   useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : "auto";
+    document.body.style.overflow = open ? "hidden" : "";
     return () => {
-      document.body.style.overflow = "auto";
+      document.body.style.overflow = "";
     };
   }, [open]);
 
@@ -127,9 +127,9 @@ export default function Navbar({ sectionsConfig, theme = "light", onThemeToggle 
         initial={lightweightMotion ? false : { y: -48, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: lightweightMotion ? 0.1 : 0.25, ease: "easeOut" }}
-        className="fixed top-0 left-0 right-0 z-[999] pt-1 hidden lg:block"
+        className="fixed top-0 left-0 right-0 z-[999] hidden pt-1 xl:block"
       >
-        <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <nav className="mx-auto max-w-[92rem] px-4 sm:px-6 lg:px-8">
           <div
             className="relative flex h-16 items-center justify-between rounded-lg border px-4 shadow-lg backdrop-blur-md sm:px-6"
             style={{
@@ -156,14 +156,14 @@ export default function Navbar({ sectionsConfig, theme = "light", onThemeToggle 
             </motion.button>
 
             {/* Desktop Navigation */}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-0.5">
               {visibleNavItems.map(({ id, label, icon: Icon }) => (
                 <motion.button
                   key={id}
                   onClick={() => scrollTo(id)}
                   whileHover={lightweightMotion ? undefined : { scale: 1.04 }}
                   whileTap={lightweightMotion ? undefined : { scale: 0.97 }}
-                  className={`relative rounded-lg px-4 py-2 text-sm font-medium transition-all duration-300 ${
+                  className={`relative rounded-lg px-3 py-2 text-sm font-medium transition-all duration-300 ${
                     active === id ? "text-[var(--color-text)]" : "text-[var(--color-muted)] hover:text-[var(--color-text)]"
                   }`}
                 >
@@ -214,38 +214,86 @@ export default function Navbar({ sectionsConfig, theme = "light", onThemeToggle 
       </motion.header>
 
       {/* Mobile Navigation */}
-      <div className="lg:hidden">
-        {/* Floating Menu Button */}
-        <motion.button
-          whileTap={lightweightMotion ? undefined : { scale: 0.92 }}
-          onClick={() => setOpen(!open)}
-          className="fixed bottom-6 right-6 z-[998] rounded-full bg-gradient-to-r from-teal-400 to-amber-300 p-3 text-slate-950 shadow-lg shadow-black/20 transition-colors hover:from-teal-300 hover:to-amber-200"
-          aria-label={open ? "Close navigation" : "Open navigation"}
+      <div className="xl:hidden">
+        <motion.header
+          initial={lightweightMotion ? false : { y: -32, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: lightweightMotion ? 0.08 : 0.22, ease: "easeOut" }}
+          className="fixed inset-x-0 top-0 z-[1000] px-3 pt-2 sm:px-4"
         >
-          <AnimatePresence mode="wait">
-            {open ? (
-              <motion.div
-                key="close"
-                initial={lightweightMotion ? { opacity: 1 } : { rotate: -90, opacity: 0 }}
-                animate={{ rotate: 0, opacity: 1 }}
-                exit={lightweightMotion ? { opacity: 0 } : { rotate: -90, opacity: 0 }}
-                transition={{ duration: lightweightMotion ? 0.08 : 0.2 }}
+          <nav
+            className="flex h-14 items-center justify-between rounded-lg border px-3 shadow-lg backdrop-blur-md"
+            style={{
+              backgroundColor: "var(--color-nav)",
+              borderColor: "var(--color-border)",
+              boxShadow: "var(--shadow-soft)",
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => scrollTo("home")}
+              className="min-w-0 text-left"
+              aria-label="Go to home"
+            >
+              <span
+                className="block bg-clip-text text-base font-black text-transparent"
+                style={{
+                  backgroundImage: "linear-gradient(90deg, var(--color-text), var(--color-accent-strong), var(--color-warm))",
+                }}
               >
-                <X size={24} />
-              </motion.div>
-            ) : (
-              <motion.div
-                key="menu"
-                initial={lightweightMotion ? { opacity: 1 } : { rotate: 90, opacity: 0 }}
-                animate={{ rotate: 0, opacity: 1 }}
-                exit={lightweightMotion ? { opacity: 0 } : { rotate: 90, opacity: 0 }}
-                transition={{ duration: lightweightMotion ? 0.08 : 0.2 }}
+                Deepak
+              </span>
+              <span className="block text-[11px] font-medium text-[var(--color-faint)]">Portfolio</span>
+            </button>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="flex h-10 w-10 items-center justify-center rounded-lg border text-[var(--color-muted)] transition-colors hover:text-[var(--color-text)]"
+                style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface-soft)" }}
+                aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
+                title={isDark ? "Light theme" : "Dark theme"}
               >
-                <Menu size={24} />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.button>
+                <ThemeIcon size={17} />
+              </button>
+
+              <motion.button
+                type="button"
+                whileTap={lightweightMotion ? undefined : { scale: 0.94 }}
+                onClick={() => setOpen((value) => !value)}
+                className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-r from-teal-400 to-amber-300 text-slate-950 shadow-lg shadow-black/15"
+                aria-label={open ? "Close navigation" : "Open navigation"}
+                aria-expanded={open}
+                aria-controls="mobile-navigation"
+              >
+                <AnimatePresence mode="wait" initial={false}>
+                  {open ? (
+                    <motion.span
+                      key="close"
+                      initial={lightweightMotion ? { opacity: 1 } : { rotate: -90, opacity: 0 }}
+                      animate={{ rotate: 0, opacity: 1 }}
+                      exit={lightweightMotion ? { opacity: 0 } : { rotate: 90, opacity: 0 }}
+                      transition={{ duration: lightweightMotion ? 0.08 : 0.16 }}
+                    >
+                      <X size={22} />
+                    </motion.span>
+                  ) : (
+                    <motion.span
+                      key="menu"
+                      initial={lightweightMotion ? { opacity: 1 } : { rotate: 90, opacity: 0 }}
+                      animate={{ rotate: 0, opacity: 1 }}
+                      exit={lightweightMotion ? { opacity: 0 } : { rotate: -90, opacity: 0 }}
+                      transition={{ duration: lightweightMotion ? 0.08 : 0.16 }}
+                    >
+                      <Menu size={22} />
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </motion.button>
+            </div>
+          </nav>
+        </motion.header>
 
         {/* Mobile Menu Backdrop */}
         <AnimatePresence>
@@ -256,7 +304,7 @@ export default function Navbar({ sectionsConfig, theme = "light", onThemeToggle 
               exit={{ opacity: 0 }}
               onClick={() => setOpen(false)}
               transition={{ duration: lightweightMotion ? 0.08 : 0.18 }}
-              className="fixed inset-0 z-[997] bg-slate-950/45 md:backdrop-blur-sm"
+              className="fixed inset-0 z-[998] bg-slate-950/55 backdrop-blur-sm"
             />
           )}
         </AnimatePresence>
@@ -265,11 +313,12 @@ export default function Navbar({ sectionsConfig, theme = "light", onThemeToggle 
         <AnimatePresence>
           {open && (
             <motion.div
-              initial={lightweightMotion ? { opacity: 0, y: 8 } : { scale: 0.94, opacity: 0, y: 18 }}
+              id="mobile-navigation"
+              initial={lightweightMotion ? { opacity: 0, y: -8 } : { scale: 0.98, opacity: 0, y: -18 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={lightweightMotion ? { opacity: 0, y: 8 } : { scale: 0.94, opacity: 0, y: 18 }}
+              exit={lightweightMotion ? { opacity: 0, y: -8 } : { scale: 0.98, opacity: 0, y: -18 }}
               transition={lightweightMotion ? { duration: 0.1 } : { type: "spring", damping: 24, stiffness: 260 }}
-              className="fixed bottom-24 right-6 z-[998] w-56 overflow-hidden rounded-lg border shadow-xl"
+              className="fixed inset-x-3 top-20 z-[999] max-h-[calc(100svh-6rem)] overflow-y-auto rounded-lg border shadow-xl sm:inset-x-4"
               style={{
                 backgroundColor: "var(--color-nav)",
                 borderColor: "var(--color-border)",
@@ -278,16 +327,6 @@ export default function Navbar({ sectionsConfig, theme = "light", onThemeToggle 
             >
               {/* Navigation Items */}
               <div className="py-2 space-y-1">
-                <button
-                  type="button"
-                  onClick={toggleTheme}
-                  className="mx-2 mb-2 flex w-[calc(100%-1rem)] items-center justify-between rounded-md border px-3 py-2 text-sm font-medium text-[var(--color-text)]"
-                  style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface-soft)" }}
-                >
-                  <span>{isDark ? "Light Theme" : "Dark Theme"}</span>
-                  <ThemeIcon size={17} />
-                </button>
-
                 {visibleNavItems.map(({ id, label, icon: Icon }, index) => (
                   <motion.button
                     key={id}
@@ -295,7 +334,7 @@ export default function Navbar({ sectionsConfig, theme = "light", onThemeToggle 
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: lightweightMotion ? 0 : index * 0.025, duration: 0.12 }}
                     onClick={() => scrollTo(id)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all ${
+                    className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-all ${
                       active === id
                         ? "border-l-2 border-teal-400 bg-gradient-to-r from-teal-400/18 to-amber-300/10 text-[var(--color-text)]"
                         : "text-[var(--color-muted)] hover:bg-black/5 hover:text-[var(--color-text)]"
@@ -310,6 +349,7 @@ export default function Navbar({ sectionsConfig, theme = "light", onThemeToggle 
                 {resolvedSectionsConfig.blog && (
                   <motion.a
                     href="/blog"
+                    onClick={() => setOpen(false)}
                     initial={lightweightMotion ? false : { opacity: 0, x: -12 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: lightweightMotion ? 0 : (visibleNavItems.length + 1) * 0.025, duration: 0.12 }}

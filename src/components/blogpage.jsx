@@ -592,7 +592,7 @@ export default function MassiveAnimatedBlogPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            className="portfolio-modal-backdrop fixed inset-0 z-[1001] flex items-center justify-center p-3 sm:p-4"
             onClick={handleClosePost}
           >
             <motion.article
@@ -601,7 +601,7 @@ export default function MassiveAnimatedBlogPage() {
               exit={{ scale: 0.9, y: 50 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
               onClick={(e) => e.stopPropagation()}
-              className="relative max-w-4xl w-full bg-white rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
+              className="relative max-h-[92svh] w-full max-w-4xl overflow-hidden overflow-y-auto rounded-lg bg-white shadow-2xl"
             >
               {/* Header Image */}
               {active.cover && (
@@ -616,7 +616,7 @@ export default function MassiveAnimatedBlogPage() {
                   {/* Close Button */}
                   <button
                     onClick={handleClosePost}
-                    className="absolute top-6 right-6 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition-all shadow-lg z-10"
+                    className="absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white/90 shadow-lg backdrop-blur-sm transition-all hover:bg-white sm:right-6 sm:top-6"
                   >
                     <FaTimes className="text-gray-900 text-xl" />
                   </button>
