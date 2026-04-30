@@ -19,9 +19,34 @@ const STORAGE_KEYS = {
 };
 
 let uniqueUserPromise = null;
+let analyticsDocsPromise = null;
+let gaInitialized = false;
+let gtmInitialized = false;
+
+function runWhenIdle(task) {
+  if (typeof window === "undefined") {
+    return task();
+  }
+
+  const runner = () => {
+    Promise.resolve(task()).catch((error) => {
+      console.error("Deferred analytics task failed:", error);
+    });
+  };
+
+  if (typeof window.requestIdleCallback === "function") {
+    window.requestIdleCallback(runner, { timeout: 2500 });
+  } else {
+    window.setTimeout(runner, 250);
+  }
+
+  return Promise.resolve();
+}
 
 export const initializeGA = () => {
   try {
+    if (gaInitialized) return;
+
     const gaId =
       process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID ||
       process.env.VITE_FIREBASE_MEASUREMENT_ID ||
@@ -48,7 +73,7 @@ export const initializeGA = () => {
     });
 
     window.gtag = gtag;
-    console.log("Google Analytics initialized:", gaId);
+    gaInitialized = true;
   } catch (error) {
     console.error("Failed to initialize Google Analytics:", error);
   }
@@ -56,6 +81,8 @@ export const initializeGA = () => {
 
 export const initializeGTM = () => {
   try {
+    if (gtmInitialized) return;
+
     const gtmId = process.env.NEXT_PUBLIC_GTM_ID || process.env.VITE_GTM_ID;
     if (!gtmId) {
       console.warn("GTM_ID not configured");
@@ -74,7 +101,7 @@ export const initializeGTM = () => {
       "gtm.uniqueEventId": Math.random(),
     });
 
-    console.log("Google Tag Manager initialized:", gtmId);
+    gtmInitialized = true;
   } catch (error) {
     console.error("Failed to initialize Google Tag Manager:", error);
   }
@@ -147,20 +174,29 @@ function getOrCreateStoredId(storageType, storageKey, cacheKey) {
 }
 
 async function ensureAnalyticsDocs() {
-  const refs = [
-    "totals",
-    "sections",
-    "links",
-    "daily",
-    "users",
-    "devices",
-    "traffic",
-    "blog",
-    "performance",
-    "errors",
-  ].map((id) => doc(db, "analytics", id));
+  if (!analyticsDocsPromise) {
+    analyticsDocsPromise = (async () => {
+      const refs = [
+        "totals",
+        "sections",
+        "links",
+        "daily",
+        "users",
+        "devices",
+        "traffic",
+        "blog",
+        "performance",
+        "errors",
+      ].map((id) => doc(db, "analytics", id));
 
-  await Promise.all(refs.map((ref) => setDoc(ref, {}, { merge: true })));
+      await Promise.all(refs.map((ref) => setDoc(ref, {}, { merge: true })));
+    })().catch((error) => {
+      analyticsDocsPromise = null;
+      throw error;
+    });
+  }
+
+  return analyticsDocsPromise;
 }
 
 function isRecentEvent(key, limitMins = 2) {
@@ -175,16 +211,14 @@ function isRecentEvent(key, limitMins = 2) {
   return false;
 }
 
-export const logSectionView = async (sectionName = "unknown") => {
-  try {
-    await ensureAnalyticsDocs();
-    const currentDay = getTodayDate();
-
+export const logSectionView = (sectionName = "unknown") =>
+  runWhenIdle(async () => {
     if (isRecentEvent(`view_${sectionName}`)) {
-      console.log(`Skipped duplicate section view: ${sectionName}`);
       return;
     }
 
+    await ensureAnalyticsDocs();
+    const currentDay = getTodayDate();
     const totalsRef = doc(db, "analytics", "totals");
     const sectionsRef = doc(db, "analytics", "sections");
     const dailyRef = doc(db, "analytics", "daily");
@@ -198,13 +232,10 @@ export const logSectionView = async (sectionName = "unknown") => {
         [`${currentDay}.lastUpdated`]: serverTimestamp(),
       }),
     ]);
-  } catch (error) {
-    console.error("Error logging section view:", error);
-  }
-};
+  });
 
-export const logLinkClick = async (linkName = "unknown") => {
-  try {
+export const logLinkClick = (linkName = "unknown") =>
+  runWhenIdle(async () => {
     await ensureAnalyticsDocs();
     const currentDay = getTodayDate();
 
@@ -221,13 +252,10 @@ export const logLinkClick = async (linkName = "unknown") => {
         [`${currentDay}.lastUpdated`]: serverTimestamp(),
       }),
     ]);
-  } catch (error) {
-    console.error("Error logging link click:", error);
-  }
-};
+  });
 
-export const logDownload = async (fileName = "resume") => {
-  try {
+export const logDownload = (fileName = "resume") =>
+  runWhenIdle(async () => {
     await ensureAnalyticsDocs();
     const currentDay = getTodayDate();
 
@@ -242,21 +270,16 @@ export const logDownload = async (fileName = "resume") => {
         [`${currentDay}.lastUpdated`]: serverTimestamp(),
       }),
     ]);
-  } catch (error) {
-    console.error("Error logging download:", error);
-  }
-};
+  });
 
-export const logResumeOpen = async () => {
-  try {
-    await ensureAnalyticsDocs();
-    const currentDay = getTodayDate();
-
+export const logResumeOpen = () =>
+  runWhenIdle(async () => {
     if (isRecentEvent("resume_open")) {
-      console.log("Skipped duplicate resume open");
       return;
     }
 
+    await ensureAnalyticsDocs();
+    const currentDay = getTodayDate();
     const totalsRef = doc(db, "analytics", "totals");
     const dailyRef = doc(db, "analytics", "daily");
 
@@ -267,17 +290,14 @@ export const logResumeOpen = async () => {
         [`${currentDay}.lastUpdated`]: serverTimestamp(),
       }),
     ]);
-  } catch (error) {
-    console.error("Error logging resume open:", error);
-  }
-};
+  });
 
 export const logUniqueUser = async () => {
   if (uniqueUserPromise) {
     return uniqueUserPromise;
   }
 
-  uniqueUserPromise = (async () => {
+  uniqueUserPromise = runWhenIdle(async () => {
     try {
       await ensureAnalyticsDocs();
 
@@ -354,13 +374,13 @@ export const logUniqueUser = async () => {
     } finally {
       uniqueUserPromise = null;
     }
-  })();
+  });
 
   return uniqueUserPromise;
 };
 
-export const logCustomEvent = async (category, eventName, meta = {}) => {
-  try {
+export const logCustomEvent = (category, eventName, meta = {}) =>
+  runWhenIdle(async () => {
     await ensureAnalyticsDocs();
     const currentDay = getTodayDate();
     const dailyRef = doc(db, "analytics", "daily");
@@ -370,10 +390,7 @@ export const logCustomEvent = async (category, eventName, meta = {}) => {
       [`${currentDay}.customEventsMeta.${category}.${eventName}`]: meta,
       [`${currentDay}.lastUpdated`]: serverTimestamp(),
     });
-  } catch (error) {
-    console.error("Error logging custom event:", error);
-  }
-};
+  });
 
 function getDeviceInfo() {
   const ua = navigator.userAgent;
@@ -398,8 +415,8 @@ function getDeviceInfo() {
   return { browser, os, deviceType };
 }
 
-export const logDeviceInfo = async () => {
-  try {
+export const logDeviceInfo = () =>
+  runWhenIdle(async () => {
     if (isRecentEvent("device_info", 1440)) {
       return;
     }
@@ -414,10 +431,7 @@ export const logDeviceInfo = async () => {
       [`deviceTypes.${deviceType}`]: increment(1),
       lastUpdated: serverTimestamp(),
     });
-  } catch (error) {
-    console.error("Error logging device info:", error);
-  }
-};
+  });
 
 function getTrafficSource() {
   const params = new URLSearchParams(window.location.search);
@@ -445,8 +459,8 @@ function getTrafficSource() {
   return { source, medium: utmMedium, campaign: utmCampaign };
 }
 
-export const logTrafficSource = async () => {
-  try {
+export const logTrafficSource = () =>
+  runWhenIdle(async () => {
     if (isRecentEvent("traffic_source", 1440)) {
       return;
     }
@@ -463,10 +477,7 @@ export const logTrafficSource = async () => {
     if (campaign) updates[`campaigns.${campaign}`] = increment(1);
 
     await updateDoc(trafficRef, updates);
-  } catch (error) {
-    console.error("Error logging traffic source:", error);
-  }
-};
+  });
 
 export const logBlogView = async (postSlug, postTitle) => {
   try {

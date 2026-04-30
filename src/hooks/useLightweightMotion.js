@@ -8,11 +8,7 @@ export function useLightweightMotion() {
       return undefined;
     }
 
-    const queries = [
-      window.matchMedia("(max-width: 767px)"),
-      window.matchMedia("(pointer: coarse)"),
-      window.matchMedia("(prefers-reduced-motion: reduce)"),
-    ];
+    const queries = [window.matchMedia("(prefers-reduced-motion: reduce)")];
 
     const updatePreference = () => {
       const saveData = Boolean(navigator.connection?.saveData);

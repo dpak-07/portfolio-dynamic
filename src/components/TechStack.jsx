@@ -1,459 +1,340 @@
 "use client";
+
+import { AnimatePresence, motion, useInView } from "framer-motion";
 import {
-  motion,
-  AnimatePresence,
-  useMotionValue,
-  useTransform,
-  useInView,
-} from "framer-motion";
-import { Code2 } from "lucide-react";
-import { useEffect, useState, useRef } from "react";
+  ArrowRight,
+  Boxes,
+  BrainCircuit,
+  Cloud,
+  Code2,
+  Cpu,
+  Database,
+  Layers3,
+  Server,
+  Sparkles,
+  Workflow,
+  Wrench,
+} from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useFirestoreData } from "@/hooks/useFirestoreData";
-import { logSectionView, logLinkClick } from "../utils/analytics";
+import { logLinkClick, logSectionView } from "../utils/analytics";
 
-const containerVariants = {
-  hidden: { opacity: 0, y: 40 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 1, ease: "easeOut", staggerChildren: 0.12 },
-  },
-};
-
-const cardVariants = {
-  hidden: { opacity: 0, y: 50, scale: 0.9 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: { type: "spring", stiffness: 100, damping: 14, duration: 0.8 },
-  },
-};
-
-// ✅ Improved mobile slide animation
-const mobileSlideVariants = {
-  enter: (direction) => ({
-    opacity: 0,
-    x: direction > 0 ? "100%" : "-100%",
-    scale: 0.85,
-    rotateY: direction > 0 ? 25 : -25,
-    filter: "blur(8px)",
-  }),
-  center: {
-    opacity: 1,
-    x: 0,
-    scale: 1,
-    rotateY: 0,
-    filter: "blur(0px)",
-    transition: {
-      type: "spring",
-      stiffness: 120,
-      damping: 20,
-      duration: 0.7,
-      opacity: { duration: 0.4 },
-      filter: { duration: 0.5 },
-    },
-  },
-  exit: (direction) => ({
-    opacity: 0,
-    x: direction > 0 ? "-100%" : "100%",
-    scale: 0.85,
-    rotateY: direction > 0 ? -25 : 25,
-    filter: "blur(8px)",
-    transition: {
-      duration: 0.5,
-      ease: [0.65, 0, 0.35, 1],
-    },
-  }),
-};
-
-// 🌈 Color mapping for categories
-const COLOR_MAP = {
-  "Programming Languages": "from-purple-400 to-pink-500",
-  Languages: "from-purple-400 to-pink-500",
-  "Frontend Development": "from-blue-500 to-cyan-400",
-  Frontend: "from-blue-500 to-cyan-400",
-  "Backend Development": "from-green-500 to-emerald-400",
-  Backend: "from-green-500 to-emerald-400",
-  Databases: "from-orange-400 to-amber-500",
-  "Cloud & DevOps": "from-yellow-400 to-lime-400",
-  "AI & Machine Learning": "from-red-400 to-pink-400",
-  "AI & ML": "from-red-400 to-pink-400",
-  "Mobile Development": "from-teal-400 to-green-400",
-  Mobile: "from-teal-400 to-green-400",
-  Tools: "from-indigo-400 to-blue-400",
-};
-
-const DEFAULT_GRADIENTS = [
-  "from-cyan-400 to-blue-500",
-  "from-purple-400 to-pink-500",
-  "from-green-400 to-emerald-500",
-  "from-orange-400 to-amber-500",
-  "from-red-400 to-pink-500",
-  "from-yellow-400 to-lime-500",
-  "from-indigo-400 to-blue-500",
-  "from-teal-400 to-green-500",
+const FALLBACK_CATEGORIES = [
+  { title: "Frontend Development", tech: ["React", "Next.js", "Tailwind CSS", "Framer Motion"] },
+  { title: "Backend Development", tech: ["Node.js", "Express", "REST APIs", "Firebase"] },
+  { title: "Cloud & DevOps", tech: ["AWS", "Docker", "GitHub Actions", "Vercel"] },
+  { title: "AI & Machine Learning", tech: ["Python", "TensorFlow", "OpenAI", "MLOps"] },
 ];
 
-export default function AnimatedTechStack() {
-  // ✅ Section tracking with ref
-  const sectionRef = useRef(null);
-  const hasLoggedView = useRef(false);
+const ACCENTS = ["#14b8a6", "#d97706", "#64748b", "#0ea5e9", "#10b981", "#8b5cf6", "#f59e0b", "#06b6d4"];
+const ICONS = [Code2, Server, Cloud, BrainCircuit, Database, Cpu, Wrench, Boxes, Layers3, Workflow];
 
-  const sectionInView = useInView(sectionRef, {
-    once: true,
-    amount: 0.2,
-    margin: "-100px"
-  });
+const containerVariants = {
+  hidden: { opacity: 0, y: 28 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1], staggerChildren: 0.06 },
+  },
+};
 
-  useEffect(() => {
-    if (sectionInView && !hasLoggedView.current) {
-      console.log("✅ Tech Stack section in view - logging...");
-      logSectionView("tech-stack");
-      hasLoggedView.current = true;
-    }
-  }, [sectionInView]);
+const itemVariants = {
+  hidden: { opacity: 0, y: 18 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.34, ease: [0.22, 1, 0.36, 1] } },
+};
 
-  // Firestore hook
-  const { data: firestoreData, loading, error } = useFirestoreData(
-    "techStack",
-    "categories"
-  );
+function normalizeCategories(firestoreData) {
+  const source = Array.isArray(firestoreData?.techStackData) ? firestoreData.techStackData : FALLBACK_CATEGORIES;
 
-  const [categories, setCategories] = useState([]);
-  const [index, setIndex] = useState(0);
-  const [[page, direction], setPage] = useState([0, 0]);
-  const [dragStart, setDragStart] = useState(0);
-  const [autoPlay, setAutoPlay] = useState(true);
-  const [maxHeight, setMaxHeight] = useState(0);
+  return source
+    .map((category, index) => ({
+      title: category?.title || `Layer ${index + 1}`,
+      tech: Array.isArray(category?.tech) ? category.tech.filter(Boolean) : [],
+      accent: ACCENTS[index % ACCENTS.length],
+      Icon: ICONS[index % ICONS.length],
+    }))
+    .filter((category) => category.tech.length > 0);
+}
 
-  // 3D Tilt Motion
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-  const rotateX = useTransform(y, [-100, 100], [8, -8]);
-  const rotateY = useTransform(x, [-100, 100], [-8, 8]);
+function distributeTools(tools) {
+  const groups = [[], [], []];
+  tools.forEach((tool, index) => groups[index % groups.length].push(tool));
+  return groups;
+}
 
-  // 🔥 Prepare categories and calculate max height
-  useEffect(() => {
-    if (firestoreData && firestoreData.techStackData) {
-      const processed = firestoreData.techStackData.map((cat, index) => {
-        const color =
-          COLOR_MAP[cat.title] ||
-          DEFAULT_GRADIENTS[index % DEFAULT_GRADIENTS.length] ||
-          "from-cyan-400 to-blue-500";
-        return {
-          title: cat.title,
-          color: color,
-          tech: Array.isArray(cat.tech) ? cat.tech : [],
-        };
-      });
-      setCategories(processed);
-
-      const maxTechCount = Math.max(...processed.map(cat => cat.tech.length));
-      const calculatedHeight = 180 + Math.ceil(maxTechCount / 2) * 48;
-      setMaxHeight(calculatedHeight);
-
-      console.log("✅ Tech stack loaded:", processed.length, "categories");
-      console.log("✅ Max height calculated:", calculatedHeight);
-    }
-  }, [firestoreData]);
-
-  // 🔄 Auto-play mobile carousel
-  useEffect(() => {
-    if (!autoPlay || categories.length === 0) return;
-    const timer = setInterval(() => handleNext(true), 4000);
-    return () => clearInterval(timer);
-  }, [index, autoPlay, categories.length]);
-
-  const handleNext = (isAutoSwipe = false) => {
-    if (categories.length === 0) return;
-    if (!isAutoSwipe) {
-      console.log("👉 Tech swipe next - logging...");
-      logLinkClick("tech_swipe_next");
-    }
-    const newIndex = (index + 1) % categories.length;
-    setPage([newIndex, 1]);
-    setIndex(newIndex);
-  };
-
-  const handlePrev = () => {
-    if (categories.length === 0) return;
-    console.log("👈 Tech swipe prev - logging...");
-    logLinkClick("tech_swipe_prev");
-    const newIndex = (index - 1 + categories.length) % categories.length;
-    setPage([newIndex, -1]);
-    setIndex(newIndex);
-  };
-
-  const handleDragStart = (e) => {
-    setDragStart(e.touches[0].clientX);
-    setAutoPlay(false);
-  };
-
-  const handleDragEnd = (e) => {
-    const swipe = dragStart - e.changedTouches[0].clientX;
-    if (swipe > 50) handleNext(false);
-    else if (swipe < -50) handlePrev();
-    setAutoPlay(true);
-  };
-
-  const handleMove = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const xVal = e.touches[0].clientX - rect.left - rect.width / 2;
-    const yVal = e.touches[0].clientY - rect.top - rect.height / 2;
-    x.set(xVal);
-    y.set(yVal);
-  };
-
-  const handleLeave = () => {
-    x.set(0);
-    y.set(0);
-  };
-
-  // 🌀 Loading State
-  if (loading) {
-    return (
-      <section
-        id="tech-stack"
-        ref={sectionRef}
-        className="relative py-20 overflow-hidden scroll-mt-20"
-      >
-        <div className="max-w-6xl mx-auto px-6 md:px-10 flex items-center justify-center h-96">
-          <div className="text-center">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-              className="inline-block"
-            >
-              <Code2 className="w-12 h-12 text-cyan-400" />
-            </motion.div>
-            <p className="text-white/70 mt-4">Loading tech stack...</p>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  // 🌀 Error State
-  if (error) {
-    return (
-      <section
-        id="tech-stack"
-        ref={sectionRef}
-        className="relative py-20 overflow-hidden scroll-mt-20"
-      >
-        <div className="max-w-6xl mx-auto px-6 md:px-10 flex items-center justify-center h-96">
-          <div className="text-center">
-            <Code2 className="w-12 h-12 text-red-400 mx-auto mb-4" />
-            <p className="text-white/70">Unable to load tech stack data</p>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  // 🌀 Empty State
-  if (!categories || categories.length === 0) {
-    return (
-      <section
-        id="tech-stack"
-        ref={sectionRef}
-        className="relative py-20 overflow-hidden scroll-mt-20"
-      >
-        <div className="max-w-6xl mx-auto px-6 md:px-10 flex items-center justify-center h-96">
-          <div className="text-center">
-            <Code2 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-white/70">No tech stack data available</p>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  // 💫 Main Render
+function LoadingState({ sectionRef }) {
   return (
-    <section
-      id="tech-stack"
-      ref={sectionRef}
-      className="relative py-20 overflow-hidden scroll-mt-20"
-    >
-      {/* CRT Glow */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(0,255,255,0.07),transparent_70%)]"></div>
-      <div className="absolute inset-0 pointer-events-none mix-blend-screen opacity-[0.04] bg-[repeating-linear-gradient(0deg,rgba(255,255,255,0.15)_0px,rgba(255,255,255,0.15)_1px,transparent_1px,transparent_2px)] animate-[scanline_6s_linear_infinite]" />
-      <style>{`@keyframes scanline {0%{transform:translateY(0)}100%{transform:translateY(100%)}}`}</style>
+    <section id="tech-stack" ref={sectionRef} className="relative overflow-hidden px-4 py-20 scroll-mt-24 sm:px-6 md:px-8">
+      <div className="mx-auto flex min-h-80 max-w-6xl items-center justify-center">
+        <div className="flex items-center gap-3 rounded-lg border px-5 py-4" style={{ background: "var(--color-surface)", borderColor: "var(--color-border)" }}>
+          <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}>
+            <Code2 className="h-5 w-5 text-cyan-500" />
+          </motion.div>
+          <span className="text-sm font-medium text-[var(--color-muted)]">Loading tech stack</span>
+        </div>
+      </div>
+    </section>
+  );
+}
 
-      <motion.div
-        className="max-w-6xl mx-auto px-6 md:px-10"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        {/* Header */}
-        <div className="text-center mb-14">
-          <h2 className="text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent mb-2 drop-shadow-[0_0_20px_rgba(0,255,255,0.3)]">
+export default function AnimatedTechStack() {
+  const sectionRef = useRef(null);
+  const loggedOnce = useRef(false);
+  const inView = useInView(sectionRef, { once: true, amount: 0.18, margin: "-80px" });
+  const { data: firestoreData, loading, error } = useFirestoreData("techStack", "categories");
+  const categories = useMemo(() => normalizeCategories(firestoreData), [firestoreData]);
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    if (inView && !loggedOnce.current) {
+      logSectionView("tech-stack");
+      loggedOnce.current = true;
+    }
+  }, [inView]);
+
+  useEffect(() => {
+    if (activeIndex >= categories.length) {
+      setActiveIndex(0);
+    }
+  }, [activeIndex, categories.length]);
+
+  const selected = categories[activeIndex] || categories[0];
+  const selectedTools = selected?.tech || [];
+  const allTools = useMemo(() => new Set(categories.flatMap((category) => category.tech)).size, [categories]);
+  const maxTools = Math.max(1, ...categories.map((category) => category.tech.length));
+  const toolGroups = distributeTools(selectedTools);
+
+  if (loading && !firestoreData) {
+    return <LoadingState sectionRef={sectionRef} />;
+  }
+
+  if (!selected) {
+    return (
+      <section id="tech-stack" ref={sectionRef} className="relative overflow-hidden px-4 py-20 scroll-mt-24 sm:px-6 md:px-8">
+        <div className="mx-auto max-w-6xl rounded-lg border p-8 text-center" style={{ background: "var(--color-surface)", borderColor: "var(--color-border)" }}>
+          <Code2 className="mx-auto mb-3 h-8 w-8 text-cyan-500" />
+          <p className="text-sm text-[var(--color-muted)]">{error ? "Unable to load tech stack data" : "No tech stack data available"}</p>
+        </div>
+      </section>
+    );
+  }
+
+  const SelectedIcon = selected.Icon;
+
+  return (
+    <section id="tech-stack" ref={sectionRef} className="relative overflow-hidden px-4 py-20 scroll-mt-24 sm:px-6 md:px-8">
+      <motion.div className="mx-auto max-w-6xl" variants={containerVariants} initial="hidden" animate={inView ? "visible" : "hidden"}>
+        <motion.div className="mb-10 text-center" variants={itemVariants}>
+          <div className="mb-3 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-faint)]" style={{ borderColor: "var(--color-border)" }}>
+            <Sparkles className="h-3.5 w-3.5 text-cyan-500" />
+            Stack Studio
+          </div>
+          <h2 className="bg-clip-text text-4xl font-extrabold text-transparent sm:text-5xl" style={{ backgroundImage: "linear-gradient(90deg, var(--color-text), var(--color-accent-strong), var(--color-warm))" }}>
             Tech Stack
           </h2>
-          <p className="text-white/70 text-sm md:text-base tracking-wide">
-            The core technologies that power my builds and innovations
+          <p className="mx-auto mt-3 max-w-2xl text-sm text-[var(--color-muted)] sm:text-base">
+            A working blueprint of the tools I use to design, build, ship, and scale products.
           </p>
-        </div>
-
-        {/* 🖥 Desktop Grid */}
-        <motion.div
-          className="hidden sm:grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
-          variants={containerVariants}
-        >
-          {categories.map((category) => (
-            <motion.div
-              key={category.title}
-              variants={cardVariants}
-              whileHover={{
-                scale: 1.07,
-                y: -5,
-                boxShadow: "0 0 35px rgba(0,255,255,0.15)",
-              }}
-              className="relative overflow-hidden rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md px-6 py-8 group flex flex-col"
-              style={{ minHeight: '280px' }}
-            >
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2.5 bg-white/10 rounded-xl shadow-inner">
-                  <Code2 className="w-6 h-6 text-cyan-400" />
-                </div>
-                <h3 className="text-lg font-semibold text-white tracking-wide">
-                  {category.title}
-                </h3>
-              </div>
-
-              <div className="flex-1">
-                <ul className="grid grid-cols-2 gap-2 w-full">
-                  {category.tech.map((tech) => (
-                    <motion.li
-                      key={tech}
-                      whileHover={{
-                        scale: 1.08,
-                        color: "#fff",
-                        textShadow: "0px 0px 10px rgba(0,255,255,0.7)",
-                      }}
-                      className="text-white/70 text-sm font-medium bg-white/5 px-3 py-2 text-center rounded-md border border-white/10 hover:bg-gradient-to-r hover:from-cyan-500/30 hover:to-blue-500/30 transition-all"
-                    >
-                      {tech}
-                    </motion.li>
-                  ))}
-                </ul>
-              </div>
-            </motion.div>
-          ))}
         </motion.div>
 
-        {/* 📱 Mobile Carousel - Fixed Height Container */}
-        <div
-          className="sm:hidden relative w-full flex justify-center items-center mt-6 perspective-[1200px]"
-          style={{ height: `${maxHeight + 100}px` }}
-          onTouchStart={handleDragStart}
-          onTouchEnd={handleDragEnd}
-        >
-          <AnimatePresence mode="wait" initial={false} custom={direction}>
-            {categories[index] && (
+        <motion.div className="grid gap-5 lg:grid-cols-[0.82fr_1.45fr]" variants={itemVariants}>
+          <aside className="rounded-lg border p-4" style={{ background: "var(--color-surface)", borderColor: "var(--color-border)", boxShadow: "var(--shadow-soft)" }}>
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-faint)]">Build Console</div>
+                <div className="text-lg font-bold text-[var(--color-text)]">Tool layers</div>
+              </div>
+              <div className="rounded-lg border p-2 text-cyan-500" style={{ borderColor: "var(--color-border)", background: "var(--color-surface-soft)" }}>
+                <Workflow className="h-5 w-5" />
+              </div>
+            </div>
+
+            <div className="mb-5 grid grid-cols-3 gap-2">
+              {[
+                ["Layers", categories.length],
+                ["Tools", allTools],
+                ["Active", selectedTools.length],
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--color-border)", background: "var(--color-surface-muted)" }}>
+                  <div className="text-lg font-bold text-[var(--color-text)]">{value}</div>
+                  <div className="text-[11px] uppercase tracking-[0.14em] text-[var(--color-faint)]">{label}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="hidden flex-col gap-2 lg:flex">
+              {categories.map((category, index) => {
+                const Icon = category.Icon;
+                const active = index === activeIndex;
+                return (
+                  <motion.button
+                    key={category.title}
+                    type="button"
+                    whileHover={{ x: 3 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => {
+                      setActiveIndex(index);
+                      logLinkClick(`tech_layer_${category.title}`);
+                    }}
+                    className="flex w-full items-center gap-3 rounded-lg border px-3 py-3 text-left transition-colors"
+                    style={{
+                      borderColor: active ? category.accent : "var(--color-border)",
+                      background: active ? "linear-gradient(90deg, rgba(20,184,166,0.14), rgba(217,119,6,0.08))" : "transparent",
+                      color: "var(--color-text)",
+                    }}
+                  >
+                    <span className="flex h-9 w-9 items-center justify-center rounded-lg border" style={{ borderColor: "var(--color-border)", color: category.accent }}>
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-semibold">{category.title}</span>
+                      <span className="block text-xs text-[var(--color-faint)]">{category.tech.length} tools</span>
+                    </span>
+                    <ArrowRight className={`h-4 w-4 transition-transform ${active ? "translate-x-0 opacity-100" : "-translate-x-1 opacity-35"}`} />
+                  </motion.button>
+                );
+              })}
+            </div>
+
+            <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 lg:hidden" style={{ scrollbarWidth: "none" }}>
+              {categories.map((category, index) => {
+                const active = index === activeIndex;
+                return (
+                  <motion.button
+                    key={category.title}
+                    type="button"
+                    whileTap={{ scale: 0.96 }}
+                    onClick={() => {
+                      setActiveIndex(index);
+                      logLinkClick(`tech_layer_${category.title}`);
+                    }}
+                    className="shrink-0 rounded-lg border px-3 py-2 text-sm font-semibold"
+                    style={{
+                      borderColor: active ? category.accent : "var(--color-border)",
+                      background: active ? "var(--color-accent-soft)" : "var(--color-surface-muted)",
+                      color: "var(--color-text)",
+                    }}
+                  >
+                    {category.title}
+                  </motion.button>
+                );
+              })}
+            </div>
+          </aside>
+
+          <div className="rounded-lg border p-4 sm:p-5" style={{ background: "var(--color-surface)", borderColor: "var(--color-border)", boxShadow: "var(--shadow-soft)" }}>
+            <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg border" style={{ color: selected.accent, borderColor: "var(--color-border)", background: "var(--color-surface-soft)" }}>
+                  <SelectedIcon className="h-6 w-6" />
+                </div>
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-faint)]">Active Blueprint</div>
+                  <h3 className="text-xl font-bold text-[var(--color-text)]">{selected.title}</h3>
+                </div>
+              </div>
+              <div className="rounded-lg border px-3 py-2 text-sm font-semibold text-[var(--color-muted)]" style={{ borderColor: "var(--color-border)", background: "var(--color-surface-muted)" }}>
+                {selectedTools.length} connected tools
+              </div>
+            </div>
+
+            <AnimatePresence mode="wait">
               <motion.div
-                key={categories[index].title}
-                custom={direction}
-                variants={mobileSlideVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                style={{
-                  rotateX,
-                  rotateY,
-                  transformStyle: "preserve-3d",
-                  minHeight: `${maxHeight}px`
-                }}
-                onTouchMove={handleMove}
-                onTouchEnd={handleLeave}
-                className="absolute w-[90%] flex flex-col rounded-3xl border border-cyan-300/20 backdrop-blur-[10px] p-6 shadow-[0_0_40px_rgba(0,255,255,0.15)] bg-[linear-gradient(135deg,rgba(255,255,255,0.1)_0%,rgba(255,255,255,0.05)_100%)] overflow-hidden"
+                key={selected.title}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
+                className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]"
               >
-                {/* Neon glow bar */}
-                <div className="absolute left-0 right-0 top-0 h-[3px] overflow-hidden rounded-t-3xl">
-                  <motion.div
-                    className={`h-full bg-gradient-to-r ${categories[index].color}`}
-                    animate={{
-                      opacity: [0.6, 1, 0.6],
-                      boxShadow: [
-                        `0 0 10px rgba(0, 255, 255, 0.4)`,
-                        `0 0 20px rgba(0, 255, 255, 0.8)`,
-                        `0 0 10px rgba(0, 255, 255, 0.4)`,
-                      ],
-                    }}
-                    transition={{
-                      duration: 2,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                    }}
-                  />
-                </div>
-
-                <div className="flex items-center gap-3 mb-6 z-20 mt-2">
-                  <div className="p-2 bg-white/10 rounded-xl border border-white/10">
-                    <Code2 className="w-6 h-6 text-cyan-400" />
+                <div className="rounded-lg border p-4" style={{ borderColor: "var(--color-border)", background: "var(--color-surface-muted)" }}>
+                  <div className="mb-4 flex items-center justify-between">
+                    <div className="text-sm font-bold text-[var(--color-text)]">Tool Map</div>
+                    <div className="h-2 w-28 overflow-hidden rounded-full bg-slate-200/70">
+                      <motion.div
+                        className="h-full rounded-full"
+                        style={{ backgroundColor: selected.accent }}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${Math.max(18, Math.round((selectedTools.length / maxTools) * 100))}%` }}
+                        transition={{ duration: 0.45, ease: "easeOut" }}
+                      />
+                    </div>
                   </div>
-                  <h3 className="text-xl font-semibold text-white tracking-wide">
-                    {categories[index].title}
-                  </h3>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    {selectedTools.map((tool, index) => (
+                      <motion.span
+                        key={tool}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.025, duration: 0.22 }}
+                        className="rounded-lg border px-3 py-2 text-center text-sm font-semibold text-[var(--color-text)]"
+                        style={{ borderColor: "var(--color-border)", background: "var(--color-bg-strong)" }}
+                      >
+                        {tool}
+                      </motion.span>
+                    ))}
+                  </div>
                 </div>
 
-                <div className="flex-1 flex items-start">
-                  <ul className="grid grid-cols-2 gap-3 w-full z-20">
-                    {categories[index].tech.map((tech, techIndex) => (
-                      <motion.li
-                        key={tech}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: techIndex * 0.05, duration: 0.3 }}
-                        whileHover={{
-                          scale: 1.05,
-                          color: "#fff",
-                          textShadow: "0px 0px 10px rgba(0,255,255,0.8)",
-                        }}
-                        className="text-white/70 text-sm font-medium bg-white/5 px-3 py-2 text-center rounded-md border border-white/10 hover:bg-gradient-to-r hover:from-cyan-500/20 hover:to-blue-500/20 transition-all"
-                      >
-                        {tech}
-                      </motion.li>
-                    ))}
-                  </ul>
+                <div className="grid gap-3">
+                  {["Shape", "Build", "Ship"].map((phase, phaseIndex) => (
+                    <div key={phase} className="rounded-lg border p-3" style={{ borderColor: "var(--color-border)", background: "var(--color-bg-strong)" }}>
+                      <div className="mb-2 flex items-center gap-2">
+                        <span className="flex h-7 w-7 items-center justify-center rounded-md text-xs font-bold text-slate-950" style={{ backgroundColor: selected.accent }}>
+                          {phaseIndex + 1}
+                        </span>
+                        <span className="font-semibold text-[var(--color-text)]">{phase}</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {(toolGroups[phaseIndex].length ? toolGroups[phaseIndex] : selectedTools.slice(0, 2)).map((tool) => (
+                          <span key={`${phase}-${tool}`} className="rounded-md px-2 py-1 text-xs font-medium text-[var(--color-muted)]" style={{ background: "var(--color-surface-muted)" }}>
+                            {tool}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+            </AnimatePresence>
+          </div>
+        </motion.div>
 
-        {/* Swipe Indicators */}
-        <div className="sm:hidden flex justify-center mt-6 space-x-2">
-          {categories.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => {
-                console.log(`📍 Indicator ${i} clicked - logging...`);
-                logLinkClick(`tech_indicator_${i}`);
-                const newDirection = i > index ? 1 : -1;
-                setPage([i, newDirection]);
-                setIndex(i);
-                setAutoPlay(false);
-                setTimeout(() => setAutoPlay(true), 3000);
-              }}
-              className={`h-[4px] w-6 rounded-full transition-all duration-300 cursor-pointer ${i === index
-                ? "bg-cyan-400 shadow-[0_0_12px_rgba(0,255,255,0.8)] w-10"
-                : "bg-white/10 hover:bg-white/30"
-                }`}
-              aria-label={`Go to slide ${i + 1}`}
-            ></button>
-          ))}
-        </div>
-
-        {/* Outro */}
-        <div className="text-center mt-20">
-          <p className="text-white/50 text-sm md:text-base italic">
-            ✨ "Code. Learn. Build. Repeat."
-          </p>
-        </div>
+        <motion.div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" variants={itemVariants}>
+          {categories.map((category, index) => {
+            const Icon = category.Icon;
+            return (
+              <motion.button
+                key={category.title}
+                type="button"
+                whileHover={{ y: -3 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setActiveIndex(index)}
+                className="group rounded-lg border p-4 text-left transition-colors"
+                style={{
+                  background: index === activeIndex ? "linear-gradient(135deg, var(--color-accent-soft), rgba(217,119,6,0.08))" : "var(--color-surface)",
+                  borderColor: index === activeIndex ? category.accent : "var(--color-border)",
+                  boxShadow: "var(--shadow-soft)",
+                }}
+              >
+                <div className="mb-4 flex items-center justify-between">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-lg border" style={{ color: category.accent, borderColor: "var(--color-border)" }}>
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  <span className="text-xs font-semibold text-[var(--color-faint)]">{String(index + 1).padStart(2, "0")}</span>
+                </div>
+                <h4 className="line-clamp-1 text-sm font-bold text-[var(--color-text)]">{category.title}</h4>
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {category.tech.slice(0, 3).map((tool) => (
+                    <span key={tool} className="rounded-md px-2 py-1 text-[11px] font-medium text-[var(--color-muted)]" style={{ background: "var(--color-surface-muted)" }}>
+                      {tool}
+                    </span>
+                  ))}
+                </div>
+              </motion.button>
+            );
+          })}
+        </motion.div>
       </motion.div>
     </section>
   );

@@ -77,6 +77,29 @@ const INITIAL_FIRESTORE_ENTRIES = [
   { collectionName: "linkedin" },
 ];
 
+function usePortfolioTheme() {
+  const [theme, setTheme] = useState(() => {
+    if (typeof window === "undefined") return "light";
+    try {
+      return window.localStorage.getItem("portfolio.theme") || "light";
+    } catch {
+      return "light";
+    }
+  });
+
+  useEffect(() => {
+    const safeTheme = theme === "dark" ? "dark" : "light";
+    document.documentElement.dataset.theme = safeTheme;
+    try {
+      window.localStorage.setItem("portfolio.theme", safeTheme);
+    } catch {
+      // Private browsing can block storage; the visual theme still applies.
+    }
+  }, [theme]);
+
+  return [theme === "dark" ? "dark" : "light", setTheme];
+}
+
 function SectionsConfigLoader({ children }) {
   const { data: sectionsData, loading: sectionsLoading } = useFirestoreData("sections", "visibility");
 
@@ -224,11 +247,11 @@ function AdminNavbar() {
   );
 }
 
-function HomeShell({ sectionsConfig }) {
+function HomeShell({ sectionsConfig, theme, onThemeToggle }) {
   return (
-    <div className="portfolio-shell relative overflow-x-hidden text-white">
+    <div className="portfolio-shell relative overflow-x-hidden" data-theme={theme}>
       <GlobalBackgroundEffects />
-      <Navbar sectionsConfig={sectionsConfig} />
+      <Navbar sectionsConfig={sectionsConfig} theme={theme} onThemeToggle={onThemeToggle} />
 
       {sectionsConfig.home && <Header />}
 
@@ -248,10 +271,13 @@ function HomeShell({ sectionsConfig }) {
   );
 }
 
-function AppRoutes({ sectionsConfig }) {
+function AppRoutes({ sectionsConfig, theme, onThemeToggle }) {
   return (
     <Routes>
-      <Route path="/" element={<HomeShell sectionsConfig={sectionsConfig} />} />
+      <Route
+        path="/"
+        element={<HomeShell sectionsConfig={sectionsConfig} theme={theme} onThemeToggle={onThemeToggle} />}
+      />
       <Route
         path="/blog"
         element={
@@ -320,7 +346,7 @@ function AppRoutes({ sectionsConfig }) {
   );
 }
 
-function AppContent({ sectionsConfig, sectionsLoading, bootstrapReady, minTimePassed, ssrRendered }) {
+function AppContent({ sectionsConfig, sectionsLoading, bootstrapReady, minTimePassed, ssrRendered, theme, onThemeToggle }) {
   const lightweightMotion = useLightweightMotion();
   const appReady = minTimePassed && !sectionsLoading && bootstrapReady;
   const [showLoader, setShowLoader] = useState(() => !ssrRendered);
@@ -363,7 +389,7 @@ function AppContent({ sectionsConfig, sectionsLoading, bootstrapReady, minTimePa
           transition={{ duration: lightweightMotion ? 0.12 : 0.9 }}
         >
           <AdminResponsiveStyles />
-          <AppRoutes sectionsConfig={sectionsConfig} />
+          <AppRoutes sectionsConfig={sectionsConfig} theme={theme} onThemeToggle={onThemeToggle} />
         </motion.div>
       )}
     </MotionConfig>
@@ -377,6 +403,8 @@ function App({ ssrRendered = false }) {
   );
   const [bootstrapReady, setBootstrapReady] = useState(() => ssrRendered);
   const lightweightMotion = useLightweightMotion();
+  const [theme, setTheme] = usePortfolioTheme();
+  const toggleTheme = () => setTheme((current) => (current === "dark" ? "light" : "dark"));
 
   useEffect(() => {
     const timer = setTimeout(() => setMinTimePassed(true), lightweightMotion ? 180 : 500);
@@ -413,25 +441,6 @@ function App({ ssrRendered = false }) {
       window.removeEventListener("offline", handleOffline);
     };
   }, []);
-
-  useEffect(() => {
-    if (lightweightMotion) {
-      return undefined;
-    }
-
-    const isCoarsePointer = window.matchMedia?.("(pointer: coarse)")?.matches;
-    if (isCoarsePointer) {
-      return undefined;
-    }
-
-    const handleMouseMove = (event) => {
-      document.body.style.setProperty("--mouse-x", `${event.clientX}px`);
-      document.body.style.setProperty("--mouse-y", `${event.clientY}px`);
-    };
-
-    window.addEventListener("mousemove", handleMouseMove, { passive: true });
-    return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, [lightweightMotion]);
 
   useEffect(() => {
     initializeGA();
@@ -533,6 +542,8 @@ function App({ ssrRendered = false }) {
           bootstrapReady={bootstrapReady}
           minTimePassed={minTimePassed}
           ssrRendered={ssrRendered}
+          theme={theme}
+          onThemeToggle={toggleTheme}
         />
       )}
     </SectionsConfigLoader>

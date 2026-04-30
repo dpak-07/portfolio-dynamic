@@ -64,6 +64,10 @@ export default function EnhancedNavbar() {
 
     // Active section observer - optimized for instant detection
     useEffect(() => {
+        if (typeof IntersectionObserver === "undefined") {
+            return undefined;
+        }
+
         const observer = new IntersectionObserver(
             (entries) => {
                 entries.forEach((entry) => {

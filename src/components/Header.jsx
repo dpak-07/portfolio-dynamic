@@ -162,12 +162,18 @@ export default function Header() {
     <header
       id="home"
       ref={sectionRef}
-      className="relative flex min-h-[100svh] w-full scroll-mt-24 flex-col items-center justify-center overflow-hidden text-white"
+      className="relative flex min-h-[100svh] w-full scroll-mt-24 flex-col items-center justify-center overflow-hidden text-[var(--color-text)]"
     >
       <div className="absolute inset-0 -z-10 overflow-hidden">
-        <div className="absolute inset-0 bg-[linear-gradient(145deg,rgba(20,184,166,0.26),transparent_38%),linear-gradient(220deg,rgba(245,158,11,0.16),transparent_34%),linear-gradient(180deg,rgba(7,16,15,0.78),rgba(2,6,5,0.98))]" />
-        <div className="absolute inset-0 opacity-[0.12] [background-image:linear-gradient(rgba(226,232,240,0.2)_1px,transparent_1px),linear-gradient(90deg,rgba(226,232,240,0.2)_1px,transparent_1px)] [background-size:64px_64px]" />
-        <div className="absolute inset-x-0 top-0 h-36 bg-gradient-to-b from-emerald-200/10 to-transparent" />
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(145deg, rgba(20,184,166,0.16), transparent 38%), linear-gradient(220deg, rgba(217,119,6,0.1), transparent 34%), linear-gradient(180deg, color-mix(in srgb, var(--color-bg) 82%, transparent), var(--color-bg-strong))",
+          }}
+        />
+        <div className="absolute inset-0 opacity-[0.12] [background-image:linear-gradient(rgba(15,23,42,0.16)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,0.16)_1px,transparent_1px)] [background-size:64px_64px]" />
+        <div className="absolute inset-x-0 top-0 h-36 bg-gradient-to-b from-teal-200/20 to-transparent" />
       </div>
 
       <motion.div
@@ -177,7 +183,7 @@ export default function Header() {
         animate="visible"
       >
         <motion.h1
-          className="mb-4 text-4xl font-extrabold leading-tight text-emerald-100 drop-shadow-sm sm:mb-6 sm:text-5xl md:text-6xl lg:text-7xl"
+          className="mb-4 text-4xl font-extrabold leading-tight text-[var(--color-text)] drop-shadow-sm sm:mb-6 sm:text-5xl md:text-6xl lg:text-7xl"
           variants={itemVariants}
         >
           Hi, I&apos;m {profileData.name}
@@ -185,7 +191,7 @@ export default function Header() {
 
         <motion.div className="mb-4 max-w-5xl px-4 sm:mb-6" variants={itemVariants}>
           <div className="block sm:hidden">
-            <p className="text-center text-base text-white/80">
+            <p className="text-center text-base text-[var(--color-muted)]">
               {showAllRoles ? processedRoles.full : processedRoles.first2}
             </p>
             {processedRoles.hasMore && (
@@ -199,7 +205,7 @@ export default function Header() {
           </div>
 
           <p
-            className="hidden overflow-x-auto whitespace-nowrap text-base text-white/80 sm:block sm:text-lg md:text-xl"
+            className="hidden overflow-x-auto whitespace-nowrap text-base text-[var(--color-muted)] sm:block sm:text-lg md:text-xl"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
             <style jsx="true">{`
@@ -212,7 +218,7 @@ export default function Header() {
         </motion.div>
 
         <motion.div
-          className="mb-6 h-[28px] max-w-2xl px-4 font-mono text-sm text-white/60 sm:mb-8 sm:h-[32px] sm:text-base md:text-lg"
+          className="mb-6 h-[28px] max-w-2xl px-4 font-mono text-sm text-[var(--color-faint)] sm:mb-8 sm:h-[32px] sm:text-base md:text-lg"
           variants={itemVariants}
         >
           {lightweightMotion ? (
@@ -240,7 +246,7 @@ export default function Header() {
               event.preventDefault();
               scrollToSection("projects", { offset: 88 });
             }}
-            className="flex-1 whitespace-nowrap rounded-lg bg-cyansoft px-5 py-2.5 text-center text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-950/20 transition-colors hover:bg-emerald-200 sm:flex-none sm:text-base"
+            className="flex-1 whitespace-nowrap rounded-lg bg-cyansoft px-5 py-2.5 text-center text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-950/15 transition-colors hover:bg-emerald-200 sm:flex-none sm:text-base"
           >
             View Projects
           </a>
@@ -251,7 +257,8 @@ export default function Header() {
               event.preventDefault();
               scrollToSection("contact", { offset: 88 });
             }}
-            className="flex-1 whitespace-nowrap rounded-lg border border-amber-200/25 px-5 py-2.5 text-center text-sm font-medium text-white/90 transition-colors hover:border-amber-200/60 hover:bg-amber-200/10 sm:flex-none sm:text-base"
+            className="flex-1 whitespace-nowrap rounded-lg border px-5 py-2.5 text-center text-sm font-medium text-[var(--color-text)] transition-colors hover:bg-amber-200/10 sm:flex-none sm:text-base"
+            style={{ borderColor: "var(--color-border-strong)" }}
           >
             Contact
           </a>
@@ -275,9 +282,10 @@ export default function Header() {
 
               logDownload("resume");
             }}
-            className={`flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-white/20 px-5 py-2.5 text-sm font-medium text-white/90 transition-colors sm:flex-none sm:text-base ${
+            className={`flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-lg border px-5 py-2.5 text-sm font-medium text-[var(--color-text)] transition-colors sm:flex-none sm:text-base ${
               download ? "hover:border-cyansoft hover:bg-white/10" : "pointer-events-none opacity-50"
             }`}
+            style={{ borderColor: "var(--color-border-strong)" }}
           >
             <FaDownload className="h-3.5 w-3.5" /> Download
           </a>
@@ -296,7 +304,7 @@ export default function Header() {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => logLinkClick(key)}
-                className="text-white/80 transition-all hover:scale-110 hover:text-cyansoft"
+                className="text-[var(--color-muted)] transition-all hover:scale-110 hover:text-cyansoft"
               >
                 <Icon className="h-6 w-6" />
               </a>
