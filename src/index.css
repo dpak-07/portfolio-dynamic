@@ -9,8 +9,10 @@
 /* 🎨 Root Variables  */
 /* ------------------ */
 :root {
-  --cyansoft: #0ff;
-  --cyanglow: #00e5ff;
+  --cyansoft: #5eead4;
+  --cyanglow: #14b8a6;
+  --accent-warm: #f59e0b;
+  --surface-dark: #07100f;
 
   /* mobile-safe viewport unit (set by JS on app load) */
   --vh: 1vh;
@@ -40,8 +42,8 @@
     margin: 0;
     padding: 0;
     overflow-x: hidden;
-    background: #0b0b0d;
-    color: #f4f4f4;
+    background: var(--surface-dark);
+    color: #f6fbf9;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -56,15 +58,12 @@ body::before {
   inset: 0;
   z-index: -2;
   background-image:
-    linear-gradient(120deg, rgba(0, 229, 255, 0.03), rgba(0, 229, 255, 0.02)),
-    radial-gradient(600px 200px at 10% 10%, rgba(0, 229, 255, 0.02), transparent 30%),
-    radial-gradient(500px 180px at 90% 90%, rgba(0, 229, 255, 0.015), transparent 30%);
-  background-size: 400% 400%, 600px 200px, 500px 180px;
-  background-position: 0% 50%, 10% 10%, 90% 90%;
+    linear-gradient(135deg, rgba(20, 184, 166, 0.08), transparent 38%),
+    linear-gradient(225deg, rgba(245, 158, 11, 0.06), transparent 34%),
+    linear-gradient(180deg, #07100f, #030606);
+  background-size: cover;
+  background-position: center;
   background-repeat: no-repeat;
-  animation:
-    gradientShift 18s ease-in-out infinite,
-    radialPulse 8s ease-in-out infinite;
 }
 
 /* --------------------------- */
@@ -220,6 +219,85 @@ body::before {
 .section-large {
   padding-top: 6rem;
   padding-bottom: 6rem;
+}
+
+.portfolio-shell [class*="text-cyan-"],
+.portfolio-shell [class*="text-blue-"] {
+  color: #5eead4 !important;
+}
+
+.portfolio-shell [class*="text-purple-"],
+.portfolio-shell [class*="text-pink-"] {
+  color: #fcd34d !important;
+}
+
+.portfolio-shell [class*="border-cyan-"],
+.portfolio-shell [class*="border-blue-"] {
+  border-color: rgba(94, 234, 212, 0.34) !important;
+}
+
+.portfolio-shell [class*="border-purple-"],
+.portfolio-shell [class*="border-pink-"] {
+  border-color: rgba(252, 211, 77, 0.3) !important;
+}
+
+.portfolio-shell [class*="shadow-cyan-"],
+.portfolio-shell [class*="shadow-blue-"] {
+  --tw-shadow-color: rgba(20, 184, 166, 0.28) !important;
+}
+
+.portfolio-shell [class*="shadow-purple-"],
+.portfolio-shell [class*="shadow-pink-"] {
+  --tw-shadow-color: rgba(245, 158, 11, 0.24) !important;
+}
+
+@media (max-width: 767px), (prefers-reduced-motion: reduce) {
+  body::before {
+    animation: none !important;
+    background-image:
+      linear-gradient(145deg, rgba(20, 184, 166, 0.1), transparent 44%),
+      linear-gradient(180deg, #07100f, #030606);
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 120ms !important;
+  }
+
+  .animate-spin {
+    animation-duration: 900ms !important;
+    animation-iteration-count: infinite !important;
+  }
+
+  .portfolio-shell [class*="blur-"],
+  .portfolio-shell [class*="backdrop-blur"] {
+    filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  .portfolio-shell [class*="shadow-"] {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18) !important;
+  }
+
+  .animate-fadeInUp,
+  .animate-fadeInDown,
+  .animate-slideUp {
+    animation-duration: 160ms;
+    transform: none;
+  }
+
+  .section-large {
+    padding-top: 4rem;
+    padding-bottom: 4rem;
+  }
 }
 
 /* -------------------------- */

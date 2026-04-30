@@ -9,10 +9,10 @@ module.exports = {
     extend: {
       // 🌈 Custom Colors
       colors: {
-        cyanglow: '#00e5ff',
-        cyansoft: '#0ff',
-        'bg-dark': '#0f0f12',
-        panel: '#151516',
+        cyanglow: '#14b8a6',
+        cyansoft: '#5eead4',
+        'bg-dark': '#07100f',
+        panel: '#101817',
       },
 
       // 🎬 Custom Keyframes for Animations
@@ -133,7 +133,7 @@ module.exports = {
 
       // 🌟 Box Shadows
       boxShadow: {
-        cyanglow: '0 8px 30px rgba(0,229,255,0.08), 0 2px 6px rgba(0,229,255,0.06)',
+        cyanglow: '0 8px 30px rgba(20,184,166,0.08), 0 2px 6px rgba(245,158,11,0.06)',
         // ✨ NEW Timeline Shadows
         'glow-blue': '0 0 20px rgba(59, 130, 246, 0.5)',
         'glow-purple': '0 0 20px rgba(139, 92, 246, 0.5)',

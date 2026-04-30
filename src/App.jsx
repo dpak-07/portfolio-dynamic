@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Routes, Route, Navigate, useLocation, Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, MotionConfig } from "framer-motion";
 
 import {
   initializeGA,
@@ -13,6 +13,7 @@ import {
 } from "./utils/analytics";
 import { isAdminAuthenticated, touchAdminSession } from "./utils/adminSession";
 import { preloadFirestoreEntries } from "./utils/firestoreCache";
+import { useLightweightMotion } from "./hooks/useLightweightMotion";
 
 import Navbar from "./components/Navbar";
 import GlobalBackgroundEffects from "./components/GlobalBackgroundEffects";
@@ -225,7 +226,7 @@ function AdminNavbar() {
 
 function HomeShell({ sectionsConfig }) {
   return (
-    <div className="relative overflow-x-hidden text-white">
+    <div className="portfolio-shell relative overflow-x-hidden text-white">
       <GlobalBackgroundEffects />
       <Navbar sectionsConfig={sectionsConfig} />
 
@@ -320,6 +321,7 @@ function AppRoutes({ sectionsConfig }) {
 }
 
 function AppContent({ sectionsConfig, sectionsLoading, bootstrapReady, minTimePassed, ssrRendered }) {
+  const lightweightMotion = useLightweightMotion();
   const appReady = minTimePassed && !sectionsLoading && bootstrapReady;
   const [showLoader, setShowLoader] = useState(() => !ssrRendered);
 
@@ -331,13 +333,13 @@ function AppContent({ sectionsConfig, sectionsLoading, bootstrapReady, minTimePa
 
     const timer = setTimeout(() => {
       setShowLoader(false);
-    }, 550);
+    }, lightweightMotion ? 120 : 550);
 
     return () => clearTimeout(timer);
-  }, [appReady]);
+  }, [appReady, lightweightMotion]);
 
   return (
-    <>
+    <MotionConfig reducedMotion={lightweightMotion ? "always" : "user"}>
       <AnimatePresence>
         {showLoader && (
           <motion.div
@@ -345,7 +347,7 @@ function AppContent({ sectionsConfig, sectionsLoading, bootstrapReady, minTimePa
             initial={{ opacity: 1 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.7, ease: "easeInOut" }}
+            transition={{ duration: lightweightMotion ? 0.12 : 0.7, ease: "easeInOut" }}
             className="fixed inset-0 z-[9999]"
           >
             <Loader ready={appReady} />
@@ -354,12 +356,17 @@ function AppContent({ sectionsConfig, sectionsLoading, bootstrapReady, minTimePa
       </AnimatePresence>
 
       {appReady && !showLoader && (
-        <motion.div key="main" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.9 }}>
+        <motion.div
+          key="main"
+          initial={{ opacity: lightweightMotion ? 1 : 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: lightweightMotion ? 0.12 : 0.9 }}
+        >
           <AdminResponsiveStyles />
           <AppRoutes sectionsConfig={sectionsConfig} />
         </motion.div>
       )}
-    </>
+    </MotionConfig>
   );
 }
 
@@ -369,11 +376,12 @@ function App({ ssrRendered = false }) {
     typeof navigator === "undefined" ? false : !navigator.onLine
   );
   const [bootstrapReady, setBootstrapReady] = useState(() => ssrRendered);
+  const lightweightMotion = useLightweightMotion();
 
   useEffect(() => {
-    const timer = setTimeout(() => setMinTimePassed(true), 500);
+    const timer = setTimeout(() => setMinTimePassed(true), lightweightMotion ? 180 : 500);
     return () => clearTimeout(timer);
-  }, []);
+  }, [lightweightMotion]);
 
   useEffect(() => {
     let active = true;
@@ -407,6 +415,15 @@ function App({ ssrRendered = false }) {
   }, []);
 
   useEffect(() => {
+    if (lightweightMotion) {
+      return undefined;
+    }
+
+    const isCoarsePointer = window.matchMedia?.("(pointer: coarse)")?.matches;
+    if (isCoarsePointer) {
+      return undefined;
+    }
+
     const handleMouseMove = (event) => {
       document.body.style.setProperty("--mouse-x", `${event.clientX}px`);
       document.body.style.setProperty("--mouse-y", `${event.clientY}px`);
@@ -414,7 +431,7 @@ function App({ ssrRendered = false }) {
 
     window.addEventListener("mousemove", handleMouseMove, { passive: true });
     return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, []);
+  }, [lightweightMotion]);
 
   useEffect(() => {
     initializeGA();

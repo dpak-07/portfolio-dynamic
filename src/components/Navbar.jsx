@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Home, User, Code, Briefcase, Award, Clock, FileText, Mail, BookOpen, Menu, X, BarChart3 } from "lucide-react";
 import { logLinkClick } from "../utils/analytics";
 import { scrollToSection } from "@/utils/scrollToSection";
+import { useLightweightMotion } from "@/hooks/useLightweightMotion";
 
 export default function Navbar({ sectionsConfig }) {
   // Navigation items with modern icons
@@ -44,6 +45,7 @@ export default function Navbar({ sectionsConfig }) {
 
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState("home");
+  const lightweightMotion = useLightweightMotion();
 
   // Active section observer - optimized for instant detection
   useEffect(() => {
@@ -105,21 +107,21 @@ export default function Navbar({ sectionsConfig }) {
     <>
       {/* Desktop Navbar */}
       <motion.header
-        initial={{ y: -100, opacity: 0 }}
+        initial={lightweightMotion ? false : { y: -48, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.25, ease: "easeOut" }}
+        transition={{ duration: lightweightMotion ? 0.1 : 0.25, ease: "easeOut" }}
         className="fixed top-0 left-0 right-0 z-[999] pt-1 hidden lg:block"
       >
         <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="relative flex items-center justify-between h-16 bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl px-4 sm:px-6 shadow-2xl">
+          <div className="relative flex items-center justify-between h-16 bg-[#07100f]/86 backdrop-blur-md border border-emerald-200/10 rounded-lg px-4 sm:px-6 shadow-lg shadow-black/25">
             {/* Logo */}
             <motion.button
               onClick={() => scrollTo("home")}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={lightweightMotion ? undefined : { scale: 1.04 }}
+              whileTap={lightweightMotion ? undefined : { scale: 0.97 }}
               className="flex items-center gap-2 group"
             >
-              <span className="text-white font-bold text-lg bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+              <span className="text-white font-bold text-lg bg-gradient-to-r from-emerald-200 via-teal-300 to-amber-200 bg-clip-text text-transparent">
                 Deepak
               </span>
             </motion.button>
@@ -130,8 +132,8 @@ export default function Navbar({ sectionsConfig }) {
                 <motion.button
                   key={id}
                   onClick={() => scrollTo(id)}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={lightweightMotion ? undefined : { scale: 1.04 }}
+                  whileTap={lightweightMotion ? undefined : { scale: 0.97 }}
                   className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${active === id
                     ? "text-white"
                     : "text-white/60 hover:text-white/90"
@@ -140,8 +142,8 @@ export default function Navbar({ sectionsConfig }) {
                   {active === id && (
                     <motion.div
                       layoutId="navbar-active"
-                      className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 rounded-lg border border-cyan-500/30"
-                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                      className="absolute inset-0 bg-gradient-to-r from-emerald-500/18 to-amber-400/12 rounded-lg border border-emerald-300/25"
+                      transition={lightweightMotion ? { duration: 0.12 } : { type: "spring", bounce: 0.15, duration: 0.45 }}
                     />
                   )}
                   <span className="relative z-10 flex items-center gap-2">
@@ -156,9 +158,9 @@ export default function Navbar({ sectionsConfig }) {
             {resolvedSectionsConfig.blog && (
               <motion.a
                 href="/blog"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-lg font-medium shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 transition-all"
+                whileHover={lightweightMotion ? undefined : { scale: 1.04 }}
+                whileTap={lightweightMotion ? undefined : { scale: 0.97 }}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-amber-400 text-slate-950 rounded-lg font-semibold shadow-lg shadow-emerald-950/25 transition-colors hover:from-emerald-300 hover:to-amber-300"
               >
                 <BookOpen size={16} />
                 Blog
@@ -172,28 +174,28 @@ export default function Navbar({ sectionsConfig }) {
       <div className="lg:hidden">
         {/* Floating Menu Button */}
         <motion.button
-          whileTap={{ scale: 0.9 }}
+          whileTap={lightweightMotion ? undefined : { scale: 0.92 }}
           onClick={() => setOpen(!open)}
-          className="fixed bottom-6 right-6 z-[998] p-3 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 text-white shadow-lg hover:shadow-xl transition-all"
+          className="fixed bottom-6 right-6 z-[998] p-3 rounded-full bg-gradient-to-r from-emerald-500 to-amber-400 text-slate-950 shadow-lg shadow-black/30 transition-colors hover:from-emerald-300 hover:to-amber-300"
         >
           <AnimatePresence mode="wait">
             {open ? (
               <motion.div
                 key="close"
-                initial={{ rotate: -90, opacity: 0 }}
+                initial={lightweightMotion ? { opacity: 1 } : { rotate: -90, opacity: 0 }}
                 animate={{ rotate: 0, opacity: 1 }}
-                exit={{ rotate: -90, opacity: 0 }}
-                transition={{ duration: 0.2 }}
+                exit={lightweightMotion ? { opacity: 0 } : { rotate: -90, opacity: 0 }}
+                transition={{ duration: lightweightMotion ? 0.08 : 0.2 }}
               >
                 <X size={24} />
               </motion.div>
             ) : (
               <motion.div
                 key="menu"
-                initial={{ rotate: 90, opacity: 0 }}
+                initial={lightweightMotion ? { opacity: 1 } : { rotate: 90, opacity: 0 }}
                 animate={{ rotate: 0, opacity: 1 }}
-                exit={{ rotate: 90, opacity: 0 }}
-                transition={{ duration: 0.2 }}
+                exit={lightweightMotion ? { opacity: 0 } : { rotate: 90, opacity: 0 }}
+                transition={{ duration: lightweightMotion ? 0.08 : 0.2 }}
               >
                 <Menu size={24} />
               </motion.div>
@@ -209,7 +211,8 @@ export default function Navbar({ sectionsConfig }) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setOpen(false)}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[997]"
+              transition={{ duration: lightweightMotion ? 0.08 : 0.18 }}
+              className="fixed inset-0 bg-black/65 z-[997] md:backdrop-blur-sm"
             />
           )}
         </AnimatePresence>
@@ -218,24 +221,24 @@ export default function Navbar({ sectionsConfig }) {
         <AnimatePresence>
           {open && (
             <motion.div
-              initial={{ scale: 0, opacity: 0, y: 20 }}
+              initial={lightweightMotion ? { opacity: 0, y: 8 } : { scale: 0.94, opacity: 0, y: 18 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0, opacity: 0, y: 20 }}
-              transition={{ type: "spring", damping: 20, stiffness: 300 }}
-              className="fixed bottom-24 right-6 z-[998] w-48 bg-gradient-to-b from-slate-900 to-slate-950 rounded-2xl border border-white/10 shadow-2xl overflow-hidden"
+              exit={lightweightMotion ? { opacity: 0, y: 8 } : { scale: 0.94, opacity: 0, y: 18 }}
+              transition={lightweightMotion ? { duration: 0.1 } : { type: "spring", damping: 24, stiffness: 260 }}
+              className="fixed bottom-24 right-6 z-[998] w-52 overflow-hidden rounded-lg border border-emerald-200/10 bg-[#07100f]/95 shadow-xl shadow-black/35"
             >
               {/* Navigation Items */}
               <div className="py-2 space-y-1">
                 {visibleNavItems.map(({ id, label, icon: Icon }, index) => (
                   <motion.button
                     key={id}
-                    initial={{ opacity: 0, x: -20 }}
+                    initial={lightweightMotion ? false : { opacity: 0, x: -12 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.05 }}
+                    transition={{ delay: lightweightMotion ? 0 : index * 0.025, duration: 0.12 }}
                     onClick={() => scrollTo(id)}
                     className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all ${
                       active === id
-                        ? "bg-gradient-to-r from-cyan-500/30 to-purple-500/30 border-l-2 border-cyan-500 text-white"
+                        ? "bg-gradient-to-r from-emerald-500/22 to-amber-400/12 border-l-2 border-emerald-300 text-white"
                         : "text-white/70 hover:bg-white/5 hover:text-white"
                     }`}
                   >
@@ -248,10 +251,10 @@ export default function Navbar({ sectionsConfig }) {
                 {resolvedSectionsConfig.blog && (
                   <motion.a
                     href="/blog"
-                    initial={{ opacity: 0, x: -20 }}
+                    initial={lightweightMotion ? false : { opacity: 0, x: -12 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: (visibleNavItems.length + 1) * 0.05 }}
-                    className="flex items-center gap-3 px-4 py-3 text-left mt-2 pt-2 border-t border-white/10 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 text-white hover:from-cyan-500/30 hover:to-purple-500/30 transition-all"
+                    transition={{ delay: lightweightMotion ? 0 : (visibleNavItems.length + 1) * 0.025, duration: 0.12 }}
+                    className="flex items-center gap-3 px-4 py-3 text-left mt-2 pt-2 border-t border-white/10 bg-gradient-to-r from-emerald-500/18 to-amber-400/12 text-white transition-colors hover:from-emerald-500/26 hover:to-amber-400/20"
                   >
                     <BookOpen size={18} />
                     <span className="font-medium text-sm">Blog</span>

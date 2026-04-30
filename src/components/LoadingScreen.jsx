@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import { useLightweightMotion } from "@/hooks/useLightweightMotion";
 
 const loaderSteps = [
   { label: "Booting interface", threshold: 18 },
@@ -20,6 +21,7 @@ const loaderParticles = [
 export default function Loader({ ready = false, onFinish }) {
   const [progress, setProgress] = useState(8);
   const finishedRef = useRef(false);
+  const lightweightMotion = useLightweightMotion();
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -59,33 +61,30 @@ export default function Loader({ ready = false, onFinish }) {
   }, [progress]);
 
   return (
-    <div className="relative flex h-full w-full items-center justify-center overflow-hidden bg-[#030712]">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.14),transparent_30%),linear-gradient(135deg,#020617,#020617_35%,#0f172a_100%)]" />
+    <div className="relative flex h-full w-full items-center justify-center overflow-hidden bg-[#06100f]">
+      <div className="absolute inset-0 bg-[linear-gradient(145deg,rgba(20,184,166,0.18),transparent_38%),linear-gradient(220deg,rgba(245,158,11,0.12),transparent_34%),linear-gradient(135deg,#07100f,#050808_52%,#020303_100%)]" />
 
-      <div className="absolute inset-0 overflow-hidden">
-        <motion.div
-          className="absolute -left-24 top-[-8%] h-[420px] w-[420px] rounded-full bg-cyan-500/30 blur-[120px]"
-          animate={{ x: [0, 54, 0], y: [0, -24, 0], scale: [1, 1.08, 1] }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div
-          className="absolute -right-20 bottom-[-10%] h-[460px] w-[460px] rounded-full bg-purple-500/30 blur-[140px]"
-          animate={{ x: [0, -44, 0], y: [0, 26, 0], scale: [1, 1.12, 1] }}
-          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div
-          className="absolute left-1/2 top-1/2 h-[340px] w-[340px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-500/16 blur-[120px]"
-          animate={{ scale: [1, 1.16, 1], opacity: [0.25, 0.4, 0.25] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-        />
-      </div>
+      {!lightweightMotion && (
+        <div className="absolute inset-0 overflow-hidden">
+          <motion.div
+            className="absolute -left-24 top-[-8%] h-[360px] w-[360px] rounded-full bg-emerald-500/18 blur-[92px]"
+            animate={{ x: [0, 54, 0], y: [0, -24, 0], scale: [1, 1.08, 1] }}
+            transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <motion.div
+            className="absolute -right-20 bottom-[-10%] h-[380px] w-[380px] rounded-full bg-amber-500/16 blur-[96px]"
+            animate={{ x: [0, -44, 0], y: [0, 26, 0], scale: [1, 1.12, 1] }}
+            transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
+          />
+        </div>
+      )}
 
-      <div className="absolute inset-0 opacity-25 [background-image:linear-gradient(rgba(34,211,238,0.12)_1px,transparent_1px),linear-gradient(90deg,rgba(34,211,238,0.12)_1px,transparent_1px)] [background-size:64px_64px]" />
+      <div className="absolute inset-0 opacity-[0.09] [background-image:linear-gradient(rgba(226,232,240,0.18)_1px,transparent_1px),linear-gradient(90deg,rgba(226,232,240,0.18)_1px,transparent_1px)] [background-size:64px_64px]" />
 
-      {loaderParticles.map((particle) => (
+      {!lightweightMotion && loaderParticles.map((particle) => (
         <motion.span
           key={`${particle.left}-${particle.top}`}
-          className="absolute rounded-full bg-white/75 shadow-[0_0_28px_rgba(34,211,238,0.45)]"
+          className="absolute rounded-full bg-emerald-100/70 shadow-[0_0_18px_rgba(20,184,166,0.35)]"
           style={{
             left: particle.left,
             top: particle.top,
@@ -98,7 +97,7 @@ export default function Loader({ ready = false, onFinish }) {
             scale: [0.9, 1.12, 0.9],
           }}
           transition={{
-            duration: 4.5,
+            duration: 6,
             repeat: Infinity,
             ease: "easeInOut",
             delay: particle.delay,
@@ -109,20 +108,20 @@ export default function Loader({ ready = false, onFinish }) {
       <motion.div
         initial={{ opacity: 0, y: 24, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.55, ease: "easeOut" }}
+        transition={{ duration: lightweightMotion ? 0.12 : 0.45, ease: "easeOut" }}
         className="relative z-10 mx-4 w-full max-w-[520px]"
       >
-        <div className="rounded-[2rem] border border-white/10 bg-slate-950/72 p-8 shadow-[0_24px_100px_rgba(0,0,0,0.45)] backdrop-blur-2xl sm:p-10">
+        <div className="rounded-lg border border-emerald-200/10 bg-[#07100f]/88 p-6 shadow-xl shadow-black/35 backdrop-blur-sm sm:p-8">
           <div className="mb-8 flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.35em] text-cyan-300/80">
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-200/80">
                 Deepak Portfolio
               </p>
               <h2 className="mt-2 text-3xl font-black text-white sm:text-4xl">
                 Warming up the experience
               </h2>
             </div>
-            <div className="rounded-full border border-cyan-400/25 bg-cyan-400/10 px-3 py-1 text-xs font-medium text-cyan-200">
+            <div className="rounded-full border border-emerald-300/25 bg-emerald-300/10 px-3 py-1 text-xs font-medium text-emerald-100">
               {Math.round(progress)}%
             </div>
           </div>
@@ -130,18 +129,18 @@ export default function Loader({ ready = false, onFinish }) {
           <div className="mb-8 flex items-center gap-6">
             <div className="relative flex h-24 w-24 items-center justify-center">
               <motion.div
-                className="absolute inset-0 rounded-full border border-cyan-400/30"
-                animate={{ rotate: 360 }}
+                className="absolute inset-0 rounded-full border border-emerald-300/30"
+                animate={lightweightMotion ? undefined : { rotate: 360 }}
                 transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
               />
               <motion.div
-                className="absolute inset-[10px] rounded-full border border-purple-400/40"
-                animate={{ rotate: -360 }}
+                className="absolute inset-[10px] rounded-full border border-amber-300/35"
+                animate={lightweightMotion ? undefined : { rotate: -360 }}
                 transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
               />
               <motion.div
-                className="absolute inset-[20px] rounded-full bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-500 shadow-[0_0_40px_rgba(34,211,238,0.35)]"
-                animate={{ scale: [1, 1.08, 1] }}
+                className="absolute inset-[20px] rounded-full bg-gradient-to-br from-emerald-300 via-teal-500 to-amber-300 shadow-[0_0_28px_rgba(20,184,166,0.25)]"
+                animate={lightweightMotion ? undefined : { scale: [1, 1.06, 1] }}
                 transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
               />
               <span className="relative z-10 text-2xl font-black text-white">D</span>
@@ -161,7 +160,7 @@ export default function Loader({ ready = false, onFinish }) {
 
           <div className="mb-6 h-2 overflow-hidden rounded-full bg-white/8">
             <motion.div
-              className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 shadow-[0_0_30px_rgba(34,211,238,0.45)]"
+              className="h-full rounded-full bg-gradient-to-r from-emerald-300 via-teal-500 to-amber-300 shadow-[0_0_20px_rgba(20,184,166,0.35)]"
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
               transition={{ duration: 0.25, ease: "easeOut" }}
@@ -176,16 +175,16 @@ export default function Loader({ ready = false, onFinish }) {
                   key={step.label}
                   className={`rounded-2xl border px-4 py-3 transition-colors ${
                     isDone
-                      ? "border-cyan-400/30 bg-cyan-400/10 text-white"
+                      ? "border-emerald-300/30 bg-emerald-300/10 text-white"
                       : "border-white/8 bg-white/[0.03] text-white/55"
                   }`}
-                  animate={isDone ? { scale: [1, 1.02, 1] } : {}}
-                  transition={{ duration: 0.35 }}
+                  animate={!lightweightMotion && isDone ? { scale: [1, 1.015, 1] } : {}}
+                  transition={{ duration: 0.25 }}
                 >
                   <div className="flex items-center gap-3">
                     <span
                       className={`h-2.5 w-2.5 rounded-full ${
-                        isDone ? "bg-cyan-300 shadow-[0_0_18px_rgba(34,211,238,0.8)]" : "bg-white/20"
+                        isDone ? "bg-emerald-200 shadow-[0_0_12px_rgba(20,184,166,0.65)]" : "bg-white/20"
                       }`}
                     />
                     <span className="text-sm font-medium">{step.label}</span>

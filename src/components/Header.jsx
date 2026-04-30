@@ -17,6 +17,7 @@ import {
 import { useRef, useState, useEffect, useMemo } from "react";
 import { useFirestoreData } from "@/hooks/useFirestoreData";
 import { useResumeResource } from "@/hooks/useResumeResource";
+import { useLightweightMotion } from "@/hooks/useLightweightMotion";
 import { logSectionView, logLinkClick, logDownload, logResumeOpen } from "../utils/analytics";
 import { scrollToSection } from "@/utils/scrollToSection";
 
@@ -34,6 +35,7 @@ export default function Header() {
   const [showAllRoles, setShowAllRoles] = useState(false);
   const sectionRef = useRef(null);
   const loggedOnce = useRef(false);
+  const lightweightMotion = useLightweightMotion();
 
   useEffect(() => {
     if (!loggedOnce.current) {
@@ -74,19 +76,37 @@ export default function Header() {
     };
   }, [profileData?.roles]);
 
-  const containerVariants = {
-    hidden: { opacity: 0, y: 40 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { staggerChildren: 0.25, duration: 1, ease: "easeOut" },
-    },
-  };
+  const containerVariants = useMemo(
+    () =>
+      lightweightMotion
+        ? {
+            hidden: { opacity: 1, y: 0 },
+            visible: { opacity: 1, y: 0, transition: { duration: 0.12 } },
+          }
+        : {
+            hidden: { opacity: 0, y: 32 },
+            visible: {
+              opacity: 1,
+              y: 0,
+              transition: { staggerChildren: 0.12, duration: 0.6, ease: "easeOut" },
+            },
+          },
+    [lightweightMotion]
+  );
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 40 },
-    visible: { opacity: 1, y: 0, transition: { duration: 1 } },
-  };
+  const itemVariants = useMemo(
+    () =>
+      lightweightMotion
+        ? {
+            hidden: { opacity: 1, y: 0 },
+            visible: { opacity: 1, y: 0, transition: { duration: 0.12 } },
+          }
+        : {
+            hidden: { opacity: 0, y: 24 },
+            visible: { opacity: 1, y: 0, transition: { duration: 0.45 } },
+          },
+    [lightweightMotion]
+  );
 
   const iconMap = {
     github: FaGithub,
@@ -105,6 +125,7 @@ export default function Header() {
     validSocials.length > 0
       ? validSocials
       : [["website", profileData?.socials?.website || ""]];
+  const typewriterLines = profileData?.typewriterLines || [];
 
   const handleOpenResume = () => {
     if (!preview) {
@@ -122,7 +143,7 @@ export default function Header() {
       <div className="flex h-screen w-full items-center justify-center text-white">
         <motion.div
           className="h-12 w-12 rounded-full border-4 border-cyan-400 border-t-transparent"
-          animate={{ rotate: 360 }}
+          animate={lightweightMotion ? undefined : { rotate: 360 }}
           transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
         />
       </div>
@@ -141,55 +162,12 @@ export default function Header() {
     <header
       id="home"
       ref={sectionRef}
-      className="relative flex min-h-screen w-full scroll-mt-24 flex-col items-center justify-center overflow-hidden text-white"
+      className="relative flex min-h-[100svh] w-full scroll-mt-24 flex-col items-center justify-center overflow-hidden text-white"
     >
       <div className="absolute inset-0 -z-10 overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.22),transparent_35%),linear-gradient(135deg,rgba(9,16,28,0.65),rgba(2,6,23,0.96))]" />
-        <div className="absolute -top-40 left-0 h-[500px] w-[500px] rounded-full bg-cyan-500/20 blur-[180px] animate-[heroFloatA_20s_ease-in-out_infinite]" />
-        <div className="absolute bottom-0 right-0 h-[420px] w-[420px] rounded-full bg-blue-500/25 blur-[160px] animate-[heroFloatB_18s_ease-in-out_infinite]" />
-        <div className="absolute left-1/2 top-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-teal-400/15 blur-[200px] animate-[heroFloatC_22s_ease-in-out_infinite]" />
-        <div className="absolute inset-0 opacity-40 [background-image:linear-gradient(rgba(34,211,238,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(34,211,238,0.06)_1px,transparent_1px)] [background-size:72px_72px] animate-[heroGrid_20s_linear_infinite]" />
-
-        <style jsx="true">{`
-          @keyframes heroFloatA {
-            0%,
-            100% {
-              transform: translate3d(0, 0, 0) scale(1);
-            }
-            50% {
-              transform: translate3d(38px, -42px, 0) scale(1.1);
-            }
-          }
-
-          @keyframes heroFloatB {
-            0%,
-            100% {
-              transform: translate3d(0, 0, 0) scale(1);
-            }
-            50% {
-              transform: translate3d(-50px, 32px, 0) scale(1.16);
-            }
-          }
-
-          @keyframes heroFloatC {
-            0%,
-            100% {
-              transform: translate3d(-50%, -50%, 0) scale(1);
-            }
-            50% {
-              transform: translate3d(calc(-50% + 40px), calc(-50% - 26px), 0) scale(1.1);
-            }
-          }
-
-          @keyframes heroGrid {
-            0% {
-              background-position: 0 0, 0 0;
-            }
-            100% {
-              background-position: 72px 72px, 72px 72px;
-            }
-          }
-        `}</style>
+        <div className="absolute inset-0 bg-[linear-gradient(145deg,rgba(20,184,166,0.26),transparent_38%),linear-gradient(220deg,rgba(245,158,11,0.16),transparent_34%),linear-gradient(180deg,rgba(7,16,15,0.78),rgba(2,6,5,0.98))]" />
+        <div className="absolute inset-0 opacity-[0.12] [background-image:linear-gradient(rgba(226,232,240,0.2)_1px,transparent_1px),linear-gradient(90deg,rgba(226,232,240,0.2)_1px,transparent_1px)] [background-size:64px_64px]" />
+        <div className="absolute inset-x-0 top-0 h-36 bg-gradient-to-b from-emerald-200/10 to-transparent" />
       </div>
 
       <motion.div
@@ -199,7 +177,7 @@ export default function Header() {
         animate="visible"
       >
         <motion.h1
-          className="mb-4 text-4xl font-extrabold leading-tight text-cyansoft drop-shadow-lg sm:mb-6 sm:text-5xl md:text-6xl lg:text-7xl"
+          className="mb-4 text-4xl font-extrabold leading-tight text-emerald-100 drop-shadow-sm sm:mb-6 sm:text-5xl md:text-6xl lg:text-7xl"
           variants={itemVariants}
         >
           Hi, I&apos;m {profileData.name}
@@ -237,15 +215,19 @@ export default function Header() {
           className="mb-6 h-[28px] max-w-2xl px-4 font-mono text-sm text-white/60 sm:mb-8 sm:h-[32px] sm:text-base md:text-lg"
           variants={itemVariants}
         >
-          <Typewriter
-            words={profileData.typewriterLines || []}
-            loop={0}
-            cursor
-            cursorStyle="|"
-            typeSpeed={50}
-            deleteSpeed={30}
-            delaySpeed={1800}
-          />
+          {lightweightMotion ? (
+            <span>{typewriterLines[0] || ""}</span>
+          ) : (
+            <Typewriter
+              words={typewriterLines}
+              loop={0}
+              cursor
+              cursorStyle="|"
+              typeSpeed={44}
+              deleteSpeed={24}
+              delaySpeed={2000}
+            />
+          )}
         </motion.div>
 
         <motion.div
@@ -258,7 +240,7 @@ export default function Header() {
               event.preventDefault();
               scrollToSection("projects", { offset: 88 });
             }}
-            className="flex-1 whitespace-nowrap rounded-full bg-cyansoft px-5 py-2.5 text-center text-sm font-semibold text-black shadow-lg transition-all hover:scale-105 hover:bg-cyan-300 sm:flex-none sm:text-base"
+            className="flex-1 whitespace-nowrap rounded-lg bg-cyansoft px-5 py-2.5 text-center text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-950/20 transition-colors hover:bg-emerald-200 sm:flex-none sm:text-base"
           >
             View Projects
           </a>
@@ -269,14 +251,14 @@ export default function Header() {
               event.preventDefault();
               scrollToSection("contact", { offset: 88 });
             }}
-            className="flex-1 whitespace-nowrap rounded-full border border-white/20 px-5 py-2.5 text-center text-sm font-medium text-white/90 transition-all hover:border-cyansoft hover:bg-white/10 sm:flex-none sm:text-base"
+            className="flex-1 whitespace-nowrap rounded-lg border border-amber-200/25 px-5 py-2.5 text-center text-sm font-medium text-white/90 transition-colors hover:border-amber-200/60 hover:bg-amber-200/10 sm:flex-none sm:text-base"
           >
             Contact
           </a>
 
           <button
             onClick={handleOpenResume}
-            className="flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-full bg-cyansoft px-5 py-2.5 text-sm font-semibold text-black shadow-lg transition-all hover:scale-105 hover:bg-cyan-300 sm:flex-none sm:text-base"
+            className="flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-cyansoft px-5 py-2.5 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-950/20 transition-colors hover:bg-emerald-200 sm:flex-none sm:text-base"
           >
             <FaFileAlt className="h-3.5 w-3.5" /> Open Resume
           </button>
@@ -293,7 +275,7 @@ export default function Header() {
 
               logDownload("resume");
             }}
-            className={`flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-full border border-white/20 px-5 py-2.5 text-sm font-medium text-white/90 transition-all sm:flex-none sm:text-base ${
+            className={`flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-white/20 px-5 py-2.5 text-sm font-medium text-white/90 transition-colors sm:flex-none sm:text-base ${
               download ? "hover:border-cyansoft hover:bg-white/10" : "pointer-events-none opacity-50"
             }`}
           >
@@ -340,7 +322,7 @@ export default function Header() {
 
       {showResume && preview && (
         <div
-          className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/90 p-4 backdrop-blur-md"
+          className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/90 p-4 backdrop-blur-sm md:backdrop-blur-md"
           onClick={(event) => {
             if (event.target === event.currentTarget) {
               setShowResume(false);
@@ -350,16 +332,16 @@ export default function Header() {
           <motion.button
             onClick={() => setShowResume(false)}
             className="absolute right-4 top-4 z-[10000] rounded-full border border-white/20 bg-black/80 p-3 text-white transition-all hover:border-cyansoft hover:bg-black hover:text-cyansoft sm:right-6 sm:top-6"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
+            whileHover={lightweightMotion ? undefined : { scale: 1.1 }}
+            whileTap={lightweightMotion ? undefined : { scale: 0.9 }}
           >
             <FaTimes className="h-6 w-6" />
           </motion.button>
 
           <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
+            initial={lightweightMotion ? { opacity: 1 } : { scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
+            transition={{ duration: lightweightMotion ? 0.12 : 0.4, ease: "easeOut" }}
             className="mx-4 h-[80vh] w-full max-w-4xl overflow-hidden rounded-xl border border-white/10 bg-[#0a0a0a] shadow-2xl lg:max-w-5xl"
             onClick={(event) => event.stopPropagation()}
           >
