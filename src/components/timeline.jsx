@@ -3,12 +3,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useInView } from "framer-motion";
 import {
+  ArrowLeft,
+  ArrowRight,
   ArrowUpRight,
   Award,
   Brain,
   Briefcase,
   CalendarDays,
-  ChevronDown,
   Cloud,
   Code,
   GraduationCap,
@@ -66,6 +67,10 @@ function getAccent(event, index) {
 
 function getEventKey(event, index) {
   return `${event.year}-${event.title}-${event._originIndex ?? index}`;
+}
+
+function formatStep(value) {
+  return String(value).padStart(2, "0");
 }
 
 function normalizeTimeline(data) {
@@ -128,7 +133,7 @@ function StatCard({ stat, index }) {
         <span className="portfolio-panel-muted flex h-9 w-9 items-center justify-center rounded-lg sm:h-10 sm:w-10" style={{ color: accent }}>
           {Icon ? <Icon className="h-4 w-4 sm:h-5 sm:w-5" /> : <Sparkles className="h-5 w-5" />}
         </span>
-        <span className="text-[10px] font-bold text-[var(--color-faint)] sm:text-xs">{String(index + 1).padStart(2, "0")}</span>
+        <span className="text-[10px] font-bold text-[var(--color-faint)] sm:text-xs">{formatStep(index + 1)}</span>
       </div>
       <div className="text-2xl font-black text-[var(--color-text)] sm:text-3xl">{stat.value}</div>
       <div className="mt-1 text-[11px] font-semibold leading-tight text-[var(--color-muted)] sm:text-xs">{stat.label}</div>
@@ -191,53 +196,135 @@ function EventModal({ event, accent, onClose }) {
   );
 }
 
-function CurrentTimelineCard({ event, accent, onOpen }) {
+function TimelineRail({ events, activeIndex, onSelect }) {
+  return (
+    <aside className="portfolio-panel rounded-lg p-3 sm:p-4 lg:sticky lg:top-24">
+      <div className="mb-3 flex items-center justify-between gap-3 border-b pb-3" style={{ borderColor: "var(--color-border)" }}>
+        <div>
+          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-faint)]">Journey Console</div>
+          <div className="text-lg font-black text-[var(--color-text)]">{events.length} milestones</div>
+        </div>
+        <div className="portfolio-panel-muted rounded-lg px-3 py-2 text-right">
+          <div className="text-xl font-black leading-none text-[var(--color-text)]">{formatStep(activeIndex + 1)}</div>
+          <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--color-faint)]">active</div>
+        </div>
+      </div>
+
+      <div className="no-scrollbar flex gap-2 overflow-x-auto lg:block lg:space-y-2 lg:overflow-visible">
+        {events.map((event, index) => {
+          const accent = getAccent(event, index);
+          const Icon = typeof event.icon === "string" ? iconMap[event.icon] : event.icon;
+          const active = activeIndex === index;
+
+          return (
+            <button
+              key={getEventKey(event, index)}
+              type="button"
+              onClick={() => onSelect(index)}
+              className="relative min-w-[15.5rem] rounded-lg border p-3 text-left transition-transform hover:-translate-y-0.5 lg:min-w-0 lg:w-full"
+              style={{
+                borderColor: active ? `${accent}88` : "var(--color-border)",
+                background: active ? `linear-gradient(135deg, ${accent}20, rgba(245,158,11,0.08))` : "var(--color-surface-muted)",
+                boxShadow: active ? `0 14px 34px ${accent}1f` : "none",
+              }}
+            >
+              <div className="mb-2 flex items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border" style={{ color: accent, borderColor: active ? `${accent}70` : "var(--color-border)" }}>
+                  {Icon ? <Icon className="h-4 w-4" /> : <CalendarDays className="h-4 w-4" />}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-xs font-black" style={{ color: accent }}>
+                    {event.year}
+                  </span>
+                  <span className="block truncate text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--color-faint)]">
+                    {event.period}
+                  </span>
+                </span>
+                {active && <span className="h-2 w-2 rounded-full" style={{ backgroundColor: accent }} />}
+              </div>
+              <div className="line-clamp-2 text-sm font-black leading-tight text-[var(--color-text)]">{event.title}</div>
+            </button>
+          );
+        })}
+      </div>
+    </aside>
+  );
+}
+
+function ActiveJourneyPanel({ event, activeIndex, total, accent, onOpen, onPrevious, onNext }) {
   const Icon = typeof event.icon === "string" ? iconMap[event.icon] : event.icon;
 
   return (
     <MotionArticle
+      key={getEventKey(event, activeIndex)}
       initial={{ opacity: 0, y: 18 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.24 }}
-      transition={{ duration: 0.35 }}
-      className="portfolio-panel overflow-hidden rounded-lg"
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.32, ease: "easeOut" }}
+      className="portfolio-panel relative overflow-hidden rounded-lg"
     >
-      <div className="relative p-5 sm:p-6 lg:p-7">
-        <div className="absolute inset-x-0 top-0 h-1" style={{ background: `linear-gradient(90deg, ${accent}, #fbbf24)` }} />
-        <div className="mb-5 flex items-center justify-between gap-3">
+      <div className="absolute inset-x-0 top-0 h-1" style={{ background: `linear-gradient(90deg, transparent, ${accent}, #fbbf24, transparent)` }} />
+      <div className="pointer-events-none absolute -right-12 -top-12 hidden h-44 w-44 rounded-full border opacity-40 sm:block" style={{ borderColor: `${accent}55` }} />
+      <div className="pointer-events-none absolute -right-4 top-12 hidden h-20 w-20 rounded-full border opacity-50 sm:block" style={{ borderColor: `${accent}44` }} />
+
+      <div className="relative p-5 sm:p-7 lg:p-8">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <span className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-black uppercase tracking-[0.14em]" style={{ borderColor: `${accent}66`, color: accent }}>
             <Sparkles className="h-3.5 w-3.5" />
-            Current
+            {activeIndex === 0 ? "Current Focus" : `Chapter ${formatStep(activeIndex + 1)}`}
           </span>
-          <span className="text-xs font-bold text-[var(--color-faint)]">{event.year}</span>
+          <span className="text-xs font-bold text-[var(--color-faint)]">
+            {formatStep(activeIndex + 1)} / {formatStep(total)}
+          </span>
         </div>
 
-        <div className="flex items-start gap-4">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border sm:h-14 sm:w-14" style={{ color: accent, borderColor: `${accent}66`, background: "var(--color-surface-muted)" }}>
-            {Icon ? <Icon className="h-6 w-6 sm:h-7 sm:w-7" /> : <CalendarDays className="h-7 w-7" />}
-          </span>
-          <div className="min-w-0">
-            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-faint)]">{event.period}</div>
-            <h3 className="mt-1 text-2xl font-black leading-tight text-[var(--color-text)] sm:text-3xl">{event.title}</h3>
+        <div className="grid gap-5 lg:grid-cols-[1fr_10rem] lg:items-start">
+          <div>
+            <div className="mb-5 flex items-start gap-4">
+              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border" style={{ color: accent, borderColor: `${accent}66`, background: "var(--color-surface-muted)" }}>
+                {Icon ? <Icon className="h-7 w-7" /> : <CalendarDays className="h-7 w-7" />}
+              </span>
+              <div className="min-w-0">
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-faint)]">{event.period}</div>
+                <h3 className="mt-1 text-2xl font-black leading-tight text-[var(--color-text)] sm:text-4xl">{event.title}</h3>
+                <div className="mt-2 text-sm font-black" style={{ color: accent }}>
+                  {event.year}
+                </div>
+              </div>
+            </div>
+
+            {event.description && <p className="max-w-3xl text-sm leading-relaxed text-[var(--color-muted)] sm:text-base">{event.description}</p>}
+          </div>
+
+          <div className="portfolio-panel-muted rounded-lg p-4 text-center">
+            <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-faint)]">milestone</div>
+            <div className="mt-1 text-5xl font-black leading-none" style={{ color: accent }}>
+              {formatStep(activeIndex + 1)}
+            </div>
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--color-bg-strong)]">
+              <MotionDiv
+                initial={{ width: 0 }}
+                animate={{ width: `${((activeIndex + 1) / total) * 100}%` }}
+                transition={{ duration: 0.45 }}
+                className="h-full rounded-full"
+                style={{ backgroundColor: accent }}
+              />
+            </div>
           </div>
         </div>
 
-        {event.description && <p className="mt-5 text-sm leading-relaxed text-[var(--color-muted)]">{event.description}</p>}
-
         {event.achievements.length > 0 && (
-          <ul className="mt-5 space-y-2">
+          <div className="mt-6 grid gap-2 sm:grid-cols-3">
             {event.achievements.slice(0, 3).map((item) => (
-              <li key={item} className="flex gap-2 text-sm text-[var(--color-muted)]">
-                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: accent }} />
-                <span>{item}</span>
-              </li>
+              <div key={item} className="rounded-lg border px-3 py-2 text-xs font-semibold leading-relaxed text-[var(--color-muted)]" style={{ borderColor: "var(--color-border)", background: "var(--color-surface-muted)" }}>
+                {item}
+              </div>
             ))}
-          </ul>
+          </div>
         )}
 
         {event.skills.length > 0 && (
-          <div className="mt-5 flex flex-wrap gap-2">
-            {event.skills.slice(0, 6).map((skill) => (
+          <div className="mt-6 flex flex-wrap gap-2">
+            {event.skills.slice(0, 8).map((skill) => (
               <span key={skill} className="portfolio-chip rounded-lg px-3 py-2 text-xs font-semibold">
                 {skill}
               </span>
@@ -245,84 +332,21 @@ function CurrentTimelineCard({ event, accent, onOpen }) {
           </div>
         )}
 
-        <button type="button" onClick={onOpen} className="portfolio-primary-button mt-6 inline-flex w-full items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-bold sm:w-auto">
-          Full Story
-          <ArrowUpRight className="h-4 w-4" />
-        </button>
+        <div className="mt-7 flex flex-wrap items-center gap-2">
+          <button type="button" onClick={onPrevious} className="portfolio-secondary-button inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold">
+            <ArrowLeft className="h-4 w-4" />
+            Prev
+          </button>
+          <button type="button" onClick={onNext} className="portfolio-secondary-button inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold">
+            Next
+            <ArrowRight className="h-4 w-4" />
+          </button>
+          <button type="button" onClick={onOpen} className="portfolio-primary-button ml-0 inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-bold sm:ml-auto sm:flex-none">
+            Open Details
+            <ArrowUpRight className="h-4 w-4" />
+          </button>
+        </div>
       </div>
-    </MotionArticle>
-  );
-}
-
-function TimelineAccordionCard({ event, index, expanded, isCurrent, accent, onToggle, onOpen }) {
-  const Icon = typeof event.icon === "string" ? iconMap[event.icon] : event.icon;
-
-  return (
-    <MotionArticle
-      initial={{ opacity: 0, y: 14 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.18 }}
-      transition={{ delay: index * 0.025, duration: 0.26 }}
-      className="portfolio-panel overflow-hidden rounded-lg"
-    >
-      <button type="button" onClick={onToggle} className="flex w-full items-center gap-3 p-3 text-left sm:gap-4 sm:p-4">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border" style={{ color: accent, borderColor: `${accent}66`, background: "var(--color-surface-muted)" }}>
-          {Icon ? <Icon className="h-5 w-5" /> : <CalendarDays className="h-5 w-5" />}
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="mb-1 flex flex-wrap items-center gap-2">
-            <span className="rounded-full px-2.5 py-1 text-[11px] font-black text-slate-950" style={{ backgroundColor: accent }}>
-              {event.year}
-            </span>
-            <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--color-faint)]">{event.period}</span>
-            {isCurrent && <span className="text-[11px] font-black uppercase tracking-[0.14em] text-[var(--color-accent-strong)]">Now</span>}
-          </span>
-          <span className="block truncate text-base font-black leading-tight text-[var(--color-text)] sm:text-lg">{event.title}</span>
-          {!expanded && event.description && <span className="mt-1 hidden text-xs leading-relaxed text-[var(--color-muted)] sm:line-clamp-1">{event.description}</span>}
-        </span>
-        <ChevronDown className={`h-5 w-5 shrink-0 text-[var(--color-faint)] transition-transform ${expanded ? "rotate-180" : ""}`} />
-      </button>
-
-      <AnimatePresence initial={false}>
-        {expanded && (
-          <MotionDiv
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.22, ease: "easeOut" }}
-            className="overflow-hidden border-t border-[var(--color-border)]"
-          >
-            <div className="px-4 pb-4 pt-3 sm:px-5 sm:pb-5">
-              {event.description && <p className="text-sm leading-relaxed text-[var(--color-muted)]">{event.description}</p>}
-
-              {event.achievements.length > 0 && (
-                <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                  {event.achievements.slice(0, 4).map((item) => (
-                    <div key={item} className="rounded-lg border border-[var(--color-border)] px-3 py-2 text-xs leading-relaxed text-[var(--color-muted)]">
-                      {item}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {event.skills.length > 0 && (
-                <div className="mt-4 flex flex-wrap gap-1.5">
-                  {event.skills.slice(0, 6).map((skill) => (
-                    <span key={skill} className="portfolio-chip rounded-md px-2 py-1 text-[11px] font-semibold">
-                      {skill}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              <button type="button" onClick={onOpen} className="portfolio-secondary-button mt-4 inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold">
-                View Details
-                <ArrowUpRight className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          </MotionDiv>
-        )}
-      </AnimatePresence>
     </MotionArticle>
   );
 }
@@ -335,7 +359,7 @@ export default function AutoScrollCarouselTimeline() {
   const { events, stats } = useMemo(() => normalizeTimeline(timelineData), [timelineData]);
   const orderedEvents = useMemo(() => sortTimelineEvents(events), [events]);
   const [selected, setSelected] = useState(null);
-  const [expandedKey, setExpandedKey] = useState(null);
+  const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
     if (inView && !loggedOnce.current) {
@@ -345,13 +369,8 @@ export default function AutoScrollCarouselTimeline() {
   }, [inView]);
 
   useEffect(() => {
-    setExpandedKey((currentKey) => {
-      if (currentKey && orderedEvents.some((event, index) => getEventKey(event, index) === currentKey)) {
-        return currentKey;
-      }
-      return orderedEvents[0] ? getEventKey(orderedEvents[0], 0) : null;
-    });
-  }, [orderedEvents]);
+    if (activeIndex >= orderedEvents.length) setActiveIndex(0);
+  }, [activeIndex, orderedEvents.length]);
 
   if (loading && !timelineData) {
     return (
@@ -378,12 +397,14 @@ export default function AutoScrollCarouselTimeline() {
     );
   }
 
-  const currentEvent = orderedEvents[0];
-  const currentAccent = getAccent(currentEvent, 0);
+  const activeEvent = orderedEvents[activeIndex] || orderedEvents[0];
+  const activeAccent = getAccent(activeEvent, activeIndex);
+  const goPrevious = () => setActiveIndex((index) => (index - 1 + orderedEvents.length) % orderedEvents.length);
+  const goNext = () => setActiveIndex((index) => (index + 1) % orderedEvents.length);
 
   return (
     <section id="timeline" ref={sectionRef} className="relative overflow-hidden px-4 py-14 scroll-mt-24 sm:px-6 lg:px-8 lg:py-20">
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-7xl">
         <MotionDiv
           initial={{ opacity: 0, y: 28 }}
           animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 28 }}
@@ -392,56 +413,36 @@ export default function AutoScrollCarouselTimeline() {
         >
           <div className="mb-3 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-faint)]" style={{ borderColor: "var(--color-border)" }}>
             <Sparkles className="h-3.5 w-3.5 text-cyan-500" />
-            Journey Path
+            Journey Console
           </div>
           <h2 className="portfolio-gradient-text text-4xl font-extrabold sm:text-5xl">My Journey</h2>
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-[var(--color-muted)] sm:text-base">
-            The latest work appears first, with older milestones tucked into expandable cards.
+            A focused timeline console with the latest chapter first and every milestone one tap away.
           </p>
         </MotionDiv>
 
         {stats.length > 0 && (
-          <div className="mb-6 grid grid-cols-2 gap-3 lg:mb-8 lg:grid-cols-4">
+          <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
             {stats.map((stat, index) => (
               <StatCard key={stat.label} stat={stat} index={index} />
             ))}
           </div>
         )}
 
-        <div className="grid gap-5 lg:grid-cols-[0.88fr_1.12fr] lg:items-start">
-          <div className="lg:sticky lg:top-24">
-            <CurrentTimelineCard
-              event={currentEvent}
-              accent={currentAccent}
-              onOpen={() => {
-                setSelected({ event: currentEvent, accent: currentAccent });
-                logLinkClick(`timeline_${currentEvent.year}_${currentEvent.title}`);
-              }}
-            />
-          </div>
-
-          <div className="space-y-3">
-            {orderedEvents.map((event, index) => {
-              const key = getEventKey(event, index);
-              const accent = getAccent(event, index);
-
-              return (
-                <TimelineAccordionCard
-                  key={key}
-                  event={event}
-                  index={index}
-                  accent={accent}
-                  isCurrent={index === 0}
-                  expanded={expandedKey === key}
-                  onToggle={() => setExpandedKey((currentKey) => (currentKey === key ? "" : key))}
-                  onOpen={() => {
-                    setSelected({ event, accent });
-                    logLinkClick(`timeline_${event.year}_${event.title}`);
-                  }}
-                />
-              );
-            })}
-          </div>
+        <div className="grid gap-4 lg:grid-cols-[22rem_minmax(0,1fr)] lg:items-start">
+          <TimelineRail events={orderedEvents} activeIndex={activeIndex} onSelect={setActiveIndex} />
+          <ActiveJourneyPanel
+            event={activeEvent}
+            activeIndex={activeIndex}
+            total={orderedEvents.length}
+            accent={activeAccent}
+            onPrevious={goPrevious}
+            onNext={goNext}
+            onOpen={() => {
+              setSelected({ event: activeEvent, accent: activeAccent });
+              logLinkClick(`timeline_${activeEvent.year}_${activeEvent.title}`);
+            }}
+          />
         </div>
       </div>
 

@@ -5,8 +5,8 @@ import { AnimatePresence, motion, useInView } from "framer-motion";
 import {
   ArrowUpRight,
   Boxes,
+  Code2,
   ExternalLink,
-  Filter,
   Github,
   Layers3,
   Loader2,
@@ -78,6 +78,10 @@ function getProjectKey(project, index) {
   return `${project.category || "project"}-${project.title}-${project.projectIndex ?? index}`;
 }
 
+function getProjectAccent(project, index = 0) {
+  return PROJECT_ACCENTS[(project?.categoryIndex ?? index) % PROJECT_ACCENTS.length];
+}
+
 function ProjectImage({ project, className = "" }) {
   if (project.img) {
     return <img src={project.img} alt={project.title} className={`h-full w-full object-cover ${className}`} loading="lazy" />;
@@ -124,14 +128,24 @@ function ProjectLinks({ project, compact = false }) {
   );
 }
 
-function CategoryRail({ categoryKeys, categories, active, onChange }) {
+function ProjectMetric({ label, value, icon, accent }) {
+  const Icon = icon;
+
   return (
-    <aside className="portfolio-panel rounded-lg p-2 lg:sticky lg:top-24">
-      <div className="mb-2 hidden items-center gap-2 px-2 pt-1 text-xs font-black uppercase tracking-[0.16em] text-[var(--color-faint)] lg:flex">
-        <Filter className="h-3.5 w-3.5" />
-        Filter
+    <div className="portfolio-panel rounded-lg p-3 sm:p-4">
+      <div className="mb-2 flex items-center justify-between gap-3">
+        {Icon && <Icon className="h-4 w-4" style={{ color: accent || "var(--color-accent-strong)" }} />}
+        <span className="text-xl font-black text-[var(--color-text)] sm:text-2xl">{value}</span>
       </div>
-      <div className="no-scrollbar flex gap-2 overflow-x-auto lg:flex-col lg:overflow-visible">
+      <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--color-faint)]">{label}</div>
+    </div>
+  );
+}
+
+function CategoryTabs({ categoryKeys, categories, active, onChange }) {
+  return (
+    <div className="portfolio-panel mb-5 rounded-lg p-2">
+      <div className="no-scrollbar flex gap-2 overflow-x-auto lg:flex-wrap">
         {categoryKeys.map((category, index) => {
           const selected = active === category;
           const accent = PROJECT_ACCENTS[index % PROJECT_ACCENTS.length];
@@ -144,43 +158,95 @@ function CategoryRail({ categoryKeys, categories, active, onChange }) {
                 onChange(category);
                 logLinkClick(`project_category_${category}`);
               }}
-              className="flex min-w-[172px] shrink-0 items-center justify-between gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors lg:min-w-0"
+              className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-lg border px-3 py-2 text-left transition-transform hover:-translate-y-0.5"
               style={{
                 borderColor: selected ? `${accent}88` : "var(--color-border)",
-                background: selected ? "var(--color-accent-soft)" : "transparent",
+                background: selected ? `${accent}18` : "var(--color-surface-muted)",
                 color: "var(--color-text)",
               }}
             >
-              <span className="min-w-0">
-                <span className="block truncate text-sm font-black">{category}</span>
-                <span className="block text-[11px] font-semibold text-[var(--color-faint)]">{categories[category]?.length || 0} projects</span>
-              </span>
               <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: accent }} />
+              <span className="min-w-0">
+                <span className="block max-w-[11rem] truncate text-xs font-black sm:max-w-none sm:text-sm">{category}</span>
+                <span className="block text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--color-faint)]">{categories[category]?.length || 0} builds</span>
+              </span>
             </button>
           );
         })}
       </div>
-    </aside>
-  );
-}
-
-function ProjectMetric({ label, value, icon }) {
-  const Icon = icon;
-  const iconNode = Icon ? <Icon className="h-4 w-4 text-cyan-500" /> : null;
-
-  return (
-    <div className="portfolio-panel rounded-lg p-3 sm:p-4">
-      <div className="mb-2 flex items-center justify-between gap-3">
-        {iconNode}
-        <span className="text-xl font-black text-[var(--color-text)] sm:text-2xl">{value}</span>
-      </div>
-      <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--color-faint)]">{label}</div>
     </div>
   );
 }
 
-function ProjectCard({ project, index, onOpen }) {
-  const accent = PROJECT_ACCENTS[(project.categoryIndex ?? index) % PROJECT_ACCENTS.length];
+function SpotlightProject({ project, active, onOpen }) {
+  const accent = getProjectAccent(project);
+
+  return (
+    <MotionArticle
+      key={`${active}-${project.title}`}
+      initial={{ opacity: 0, y: 18 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35 }}
+      className="portfolio-panel relative overflow-hidden rounded-lg"
+    >
+      <div className="absolute inset-x-0 top-0 h-1" style={{ background: `linear-gradient(90deg, transparent, ${accent}, #fbbf24, transparent)` }} />
+      <div className="grid lg:grid-cols-[1.18fr_0.82fr]">
+        <button type="button" onClick={() => onOpen(project)} className="relative block min-h-[245px] overflow-hidden text-left sm:min-h-[330px] lg:min-h-[450px]">
+          <ProjectImage project={project} className="transition-transform duration-700 hover:scale-105" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/88 via-slate-950/18 to-transparent" />
+          <div className="absolute bottom-4 left-4 right-4 sm:bottom-6 sm:left-6 sm:right-6">
+            <div className="mb-3 flex flex-wrap gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-300 px-3 py-1 text-xs font-black text-slate-950">
+                <Star className="h-3.5 w-3.5 fill-slate-950" />
+                Main Build
+              </span>
+              <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold text-white backdrop-blur">
+                {project.category || active}
+              </span>
+            </div>
+            <h3 className="max-w-3xl text-3xl font-black leading-tight text-white sm:text-5xl">{project.title}</h3>
+          </div>
+        </button>
+
+        <div className="flex min-w-0 flex-col p-5 sm:p-7">
+          <div className="mb-5 flex items-center justify-between gap-3">
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-faint)]">Build Brief</div>
+              <div className="text-lg font-black text-[var(--color-text)]">{project.featured ? "Featured project" : "Selected project"}</div>
+            </div>
+            <div className="rounded-lg px-3 py-2 text-right" style={{ background: `${accent}18` }}>
+              <Code2 className="ml-auto h-4 w-4" style={{ color: accent }} />
+              <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--color-faint)]">active</div>
+            </div>
+          </div>
+
+          {project.desc && <p className="text-xl font-black leading-tight text-[var(--color-text)]">{project.desc}</p>}
+          <p className="mt-4 line-clamp-6 text-sm leading-relaxed text-[var(--color-muted)]">{project.long || project.desc}</p>
+
+          <div className="mt-5 grid grid-cols-2 gap-2">
+            {(project.tech || []).slice(0, 4).map((tool) => (
+              <div key={tool} className="rounded-lg border px-3 py-2 text-xs font-bold text-[var(--color-text)]" style={{ borderColor: "var(--color-border)", background: "var(--color-surface-muted)" }}>
+                <div className="mb-1 h-1.5 w-7 rounded-full" style={{ backgroundColor: accent }} />
+                {tool}
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-auto flex flex-wrap items-center gap-2 pt-6">
+            <button type="button" onClick={() => onOpen(project)} className="portfolio-primary-button inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-bold sm:flex-none">
+              Explore Build
+              <ArrowUpRight className="h-4 w-4" />
+            </button>
+            <ProjectLinks project={project} />
+          </div>
+        </div>
+      </div>
+    </MotionArticle>
+  );
+}
+
+function ProjectTile({ project, index, onOpen }) {
+  const accent = getProjectAccent(project, index);
 
   return (
     <MotionArticle
@@ -188,16 +254,20 @@ function ProjectCard({ project, index, onOpen }) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.18 }}
       transition={{ delay: index * 0.03, duration: 0.28 }}
-      className="portfolio-panel group overflow-hidden rounded-lg"
+      className="portfolio-panel group relative overflow-hidden rounded-lg"
     >
-      <div className="grid min-h-[148px] grid-cols-[108px_minmax(0,1fr)] sm:block sm:min-h-0">
-        <button type="button" onClick={() => onOpen(project)} className="relative block h-full min-h-[148px] overflow-hidden text-left sm:aspect-[16/10] sm:min-h-0">
+      <div className="absolute inset-x-0 top-0 h-1" style={{ backgroundColor: accent }} />
+      <div className="grid min-h-[154px] grid-cols-[112px_minmax(0,1fr)] sm:block sm:min-h-0">
+        <button type="button" onClick={() => onOpen(project)} className="relative block h-full min-h-[154px] overflow-hidden text-left sm:aspect-[16/10] sm:min-h-0">
           <ProjectImage project={project} className="transition-transform duration-500 group-hover:scale-105" />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/58 via-transparent to-transparent sm:from-slate-950/72" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/62 via-transparent to-transparent" />
+          <span className="absolute left-2 top-2 rounded-full bg-slate-950/80 px-2 py-1 text-[10px] font-black text-white backdrop-blur">
+            {String(index + 2).padStart(2, "0")}
+          </span>
           {project.featured && (
-            <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-amber-300 px-2 py-1 text-[10px] font-black text-slate-950 sm:left-3 sm:top-3 sm:text-[11px]">
+            <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-amber-300 px-2 py-1 text-[10px] font-black text-slate-950">
               <Star className="h-3 w-3 fill-slate-950" />
-              Featured
+              Pick
             </span>
           )}
         </button>
@@ -222,58 +292,12 @@ function ProjectCard({ project, index, onOpen }) {
           </div>
 
           <div className="mt-auto flex items-center gap-2 pt-3">
-            <button type="button" onClick={() => onOpen(project)} className="portfolio-primary-button inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-bold">
+            <button type="button" onClick={() => onOpen(project)} className="portfolio-secondary-button inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-bold">
               Details
               <ArrowUpRight className="h-3.5 w-3.5 shrink-0" />
             </button>
             <ProjectLinks project={project} compact />
           </div>
-        </div>
-      </div>
-    </MotionArticle>
-  );
-}
-
-function SpotlightProject({ project, active, onOpen }) {
-  return (
-    <MotionArticle
-      key={`${active}-${project.title}`}
-      initial={{ opacity: 0, y: 18 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35 }}
-      className="portfolio-panel overflow-hidden rounded-lg lg:grid lg:grid-cols-[1.08fr_0.92fr]"
-    >
-      <button type="button" onClick={() => onOpen(project)} className="relative block aspect-[16/10] min-h-[220px] overflow-hidden text-left lg:aspect-auto lg:min-h-[390px]">
-        <ProjectImage project={project} className="transition-transform duration-700 hover:scale-105" />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/84 via-slate-950/16 to-transparent" />
-        <div className="absolute bottom-4 left-4 right-4 sm:bottom-5 sm:left-5 sm:right-5">
-          <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-amber-300 px-3 py-1 text-xs font-black text-slate-950">
-            <Star className="h-3.5 w-3.5 fill-slate-950" />
-            Spotlight
-          </div>
-          <h3 className="text-2xl font-black leading-tight text-white sm:text-4xl">{project.title}</h3>
-        </div>
-      </button>
-
-      <div className="flex min-w-0 flex-col p-4 sm:p-6 lg:p-7">
-        <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-faint)]">{project.category || active}</div>
-        {project.desc && <p className="mt-3 text-lg font-black leading-tight text-[var(--color-text)] sm:text-xl">{project.desc}</p>}
-        <p className="mt-4 line-clamp-5 text-sm leading-relaxed text-[var(--color-muted)]">{project.long || project.desc}</p>
-
-        <div className="mt-5 flex flex-wrap gap-2">
-          {project.tech?.slice(0, 8).map((tool) => (
-            <span key={tool} className="portfolio-chip rounded-lg px-3 py-2 text-xs font-semibold">
-              {tool}
-            </span>
-          ))}
-        </div>
-
-        <div className="mt-auto flex flex-wrap items-center gap-2 pt-6">
-          <button type="button" onClick={() => onOpen(project)} className="portfolio-primary-button inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-bold sm:flex-none">
-            Explore
-            <ArrowUpRight className="h-4 w-4" />
-          </button>
-          <ProjectLinks project={project} />
         </div>
       </div>
     </MotionArticle>
@@ -408,35 +432,31 @@ export default function Projects() {
         <div className="mb-7 text-center sm:mb-8">
           <div className="mb-3 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-faint)]" style={{ borderColor: "var(--color-border)" }}>
             <Sparkles className="h-3.5 w-3.5 text-cyan-500" />
-            Project Gallery
+            Build Board
           </div>
           <h2 className="portfolio-gradient-text text-4xl font-extrabold sm:text-5xl">Featured Projects</h2>
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-[var(--color-muted)] sm:text-base">
-            A cleaner showcase for deployed work, team builds, backend systems, AI tools, and experiments.
+            A sharper board of shipped products, hackathon builds, backend systems, and creative experiments.
           </p>
         </div>
 
-        <div className="mb-5 grid grid-cols-3 gap-2 sm:gap-3">
-          <ProjectMetric label="Projects" value={metrics.total} icon={Layers3} />
-          <ProjectMetric label="Featured" value={metrics.featured} icon={Star} />
-          <ProjectMetric label="Tech" value={metrics.stacks} icon={Boxes} />
+        <div className="mb-4 grid grid-cols-3 gap-2 sm:gap-3">
+          <ProjectMetric label="Projects" value={metrics.total} icon={Layers3} accent={PROJECT_ACCENTS[0]} />
+          <ProjectMetric label="Featured" value={metrics.featured} icon={Star} accent={PROJECT_ACCENTS[1]} />
+          <ProjectMetric label="Tech" value={metrics.stacks} icon={Boxes} accent={PROJECT_ACCENTS[2]} />
         </div>
 
-        <div className="grid gap-5 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start">
-          <CategoryRail categoryKeys={categoryKeys} categories={categories} active={active} onChange={setActive} />
+        <CategoryTabs categoryKeys={categoryKeys} categories={categories} active={active} onChange={setActive} />
 
-          <div className="min-w-0">
-            {spotlight && <SpotlightProject project={spotlight} active={active} onOpen={openProject} />}
+        {spotlight && <SpotlightProject project={spotlight} active={active} onOpen={openProject} />}
 
-            {remaining.length > 0 && (
-              <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {remaining.map((project, index) => (
-                  <ProjectCard key={getProjectKey(project, index)} project={project} index={index} onOpen={openProject} />
-                ))}
-              </div>
-            )}
+        {remaining.length > 0 && (
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {remaining.map((project, index) => (
+              <ProjectTile key={getProjectKey(project, index)} project={project} index={index} onOpen={openProject} />
+            ))}
           </div>
-        </div>
+        )}
       </div>
 
       <AnimatePresence>{open && <ProjectModal project={open} onClose={() => setOpen(null)} />}</AnimatePresence>
