@@ -2,7 +2,18 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useInView } from "framer-motion";
-import { ArrowUpRight, ExternalLink, Github, Layers3, Loader2, Sparkles, Star, X } from "lucide-react";
+import {
+  ArrowUpRight,
+  Boxes,
+  ExternalLink,
+  Filter,
+  Github,
+  Layers3,
+  Loader2,
+  Sparkles,
+  Star,
+  X,
+} from "lucide-react";
 import { useFirestoreData } from "@/hooks/useFirestoreData";
 import { logLinkClick, logSectionView } from "../utils/analytics";
 
@@ -15,31 +26,56 @@ const CATEGORY_ORDER = [
   "Frontend & Tools",
 ];
 
+const PROJECT_ACCENTS = ["#14b8a6", "#f59e0b", "#6366f1", "#10b981", "#fb7185", "#38bdf8"];
+const MotionArticle = motion.article;
+const MotionDiv = motion.div;
+
 function normalizeProjects(projectsData) {
   const rawCategories = projectsData?.categories || {};
   const ordered = {};
 
-  CATEGORY_ORDER.forEach((name) => {
+  CATEGORY_ORDER.forEach((name, categoryIndex) => {
     if (Array.isArray(rawCategories[name])) {
-      ordered[name] = [...rawCategories[name]];
+      ordered[name] = rawCategories[name].map((project, projectIndex) => ({
+        ...project,
+        category: name,
+        categoryIndex,
+        projectIndex,
+      }));
     }
   });
 
-  Object.entries(rawCategories).forEach(([name, projects]) => {
-    if (!ordered[name] && Array.isArray(projects)) ordered[name] = [...projects];
+  Object.entries(rawCategories).forEach(([name, projects], fallbackIndex) => {
+    if (!ordered[name] && Array.isArray(projects)) {
+      ordered[name] = projects.map((project, projectIndex) => ({
+        ...project,
+        category: name,
+        categoryIndex: CATEGORY_ORDER.length + fallbackIndex,
+        projectIndex,
+      }));
+    }
   });
 
   Object.keys(ordered).forEach((name) => {
     ordered[name] = ordered[name]
       .filter((project) => project?.title)
-      .sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)));
+      .sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)) || (a.projectIndex ?? 0) - (b.projectIndex ?? 0));
   });
 
   const all = Object.values(ordered)
     .flat()
-    .sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)));
+    .sort(
+      (a, b) =>
+        Number(Boolean(b.featured)) - Number(Boolean(a.featured)) ||
+        (a.categoryIndex ?? 0) - (b.categoryIndex ?? 0) ||
+        (a.projectIndex ?? 0) - (b.projectIndex ?? 0)
+    );
 
   return { All: all, ...ordered };
+}
+
+function getProjectKey(project, index) {
+  return `${project.category || "project"}-${project.title}-${project.projectIndex ?? index}`;
 }
 
 function ProjectImage({ project, className = "" }) {
@@ -48,98 +84,233 @@ function ProjectImage({ project, className = "" }) {
   }
 
   return (
-    <div className={`flex h-full w-full items-center justify-center bg-gradient-to-br from-teal-400/25 via-cyan-400/15 to-amber-300/25 p-6 text-center ${className}`}>
+    <div className={`flex h-full w-full items-center justify-center bg-[linear-gradient(135deg,rgba(20,184,166,0.24),rgba(99,102,241,0.14),rgba(245,158,11,0.22))] p-5 text-center ${className}`}>
       <div>
         <Layers3 className="mx-auto mb-3 h-8 w-8 text-cyan-500" />
-        <div className="text-lg font-black leading-tight text-[var(--color-text)]">{project.title}</div>
+        <div className="text-base font-black leading-tight text-[var(--color-text)] sm:text-lg">{project.title}</div>
       </div>
     </div>
   );
 }
 
-function ProjectCard({ project, index, onOpen }) {
+function ProjectLinks({ project, compact = false }) {
   return (
-    <motion.article
-      initial={{ opacity: 0, y: 18 }}
+    <div className={`flex gap-2 ${compact ? "shrink-0" : ""}`}>
+      {project.url && (
+        <a
+          href={project.url}
+          target="_blank"
+          rel="noreferrer"
+          title="View code"
+          onClick={() => logLinkClick(`project_github_${project.title}`)}
+          className="portfolio-secondary-button inline-flex h-9 w-9 items-center justify-center rounded-lg"
+        >
+          <Github className="h-4 w-4" />
+        </a>
+      )}
+      {project.live && (
+        <a
+          href={project.live}
+          target="_blank"
+          rel="noreferrer"
+          title="Open live project"
+          onClick={() => logLinkClick(`project_live_${project.title}`)}
+          className="portfolio-secondary-button inline-flex h-9 w-9 items-center justify-center rounded-lg"
+        >
+          <ExternalLink className="h-4 w-4" />
+        </a>
+      )}
+    </div>
+  );
+}
+
+function CategoryRail({ categoryKeys, categories, active, onChange }) {
+  return (
+    <aside className="portfolio-panel rounded-lg p-2 lg:sticky lg:top-24">
+      <div className="mb-2 hidden items-center gap-2 px-2 pt-1 text-xs font-black uppercase tracking-[0.16em] text-[var(--color-faint)] lg:flex">
+        <Filter className="h-3.5 w-3.5" />
+        Filter
+      </div>
+      <div className="no-scrollbar flex gap-2 overflow-x-auto lg:flex-col lg:overflow-visible">
+        {categoryKeys.map((category, index) => {
+          const selected = active === category;
+          const accent = PROJECT_ACCENTS[index % PROJECT_ACCENTS.length];
+
+          return (
+            <button
+              key={category}
+              type="button"
+              onClick={() => {
+                onChange(category);
+                logLinkClick(`project_category_${category}`);
+              }}
+              className="flex min-w-[172px] shrink-0 items-center justify-between gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors lg:min-w-0"
+              style={{
+                borderColor: selected ? `${accent}88` : "var(--color-border)",
+                background: selected ? "var(--color-accent-soft)" : "transparent",
+                color: "var(--color-text)",
+              }}
+            >
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-black">{category}</span>
+                <span className="block text-[11px] font-semibold text-[var(--color-faint)]">{categories[category]?.length || 0} projects</span>
+              </span>
+              <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: accent }} />
+            </button>
+          );
+        })}
+      </div>
+    </aside>
+  );
+}
+
+function ProjectMetric({ label, value, icon }) {
+  const Icon = icon;
+  const iconNode = Icon ? <Icon className="h-4 w-4 text-cyan-500" /> : null;
+
+  return (
+    <div className="portfolio-panel rounded-lg p-3 sm:p-4">
+      <div className="mb-2 flex items-center justify-between gap-3">
+        {iconNode}
+        <span className="text-xl font-black text-[var(--color-text)] sm:text-2xl">{value}</span>
+      </div>
+      <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--color-faint)]">{label}</div>
+    </div>
+  );
+}
+
+function ProjectCard({ project, index, onOpen }) {
+  const accent = PROJECT_ACCENTS[(project.categoryIndex ?? index) % PROJECT_ACCENTS.length];
+
+  return (
+    <MotionArticle
+      initial={{ opacity: 0, y: 16 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.2 }}
-      transition={{ delay: index * 0.04, duration: 0.3 }}
+      viewport={{ once: true, amount: 0.18 }}
+      transition={{ delay: index * 0.03, duration: 0.28 }}
       className="portfolio-panel group overflow-hidden rounded-lg"
     >
-      <button type="button" onClick={() => onOpen(project)} className="block w-full text-left">
-        <div className="relative aspect-[4/3] overflow-hidden">
+      <div className="grid min-h-[148px] grid-cols-[108px_minmax(0,1fr)] sm:block sm:min-h-0">
+        <button type="button" onClick={() => onOpen(project)} className="relative block h-full min-h-[148px] overflow-hidden text-left sm:aspect-[16/10] sm:min-h-0">
           <ProjectImage project={project} className="transition-transform duration-500 group-hover:scale-105" />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/82 via-slate-950/18 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/58 via-transparent to-transparent sm:from-slate-950/72" />
           {project.featured && (
-            <div className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-amber-300 px-2.5 py-1 text-[11px] font-black text-slate-950">
-              <Star className="h-3.5 w-3.5 fill-slate-950" />
+            <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-amber-300 px-2 py-1 text-[10px] font-black text-slate-950 sm:left-3 sm:top-3 sm:text-[11px]">
+              <Star className="h-3 w-3 fill-slate-950" />
               Featured
-            </div>
+            </span>
           )}
-          <div className="absolute bottom-3 left-3 right-3">
-            <h3 className="text-xl font-black leading-tight text-white">{project.title}</h3>
-            {project.desc && <p className="mt-1 line-clamp-2 text-xs text-white/78">{project.desc}</p>}
+        </button>
+
+        <div className="flex min-w-0 flex-col p-3 sm:p-4">
+          <div className="mb-2 flex min-w-0 items-center gap-2">
+            <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: accent }} />
+            <span className="truncate text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--color-faint)]">{project.category}</span>
           </div>
+
+          <button type="button" onClick={() => onOpen(project)} className="min-w-0 text-left">
+            <h3 className="line-clamp-2 text-base font-black leading-tight text-[var(--color-text)] sm:text-xl">{project.title}</h3>
+            {project.desc && <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[var(--color-muted)] sm:text-sm">{project.desc}</p>}
+          </button>
+
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {project.tech?.slice(0, 4).map((tool) => (
+              <span key={tool} className="portfolio-chip rounded-md px-2 py-1 text-[10px] font-semibold sm:text-[11px]">
+                {tool}
+              </span>
+            ))}
+          </div>
+
+          <div className="mt-auto flex items-center gap-2 pt-3">
+            <button type="button" onClick={() => onOpen(project)} className="portfolio-primary-button inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-bold">
+              Details
+              <ArrowUpRight className="h-3.5 w-3.5 shrink-0" />
+            </button>
+            <ProjectLinks project={project} compact />
+          </div>
+        </div>
+      </div>
+    </MotionArticle>
+  );
+}
+
+function SpotlightProject({ project, active, onOpen }) {
+  return (
+    <MotionArticle
+      key={`${active}-${project.title}`}
+      initial={{ opacity: 0, y: 18 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35 }}
+      className="portfolio-panel overflow-hidden rounded-lg lg:grid lg:grid-cols-[1.08fr_0.92fr]"
+    >
+      <button type="button" onClick={() => onOpen(project)} className="relative block aspect-[16/10] min-h-[220px] overflow-hidden text-left lg:aspect-auto lg:min-h-[390px]">
+        <ProjectImage project={project} className="transition-transform duration-700 hover:scale-105" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/84 via-slate-950/16 to-transparent" />
+        <div className="absolute bottom-4 left-4 right-4 sm:bottom-5 sm:left-5 sm:right-5">
+          <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-amber-300 px-3 py-1 text-xs font-black text-slate-950">
+            <Star className="h-3.5 w-3.5 fill-slate-950" />
+            Spotlight
+          </div>
+          <h3 className="text-2xl font-black leading-tight text-white sm:text-4xl">{project.title}</h3>
         </div>
       </button>
 
-      <div className="p-4">
-        <div className="mb-4 flex flex-wrap gap-1.5">
-          {project.tech?.slice(0, 5).map((tool) => (
-            <span key={tool} className="portfolio-chip rounded-md px-2 py-1 text-[11px] font-semibold">
+      <div className="flex min-w-0 flex-col p-4 sm:p-6 lg:p-7">
+        <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-faint)]">{project.category || active}</div>
+        {project.desc && <p className="mt-3 text-lg font-black leading-tight text-[var(--color-text)] sm:text-xl">{project.desc}</p>}
+        <p className="mt-4 line-clamp-5 text-sm leading-relaxed text-[var(--color-muted)]">{project.long || project.desc}</p>
+
+        <div className="mt-5 flex flex-wrap gap-2">
+          {project.tech?.slice(0, 8).map((tool) => (
+            <span key={tool} className="portfolio-chip rounded-lg px-3 py-2 text-xs font-semibold">
               {tool}
             </span>
           ))}
         </div>
-        <div className="flex gap-2">
-          <button type="button" onClick={() => onOpen(project)} className="portfolio-primary-button inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-bold">
-            Details
-            <ArrowUpRight className="h-3.5 w-3.5" />
+
+        <div className="mt-auto flex flex-wrap items-center gap-2 pt-6">
+          <button type="button" onClick={() => onOpen(project)} className="portfolio-primary-button inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-bold sm:flex-none">
+            Explore
+            <ArrowUpRight className="h-4 w-4" />
           </button>
-          {project.url && (
-            <a href={project.url} target="_blank" rel="noreferrer" onClick={() => logLinkClick("project_github")} className="portfolio-secondary-button inline-flex h-9 w-9 items-center justify-center rounded-lg">
-              <Github className="h-4 w-4" />
-            </a>
-          )}
-          {project.live && (
-            <a href={project.live} target="_blank" rel="noreferrer" onClick={() => logLinkClick("project_live")} className="portfolio-secondary-button inline-flex h-9 w-9 items-center justify-center rounded-lg">
-              <ExternalLink className="h-4 w-4" />
-            </a>
-          )}
+          <ProjectLinks project={project} />
         </div>
       </div>
-    </motion.article>
+    </MotionArticle>
   );
 }
 
 function ProjectModal({ project, onClose }) {
   return (
-    <motion.div className="fixed inset-0 z-[1001] flex items-center justify-center p-3 sm:p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+    <MotionDiv className="fixed inset-0 z-[1001] flex items-end justify-center p-0 sm:items-center sm:p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <button type="button" aria-label="Close project details" className="portfolio-modal-backdrop absolute inset-0" onClick={onClose} />
-      <motion.article
-        initial={{ opacity: 0, y: 24, scale: 0.96 }}
+      <MotionArticle
+        initial={{ opacity: 0, y: 32, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 24, scale: 0.96 }}
+        exit={{ opacity: 0, y: 32, scale: 0.98 }}
         transition={{ duration: 0.24, ease: "easeOut" }}
-        className="portfolio-modal-card relative max-h-[92svh] w-full max-w-5xl overflow-hidden rounded-lg"
+        className="portfolio-modal-card relative max-h-[92svh] w-full max-w-5xl overflow-hidden rounded-t-lg sm:rounded-lg"
       >
         <button type="button" onClick={onClose} className="portfolio-secondary-button absolute right-3 top-3 z-20 rounded-full p-2">
           <X className="h-5 w-5" />
         </button>
 
-        <div className="grid max-h-[92svh] overflow-y-auto lg:grid-cols-[0.95fr_1.05fr]">
-          <div className="relative min-h-64 overflow-hidden bg-slate-950 lg:min-h-[520px]">
+        <div className="grid max-h-[92svh] overflow-y-auto lg:grid-cols-[0.92fr_1.08fr]">
+          <div className="relative min-h-56 overflow-hidden bg-slate-950 sm:min-h-72 lg:min-h-[520px]">
             <ProjectImage project={project} />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/72 via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/74 via-transparent to-transparent" />
           </div>
           <div className="p-5 sm:p-7">
-            {project.featured && (
-              <div className="mb-4 inline-flex items-center gap-1.5 rounded-full bg-amber-300 px-3 py-1 text-xs font-black text-slate-950">
-                <Star className="h-3.5 w-3.5 fill-slate-950" />
-                Featured Project
-              </div>
-            )}
-            <h3 className="pr-10 text-3xl font-black leading-tight text-[var(--color-text)]">{project.title}</h3>
+            <div className="mb-4 flex flex-wrap items-center gap-2 pr-10">
+              {project.featured && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-300 px-3 py-1 text-xs font-black text-slate-950">
+                  <Star className="h-3.5 w-3.5 fill-slate-950" />
+                  Featured
+                </span>
+              )}
+              {project.category && <span className="portfolio-chip rounded-full px-3 py-1 text-xs font-bold">{project.category}</span>}
+            </div>
+            <h3 className="pr-8 text-2xl font-black leading-tight text-[var(--color-text)] sm:text-3xl">{project.title}</h3>
             {project.desc && <p className="mt-2 text-sm font-semibold text-cyan-500">{project.desc}</p>}
             <p className="mt-5 text-sm leading-relaxed text-[var(--color-muted)]">{project.long || project.desc}</p>
 
@@ -153,13 +324,13 @@ function ProjectModal({ project, onClose }) {
 
             <div className="mt-7 grid gap-3 sm:grid-cols-2">
               {project.live && (
-                <a href={project.live} target="_blank" rel="noreferrer" onClick={() => logLinkClick("project_live")} className="portfolio-primary-button inline-flex items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-bold">
+                <a href={project.live} target="_blank" rel="noreferrer" onClick={() => logLinkClick(`project_live_${project.title}`)} className="portfolio-primary-button inline-flex items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-bold">
                   <ExternalLink className="h-4 w-4" />
                   Live Demo
                 </a>
               )}
               {project.url && (
-                <a href={project.url} target="_blank" rel="noreferrer" onClick={() => logLinkClick("project_github")} className="portfolio-secondary-button inline-flex items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-bold">
+                <a href={project.url} target="_blank" rel="noreferrer" onClick={() => logLinkClick(`project_github_${project.title}`)} className="portfolio-secondary-button inline-flex items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-bold">
                   <Github className="h-4 w-4" />
                   View Code
                 </a>
@@ -167,8 +338,8 @@ function ProjectModal({ project, onClose }) {
             </div>
           </div>
         </div>
-      </motion.article>
-    </motion.div>
+      </MotionArticle>
+    </MotionDiv>
   );
 }
 
@@ -192,14 +363,27 @@ export default function Projects() {
   const visibleProjects = categories[active] || [];
   const spotlight = visibleProjects[0];
   const remaining = visibleProjects.slice(1);
+  const metrics = useMemo(() => {
+    const allProjects = categories.All || [];
+    return {
+      total: allProjects.length,
+      featured: allProjects.filter((project) => project.featured).length,
+      stacks: new Set(allProjects.flatMap((project) => project.tech || [])).size,
+    };
+  }, [categories]);
+
+  const openProject = (project) => {
+    setOpen(project);
+    logLinkClick(`project_open_${project.title}`);
+  };
 
   if (loading && !projectsData) {
     return (
       <section id="projects" ref={sectionRef} className="relative flex min-h-[70vh] items-center justify-center px-4 py-20">
         <div className="portfolio-panel flex items-center gap-3 rounded-lg px-5 py-4">
-          <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.1, repeat: Infinity, ease: "linear" }}>
+          <MotionDiv animate={{ rotate: 360 }} transition={{ duration: 1.1, repeat: Infinity, ease: "linear" }}>
             <Loader2 className="h-5 w-5 text-cyan-500" />
-          </motion.div>
+          </MotionDiv>
           <span className="text-sm font-medium text-[var(--color-muted)]">Loading Firestore projects</span>
         </div>
       </section>
@@ -219,83 +403,39 @@ export default function Projects() {
   }
 
   return (
-    <section id="projects" ref={sectionRef} className="relative overflow-hidden px-4 py-16 scroll-mt-24 sm:px-6 lg:px-8 lg:py-20">
+    <section id="projects" ref={sectionRef} className="relative overflow-hidden px-4 py-14 scroll-mt-24 sm:px-6 lg:px-8 lg:py-20">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-8 text-center">
+        <div className="mb-7 text-center sm:mb-8">
           <div className="mb-3 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-faint)]" style={{ borderColor: "var(--color-border)" }}>
             <Sparkles className="h-3.5 w-3.5 text-cyan-500" />
             Project Gallery
           </div>
           <h2 className="portfolio-gradient-text text-4xl font-extrabold sm:text-5xl">Featured Projects</h2>
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-[var(--color-muted)] sm:text-base">
-            A clearer gallery of what I built, led, deployed, and shipped.
+            A cleaner showcase for deployed work, team builds, backend systems, AI tools, and experiments.
           </p>
         </div>
 
-        <div className="mb-6 flex gap-2 overflow-x-auto pb-2" style={{ scrollbarWidth: "none" }}>
-          {categoryKeys.map((category) => (
-            <button
-              key={category}
-              type="button"
-              onClick={() => {
-                setActive(category);
-                logLinkClick(`project_category_${category}`);
-              }}
-              className="shrink-0 rounded-full border px-4 py-2 text-sm font-bold transition-colors"
-              style={{
-                borderColor: active === category ? "rgba(45,212,191,0.7)" : "var(--color-border)",
-                background: active === category ? "var(--color-accent-soft)" : "var(--color-surface-muted)",
-                color: "var(--color-text)",
-              }}
-            >
-              {category}
-            </button>
-          ))}
+        <div className="mb-5 grid grid-cols-3 gap-2 sm:gap-3">
+          <ProjectMetric label="Projects" value={metrics.total} icon={Layers3} />
+          <ProjectMetric label="Featured" value={metrics.featured} icon={Star} />
+          <ProjectMetric label="Tech" value={metrics.stacks} icon={Boxes} />
         </div>
 
-        {spotlight && (
-          <motion.article
-            key={`${active}-${spotlight.title}`}
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35 }}
-            className="portfolio-panel mb-5 grid overflow-hidden rounded-lg lg:grid-cols-[1.15fr_0.85fr]"
-          >
-            <button type="button" onClick={() => setOpen(spotlight)} className="relative block min-h-72 overflow-hidden text-left lg:min-h-[430px]">
-              <ProjectImage project={spotlight} className="transition-transform duration-700 hover:scale-105" />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/86 via-slate-950/14 to-transparent" />
-              <div className="absolute bottom-5 left-5 right-5">
-                <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-amber-300 px-3 py-1 text-xs font-black text-slate-950">
-                  <Star className="h-3.5 w-3.5 fill-slate-950" />
-                  Spotlight
-                </div>
-                <h3 className="text-3xl font-black leading-tight text-white sm:text-4xl">{spotlight.title}</h3>
-              </div>
-            </button>
+        <div className="grid gap-5 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start">
+          <CategoryRail categoryKeys={categoryKeys} categories={categories} active={active} onChange={setActive} />
 
-            <div className="p-5 sm:p-7">
-              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-faint)]">{active}</div>
-              {spotlight.desc && <p className="mt-3 text-xl font-black leading-tight text-[var(--color-text)]">{spotlight.desc}</p>}
-              <p className="mt-4 line-clamp-6 text-sm leading-relaxed text-[var(--color-muted)]">{spotlight.long || spotlight.desc}</p>
-              <div className="mt-5 flex flex-wrap gap-2">
-                {spotlight.tech?.slice(0, 8).map((tool) => (
-                  <span key={tool} className="portfolio-chip rounded-lg px-3 py-2 text-xs font-semibold">
-                    {tool}
-                  </span>
+          <div className="min-w-0">
+            {spotlight && <SpotlightProject project={spotlight} active={active} onOpen={openProject} />}
+
+            {remaining.length > 0 && (
+              <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {remaining.map((project, index) => (
+                  <ProjectCard key={getProjectKey(project, index)} project={project} index={index} onOpen={openProject} />
                 ))}
               </div>
-              <button type="button" onClick={() => setOpen(spotlight)} className="portfolio-primary-button mt-6 inline-flex w-full items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-bold sm:w-auto">
-                Explore Project
-                <ArrowUpRight className="h-4 w-4" />
-              </button>
-            </div>
-          </motion.article>
-        )}
-
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {remaining.map((project, index) => (
-            <ProjectCard key={`${project.title}-${index}`} project={project} index={index} onOpen={setOpen} />
-          ))}
+            )}
+          </div>
         </div>
       </div>
 
