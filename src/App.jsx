@@ -405,7 +405,7 @@ function AppContent({ sectionsConfig, sectionsLoading, bootstrapReady, minTimePa
 function App({ ssrRendered = false }) {
   const [minTimePassed, setMinTimePassed] = useState(() => ssrRendered);
   const [isOffline, setIsOffline] = useState(() =>
-    typeof navigator === "undefined" ? false : !navigator.onLine
+    typeof window === "undefined" ? false : !window.navigator.onLine
   );
   const [bootstrapReady, setBootstrapReady] = useState(() => ssrRendered);
   const lightweightMotion = useLightweightMotion();

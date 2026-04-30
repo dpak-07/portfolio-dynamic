@@ -11,10 +11,10 @@ import { useEffect } from "react";
  * @param {string} props.type - OG type (website, article, etc.)
  */
 export default function SEO({
-    title = "Deepak's Portfolio | Full Stack Developer",
-    description = "Full Stack Developer specializing in React, Node.js, and modern web technologies. Explore my projects, skills, and experience.",
-    keywords = "full stack developer, react developer, web developer, portfolio, javascript, typescript, node.js",
-    image = "/og-image.jpg",
+    title = "Deepak Saminathan | Full Stack Developer, AI/ML & Cloud Engineer",
+    description = "Portfolio of Deepak Saminathan, a Chennai-based Full Stack Developer and AI & Data Science student skilled in React, Next.js, Node.js, Python, AWS, Docker, MongoDB, SQL, Flutter, and AI/ML.",
+    keywords = "Deepak Saminathan, Deepak S, Full Stack Developer, React Developer, Next.js Developer, Node.js Developer, Backend Developer Intern, MERN Stack, Python Developer, AI ML Engineer, Machine Learning, AWS Cloud, Docker, MongoDB, MySQL, PostgreSQL, Flutter Developer, React Native, Chennai, Velammal Engineering College",
+    image = "https://deepakportfolio-0607.web.app/preview.png",
     url,
     type = "website",
 }) {
@@ -41,6 +41,13 @@ export default function SEO({
         // Standard meta tags
         updateMetaTag('meta[name="description"]', description);
         updateMetaTag('meta[name="keywords"]', keywords);
+        updateMetaTag('meta[name="author"]', "Deepak Saminathan");
+        updateMetaTag('meta[name="robots"]', "index, follow, max-image-preview:large");
+        updateMetaTag('meta[name="candidate"]', "Deepak Saminathan");
+        updateMetaTag('meta[name="job-title"]', "Full Stack Developer, Backend Developer Intern, AI/ML Developer");
+        updateMetaTag('meta[name="skills"]', "React, Next.js, Node.js, Express.js, Python, JavaScript, TypeScript, AWS, Docker, MongoDB, MySQL, PostgreSQL, TensorFlow, PyTorch, OpenCV, Flutter, React Native");
+        updateMetaTag('meta[name="location"]', "Chennai, India");
+        updateMetaTag('meta[name="education"]', "AI and Data Science, Velammal Engineering College");
 
         // Open Graph tags
         updateMetaTag('meta[property="og:title"]', title);
@@ -48,6 +55,7 @@ export default function SEO({
         updateMetaTag('meta[property="og:image"]', image);
         updateMetaTag('meta[property="og:url"]', resolvedUrl);
         updateMetaTag('meta[property="og:type"]', type);
+        updateMetaTag('meta[property="og:site_name"]', "Deepak Saminathan Portfolio");
 
         // Twitter Card tags
         updateMetaTag('meta[name="twitter:card"]', "summary_large_image");
@@ -63,6 +71,16 @@ export default function SEO({
             document.head.appendChild(canonical);
         }
         canonical.setAttribute("href", resolvedUrl);
+
+        let llms = document.querySelector('link[rel="alternate"][type="text/plain"]');
+        if (!llms) {
+            llms = document.createElement("link");
+            llms.setAttribute("rel", "alternate");
+            llms.setAttribute("type", "text/plain");
+            llms.setAttribute("title", "AI recruiter profile");
+            document.head.appendChild(llms);
+        }
+        llms.setAttribute("href", "/llms.txt");
     }, [title, description, keywords, image, resolvedUrl, type]);
 
     return null;
