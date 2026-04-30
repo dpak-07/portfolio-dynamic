@@ -298,7 +298,7 @@ export default function AnimatedTechStack() {
           <div className="flex items-center gap-3">
             <MotionDiv animate={{ rotate: 360 }} transition={{ duration: 1.1, repeat: Infinity, ease: "linear" }}>
               <Code2 className="h-5 w-5 text-cyan-500" />
-            </motion.div>
+            </MotionDiv>
             <span className="text-sm font-medium text-[var(--color-muted)]">Loading skill map</span>
           </div>
         </div>
@@ -311,6 +311,7 @@ export default function AnimatedTechStack() {
   }
 
   const selected = categories[activeIndex] || categories[0];
+  const SelectedIcon = selected.Icon;
   const totalTools = new Set(categories.flatMap((category) => category.tech)).size;
   const highlightTools = selected.tech.slice(0, 5);
   const selectedPanelId = `tech-stack-panel-${activeIndex}`;
@@ -322,7 +323,7 @@ export default function AnimatedTechStack() {
       aria-labelledby="tech-stack-title"
       className="relative overflow-hidden px-4 py-14 scroll-mt-24 sm:px-6 md:px-8 lg:py-20"
     >
-      <motion.div
+      <MotionDiv
         className="mx-auto max-w-6xl"
         initial={{ opacity: 0, y: 28 }}
         animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 28 }}
