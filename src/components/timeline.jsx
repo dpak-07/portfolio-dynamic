@@ -44,17 +44,17 @@ const iconMap = {
 };
 
 const ACCENT_HEX = {
-  blue: "#38bdf8",
-  orange: "#f97316",
-  emerald: "#10b981",
-  fuchsia: "#d946ef",
-  violet: "#8b5cf6",
-  indigo: "#6366f1",
-  cyan: "#06b6d4",
-  rose: "#fb7185",
+  blue: "#d1d5db",
+  orange: "#a3a3a3",
+  emerald: "#e5e7eb",
+  fuchsia: "#9ca3af",
+  violet: "#d4d4d8",
+  indigo: "#a1a1aa",
+  cyan: "#f5f5f5",
+  rose: "#b3b3b3",
 };
 
-const ACCENTS = ["#38bdf8", "#f59e0b", "#10b981", "#d946ef", "#8b5cf6", "#06b6d4"];
+const ACCENTS = ["#f5f5f5", "#d1d5db", "#a3a3a3", "#e5e7eb", "#9ca3af", "#fafafa"];
 const MotionArticle = motion.article;
 const MotionDiv = motion.div;
 

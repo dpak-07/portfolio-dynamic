@@ -1,70 +1,298 @@
 "use client";
 
 import { motion, useInView } from "framer-motion";
+import { useEffect, useMemo, useRef } from "react";
 import {
-  BrainCircuit,
-  Cloud,
-  Code2,
-  Cpu,
-  Database,
-  Layers3,
-  MonitorSmartphone,
-  Server,
-  ShieldCheck,
-  TerminalSquare,
-  Wrench,
-} from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+  FaAws,
+  FaCode,
+  FaDatabase,
+  FaDocker,
+  FaFigma,
+  FaGitAlt,
+  FaGithub,
+  FaJava,
+  FaLinux,
+  FaMobileAlt,
+  FaNodeJs,
+  FaPython,
+  FaReact,
+  FaServer,
+  FaTools,
+} from "react-icons/fa";
+import {
+  SiAndroid,
+  SiBootstrap,
+  SiC,
+  SiCss3,
+  SiCplusplus,
+  SiDart,
+  SiDjango,
+  SiExpress,
+  SiFastapi,
+  SiFirebase,
+  SiFlask,
+  SiFlutter,
+  SiHtml5,
+  SiIos,
+  SiJavascript,
+  SiKeras,
+  SiMongodb,
+  SiMysql,
+  SiNextdotjs,
+  SiNumpy,
+  SiOpencv,
+  SiPandas,
+  SiPostgresql,
+  SiPostman,
+  SiPytorch,
+  SiReact,
+  SiScikitlearn,
+  SiSpringboot,
+  SiSqlite,
+  SiTailwindcss,
+  SiTensorflow,
+  SiTypescript,
+  SiVite,
+} from "react-icons/si";
+import { VscVscode } from "react-icons/vsc";
 import { useFirestoreData } from "@/hooks/useFirestoreData";
-import { logLinkClick, logSectionView } from "../utils/analytics";
+import { logSectionView } from "../utils/analytics";
 
-const ACCENTS = ["#2dd4bf", "#f59e0b", "#38bdf8", "#22c55e", "#a78bfa", "#fb7185", "#60a5fa", "#f97316"];
-const MotionDiv = motion.div;
-const MotionSpan = motion.span;
-
-const ICON_BY_TITLE = [
-  [/programming|language/i, TerminalSquare],
-  [/frontend|ui|web/i, MonitorSmartphone],
-  [/backend|api|server/i, Server],
-  [/database|storage|firestore|mongo|sql/i, Database],
-  [/cloud|devops|aws|docker|deployment/i, Cloud],
-  [/ai|machine|learning|data/i, BrainCircuit],
-  [/mobile|android|ios|flutter|native/i, MonitorSmartphone],
-  [/security|blockchain|crypto/i, ShieldCheck],
-  [/tool|design|figma/i, Wrench],
+const CATEGORY_META = [
+  {
+    title: "Programming Languages",
+    Icon: FaCode,
+    summary: "Core languages I use to build apps, APIs, automation, and data workflows.",
+  },
+  {
+    title: "Frontend & Mobile Development",
+    Icon: FaMobileAlt,
+    summary: "Responsive interfaces and cross-platform app experiences.",
+  },
+  {
+    title: "Backend Development",
+    Icon: FaServer,
+    summary: "APIs, services, server-side logic, and production application layers.",
+  },
+  {
+    title: "Databases",
+    Icon: FaDatabase,
+    summary: "Relational, document, and Firebase-backed data storage.",
+  },
+  {
+    title: "Cloud & DevOps",
+    Icon: FaDocker,
+    summary: "Deployment, source control, cloud hosting, and local engineering workflow.",
+  },
+  {
+    title: "AI & Machine Learning",
+    Icon: SiTensorflow,
+    summary: "Modeling, computer vision, data processing, and ML experimentation.",
+  },
+  {
+    title: "Design & Productivity",
+    Icon: FaTools,
+    summary: "Design, API testing, and daily development tooling.",
+  },
 ];
 
-function pickIcon(title, index) {
-  const match = ICON_BY_TITLE.find(([pattern]) => pattern.test(title));
-  return match ? match[1] : [Code2, Layers3, Cpu, Wrench][index % 4];
+const CATEGORY_TITLES = new Set(CATEGORY_META.map((category) => category.title));
+
+const CATEGORY_ALIASES = {
+  languages: "Programming Languages",
+  "programming languages": "Programming Languages",
+  frontend: "Frontend & Mobile Development",
+  "frontend development": "Frontend & Mobile Development",
+  "frontend & tools": "Frontend & Mobile Development",
+  mobile: "Frontend & Mobile Development",
+  "mobile development": "Frontend & Mobile Development",
+  backend: "Backend Development",
+  "backend development": "Backend Development",
+  databases: "Databases",
+  database: "Databases",
+  "cloud & devops": "Cloud & DevOps",
+  devops: "Cloud & DevOps",
+  "ai & ml": "AI & Machine Learning",
+  "ai & machine learning": "AI & Machine Learning",
+  tools: "Design & Productivity",
+  "design & productivity": "Design & Productivity",
+};
+
+const PREFERRED_CATEGORY_BY_TECH = {
+  html: "Frontend & Mobile Development",
+  html5: "Frontend & Mobile Development",
+  css: "Frontend & Mobile Development",
+  css3: "Frontend & Mobile Development",
+  react: "Frontend & Mobile Development",
+  reactjs: "Frontend & Mobile Development",
+  nextjs: "Frontend & Mobile Development",
+  reactnative: "Frontend & Mobile Development",
+  flutter: "Frontend & Mobile Development",
+  tailwindcss: "Frontend & Mobile Development",
+  bootstrap: "Frontend & Mobile Development",
+  vite: "Frontend & Mobile Development",
+  android: "Frontend & Mobile Development",
+  ios: "Frontend & Mobile Development",
+  nodejs: "Backend Development",
+  express: "Backend Development",
+  expressjs: "Backend Development",
+  flask: "Backend Development",
+  django: "Backend Development",
+  fastapi: "Backend Development",
+  springboot: "Backend Development",
+  mongodb: "Databases",
+  mysql: "Databases",
+  sqlite: "Databases",
+  postgresql: "Databases",
+  firebase: "Databases",
+  firestore: "Databases",
+  awsec2: "Cloud & DevOps",
+  awss3: "Cloud & DevOps",
+  aws: "Cloud & DevOps",
+  docker: "Cloud & DevOps",
+  git: "Cloud & DevOps",
+  github: "Cloud & DevOps",
+  linux: "Cloud & DevOps",
+  tensorflow: "AI & Machine Learning",
+  pytorch: "AI & Machine Learning",
+  opencv: "AI & Machine Learning",
+  keras: "AI & Machine Learning",
+  numpy: "AI & Machine Learning",
+  pandas: "AI & Machine Learning",
+  scikitlearn: "AI & Machine Learning",
+  vscode: "Design & Productivity",
+  figma: "Design & Productivity",
+  postman: "Design & Productivity",
+};
+
+const ICON_BY_TECH = {
+  python: FaPython,
+  c: SiC,
+  cplusplus: SiCplusplus,
+  java: FaJava,
+  javascript: SiJavascript,
+  typescript: SiTypescript,
+  dart: SiDart,
+  html: SiHtml5,
+  html5: SiHtml5,
+  css: SiCss3,
+  css3: SiCss3,
+  react: FaReact,
+  reactjs: FaReact,
+  nextjs: SiNextdotjs,
+  reactnative: SiReact,
+  flutter: SiFlutter,
+  tailwindcss: SiTailwindcss,
+  bootstrap: SiBootstrap,
+  vite: SiVite,
+  android: SiAndroid,
+  ios: SiIos,
+  nodejs: FaNodeJs,
+  express: SiExpress,
+  expressjs: SiExpress,
+  flask: SiFlask,
+  django: SiDjango,
+  fastapi: SiFastapi,
+  springboot: SiSpringboot,
+  mongodb: SiMongodb,
+  mysql: SiMysql,
+  sqlite: SiSqlite,
+  postgresql: SiPostgresql,
+  firebase: SiFirebase,
+  firestore: SiFirebase,
+  awsec2: FaAws,
+  awss3: FaAws,
+  aws: FaAws,
+  docker: FaDocker,
+  git: FaGitAlt,
+  github: FaGithub,
+  linux: FaLinux,
+  tensorflow: SiTensorflow,
+  pytorch: SiPytorch,
+  opencv: SiOpencv,
+  keras: SiKeras,
+  numpy: SiNumpy,
+  pandas: SiPandas,
+  scikitlearn: SiScikitlearn,
+  vscode: VscVscode,
+  figma: FaFigma,
+  postman: SiPostman,
+};
+
+const PROFICIENCY_BY_CATEGORY = {
+  "Programming Languages": 86,
+  "Frontend & Mobile Development": 91,
+  "Backend Development": 84,
+  Databases: 80,
+  "Cloud & DevOps": 78,
+  "AI & Machine Learning": 82,
+  "Design & Productivity": 88,
+};
+
+function normalizeKey(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/\+\+/g, "plusplus")
+    .replace(/#/g, "sharp")
+    .replace(/[^a-z0-9]/g, "");
+}
+
+function normalizeTitle(title) {
+  const key = String(title || "").trim().toLowerCase();
+  return CATEGORY_ALIASES[key] || String(title || "").trim();
+}
+
+function formatTool(tool) {
+  const cleaned = String(tool || "").trim();
+  const byKey = {
+    html: "HTML5",
+    css: "CSS3",
+    react: "React.js",
+    nextjs: "Next.js",
+    express: "Express.js",
+    aws: "AWS",
+    vscode: "VS Code",
+    scikitlearn: "Scikit-learn",
+  };
+  return byKey[normalizeKey(cleaned)] || cleaned;
 }
 
 function normalizeCategories(firestoreData) {
   const source = Array.isArray(firestoreData?.techStackData) ? firestoreData.techStackData : [];
+  const grouped = new Map(CATEGORY_META.map((category) => [category.title, []]));
+  const seen = new Set();
 
-  return source
-    .map((category, index) => {
-      const title = String(category?.title || "").trim();
-      const tech = Array.isArray(category?.tech)
-        ? [...new Set(category.tech.map((tool) => String(tool || "").trim()).filter(Boolean))]
-        : [];
+  source.forEach((category) => {
+    const sourceTitle = normalizeTitle(category?.title);
+    const tools = Array.isArray(category?.tech) ? category.tech : [];
 
-      return {
-        title,
-        tech,
-        accent: ACCENTS[index % ACCENTS.length],
-        Icon: pickIcon(title, index),
-      };
-    })
-    .filter((category) => category.title && category.tech.length > 0);
+    tools.forEach((tool) => {
+      const label = formatTool(tool);
+      const key = normalizeKey(label);
+      if (!key || seen.has(key)) return;
+
+      const preferredTitle = PREFERRED_CATEGORY_BY_TECH[key] || (CATEGORY_TITLES.has(sourceTitle) ? sourceTitle : "Design & Productivity");
+      if (!grouped.has(preferredTitle)) grouped.set(preferredTitle, []);
+
+      const Icon = ICON_BY_TECH[key] || FaCode;
+      grouped.get(preferredTitle).push({ label, key, Icon });
+      seen.add(key);
+    });
+  });
+
+  return CATEGORY_META.map((meta) => ({
+    ...meta,
+    tools: grouped.get(meta.title) || [],
+    proficiency: PROFICIENCY_BY_CATEGORY[meta.title] || 78,
+  })).filter((category) => category.tools.length > 0);
 }
 
 function StatusState({ sectionRef, error }) {
   return (
-    <section id="tech-stack" ref={sectionRef} className="relative overflow-hidden px-4 py-20 scroll-mt-24 sm:px-6 md:px-8">
-      <div className="portfolio-panel mx-auto max-w-3xl rounded-lg p-6 text-center sm:p-8">
-        <Code2 className="mx-auto mb-3 h-8 w-8 text-cyan-500" />
-        <h2 className="portfolio-gradient-text text-3xl font-black">Tech Stack</h2>
+    <section id="tech-stack" ref={sectionRef} className="relative overflow-hidden px-4 py-20 scroll-mt-24 sm:px-6 lg:px-8">
+      <div className="portfolio-panel mx-auto max-w-3xl rounded-2xl p-6 text-center sm:p-8">
+        <FaCode className="mx-auto mb-3 h-8 w-8 text-[var(--color-accent-strong)]" />
+        <h2 className="portfolio-gradient-text text-3xl font-black">Skills Showcase</h2>
         <p className="mx-auto mt-3 max-w-xl text-sm text-[var(--color-muted)]">
           {error || "Tech stack data is being prepared."}
         </p>
@@ -73,13 +301,13 @@ function StatusState({ sectionRef, error }) {
   );
 }
 
-export default function AnimatedTechStack() {
+export default function SkillsSection() {
   const sectionRef = useRef(null);
   const loggedOnce = useRef(false);
   const inView = useInView(sectionRef, { once: true, amount: 0.14, margin: "-80px" });
   const { data: firestoreData, loading, error } = useFirestoreData("techStack", "categories");
   const categories = useMemo(() => normalizeCategories(firestoreData), [firestoreData]);
-  const [activeIndex, setActiveIndex] = useState(0);
+  const totalTools = useMemo(() => new Set(categories.flatMap((category) => category.tools.map((tool) => tool.key))).size, [categories]);
 
   useEffect(() => {
     if (inView && !loggedOnce.current) {
@@ -88,19 +316,17 @@ export default function AnimatedTechStack() {
     }
   }, [inView]);
 
-  useEffect(() => {
-    if (activeIndex >= categories.length) setActiveIndex(0);
-  }, [activeIndex, categories.length]);
-
   if (loading && !firestoreData) {
     return (
-      <section id="tech-stack" ref={sectionRef} className="relative overflow-hidden px-4 py-20 scroll-mt-24 sm:px-6 md:px-8">
-        <div className="portfolio-panel mx-auto flex min-h-72 max-w-5xl items-center justify-center rounded-lg p-8">
-          <div className="flex items-center gap-3">
-            <MotionDiv animate={{ rotate: 360 }} transition={{ duration: 1.1, repeat: Infinity, ease: "linear" }}>
-              <Code2 className="h-5 w-5 text-cyan-500" />
-            </MotionDiv>
-            <span className="text-sm font-medium text-[var(--color-muted)]">Loading Firestore tech stack</span>
+      <section id="tech-stack" ref={sectionRef} className="relative overflow-hidden px-4 py-20 scroll-mt-24 sm:px-6 lg:px-8">
+        <div className="portfolio-panel mx-auto flex min-h-64 max-w-5xl items-center justify-center rounded-2xl p-8">
+          <div className="flex items-center gap-3 text-sm font-medium text-[var(--color-muted)]">
+            <motion.span
+              className="h-5 w-5 rounded-full border-2 border-[var(--color-border-strong)] border-t-[var(--color-text)]"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            />
+            Loading skills
           </div>
         </div>
       </section>
@@ -111,236 +337,110 @@ export default function AnimatedTechStack() {
     return <StatusState sectionRef={sectionRef} error={error} />;
   }
 
-  const selected = categories[activeIndex] || categories[0];
-  const SelectedIcon = selected.Icon;
-  const totalTools = new Set(categories.flatMap((category) => category.tech)).size;
-  const highlightTools = selected.tech.slice(0, 5);
-  const selectedPanelId = `tech-stack-panel-${activeIndex}`;
-
   return (
     <section
       id="tech-stack"
       ref={sectionRef}
-      aria-labelledby="tech-stack-title"
-      className="relative overflow-hidden px-4 py-14 scroll-mt-24 sm:px-6 md:px-8 lg:py-20"
+      aria-labelledby="skills-title"
+      className="relative overflow-hidden px-4 py-16 scroll-mt-24 sm:px-6 lg:px-8 lg:py-24"
     >
-      <MotionDiv
-        className="mx-auto max-w-6xl"
+      <motion.div
+        className="mx-auto max-w-7xl"
         initial={{ opacity: 0, y: 28 }}
         animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 28 }}
         transition={{ duration: 0.45, ease: "easeOut" }}
       >
-        <div className="mb-8 text-center sm:mb-10">
-          <h2 id="tech-stack-title" className="portfolio-gradient-text text-4xl font-extrabold sm:text-5xl">
-            Tech Stack
-          </h2>
-          <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-[var(--color-muted)] sm:text-base">
-            A recruiter-friendly snapshot of the tools I use across full-stack, cloud, AI, and product work.
-          </p>
-        </div>
-
-        <div className="grid gap-4 lg:grid-cols-[0.78fr_1.22fr] lg:items-start">
-          <div className="portfolio-panel overflow-hidden rounded-lg">
-            <div className="border-b p-4 sm:p-5" style={{ borderColor: "var(--color-border)" }}>
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-faint)]">Skill Deck</div>
-                  <div className="text-lg font-bold text-[var(--color-text)]">{categories.length} categories</div>
-                </div>
-                <div className="portfolio-panel-muted rounded-lg px-3 py-2 text-right">
-                  <div className="text-xl font-black text-[var(--color-text)]">{totalTools}</div>
-                  <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--color-faint)]">tools</div>
-                </div>
-              </div>
+        <div className="mb-10 grid gap-5 lg:grid-cols-[0.9fr_0.55fr] lg:items-end">
+          <div>
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-soft)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-faint)]">
+              <FaCode className="h-3.5 w-3.5" />
+              Skills Showcase
             </div>
-
-            <div
-              className="no-scrollbar -mx-3 flex snap-x gap-3 overflow-x-auto px-3 pb-4 pt-3 sm:-mx-4 sm:px-4 lg:mx-0 lg:grid lg:grid-cols-1 lg:gap-2 lg:overflow-visible lg:p-4"
-              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-            >
-              {categories.map((category, index) => {
-                const Icon = category.Icon;
-                const active = index === activeIndex;
-
-                return (
-                  <button
-                    key={category.title}
-                    type="button"
-                    aria-pressed={active}
-                    aria-controls={selectedPanelId}
-                    onClick={() => {
-                      setActiveIndex(index);
-                      logLinkClick(`tech_category_${category.title}`);
-                    }}
-                    className="min-h-[6.25rem] w-[78vw] max-w-[21rem] shrink-0 snap-start rounded-lg border p-3 text-left transition-all sm:w-[18rem] lg:w-full lg:min-h-0"
-                    style={{
-                      borderColor: active ? category.accent : "var(--color-border)",
-                      background: active ? "linear-gradient(135deg, rgba(45,212,191,0.15), rgba(245,158,11,0.09))" : "var(--color-surface-muted)",
-                      boxShadow: active ? `0 16px 36px ${category.accent}22` : "none",
-                    }}
-                  >
-                    <div className="mb-2 flex items-center justify-between gap-2 lg:mb-0">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border" style={{ borderColor: "var(--color-border)", color: category.accent }}>
-                        <Icon className="h-4 w-4" />
-                      </span>
-                      <span className="text-xs font-bold text-[var(--color-faint)]">{category.tech.length}</span>
-                    </div>
-                    <div className="text-sm font-bold leading-tight text-[var(--color-text)] lg:mt-2">{category.title}</div>
-                    <div className="mt-1 line-clamp-2 text-xs leading-relaxed text-[var(--color-faint)]">
-                      {category.tech.slice(0, 3).join(" / ")}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+            <h2 id="skills-title" className="portfolio-gradient-text text-4xl font-extrabold leading-tight sm:text-5xl">
+              Clean, focused tech stack
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[var(--color-muted)] sm:text-base">
+              A deduplicated view of my strongest tools across web, mobile, backend, cloud, AI, and product work.
+            </p>
           </div>
 
-          <div id={selectedPanelId} className="portfolio-panel relative overflow-hidden rounded-lg p-4 sm:p-6">
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-24 opacity-40" style={{ background: `linear-gradient(90deg, ${selected.accent}33, transparent)` }} />
-            <div className="relative">
-              <div className="mb-5 flex items-center gap-3 sm:items-start sm:gap-4">
-                <span className="portfolio-panel-muted flex h-12 w-12 shrink-0 items-center justify-center rounded-lg sm:h-14 sm:w-14" style={{ color: selected.accent }}>
-                  <SelectedIcon className="h-6 w-6 sm:h-7 sm:w-7" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--color-faint)] sm:text-xs sm:tracking-[0.18em]">Now Viewing</div>
-                  <h3 className="text-xl font-black leading-tight text-[var(--color-text)] sm:text-2xl">{selected.title}</h3>
-                  <p className="mt-1 text-xs text-[var(--color-muted)] sm:hidden">{selected.tech.length} tools selected</p>
-                </div>
-              </div>
-
-              <div className="mb-5 hidden gap-2 sm:grid sm:grid-cols-3 md:grid-cols-5">
-                {highlightTools.map((tool, index) => (
-                  <motion.div
-                    key={tool}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.04 }}
-                    className="min-h-20 rounded-lg border p-2 text-center"
-                    style={{ borderColor: "var(--color-border)", background: "var(--color-bg-strong)" }}
-                  >
-                    <div className="mx-auto mb-2 h-1.5 w-8 rounded-full" style={{ backgroundColor: selected.accent }} />
-                    <div className="break-words text-[11px] font-bold leading-tight text-[var(--color-text)]">{tool}</div>
-                  </motion.div>
-                ))}
-              </div>
-
-              <ul className="flex flex-wrap gap-2.5 sm:grid sm:grid-cols-3 sm:gap-2">
-                {selected.tech.map((tool, index) => (
-<motion.li
-                    key={tool}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.018 }}
-                    className="portfolio-entry-chip inline-flex min-h-10 max-w-full items-center justify-center rounded-lg px-3 py-2 text-center text-xs font-semibold leading-tight sm:text-sm"
-                  >
-                    {tool}
-                  </motion.li>
-                ))}
-              </ul>
+          <div className="grid grid-cols-2 gap-3 sm:max-w-sm lg:ml-auto">
+            <div className="portfolio-panel rounded-2xl p-4">
+              <div className="text-3xl font-black text-[var(--color-text)]">{categories.length}</div>
+              <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-faint)]">Categories</div>
             </div>
-          </div>
-          <h2 className="portfolio-gradient-text text-4xl font-extrabold sm:text-5xl">Tech Stack</h2>
-          <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-[var(--color-muted)] sm:text-base">
-            A mobile-first map of the tools powering my full-stack, cloud, AI, and product work.
-          </p>
-        </div>
-
-        <div className="grid gap-4 lg:grid-cols-[0.82fr_1.18fr]">
-          <div className="portfolio-panel overflow-hidden rounded-lg">
-            <div className="border-b p-4 sm:p-5" style={{ borderColor: "var(--color-border)" }}>
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-faint)]">Skill Deck</div>
-                  <div className="text-lg font-bold text-[var(--color-text)]">{categories.length} categories</div>
-                </div>
-                <div className="portfolio-panel-muted rounded-lg px-3 py-2 text-right">
-                  <div className="text-xl font-black text-[var(--color-text)]">{totalTools}</div>
-                  <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--color-faint)]">tools</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-3 lg:grid-cols-1 lg:p-4">
-              {categories.map((category, index) => {
-                const Icon = category.Icon;
-                const active = index === activeIndex;
-
-                return (
-                  <button
-                    key={category.title}
-                    type="button"
-                    onClick={() => {
-                      setActiveIndex(index);
-                      logLinkClick(`tech_category_${category.title}`);
-                    }}
-                    className="min-h-24 rounded-lg border p-3 text-left transition-all lg:min-h-0"
-                    style={{
-                      borderColor: active ? category.accent : "var(--color-border)",
-                      background: active ? "linear-gradient(135deg, rgba(45,212,191,0.15), rgba(245,158,11,0.09))" : "var(--color-surface-muted)",
-                      boxShadow: active ? `0 16px 36px ${category.accent}22` : "none",
-                    }}
-                  >
-                    <div className="mb-3 flex items-center justify-between gap-2 lg:mb-0">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border" style={{ borderColor: "var(--color-border)", color: category.accent }}>
-                        <Icon className="h-4 w-4" />
-                      </span>
-                      <span className="text-xs font-bold text-[var(--color-faint)]">{category.tech.length}</span>
-                    </div>
-                    <div className="text-sm font-bold leading-tight text-[var(--color-text)] lg:mt-2">{category.title}</div>
-                    <div className="mt-1 hidden text-xs text-[var(--color-faint)] lg:block">{category.tech.slice(0, 3).join(" / ")}</div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="portfolio-panel relative overflow-hidden rounded-lg p-5 sm:p-6">
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-24 opacity-40" style={{ background: `linear-gradient(90deg, ${selected.accent}33, transparent)` }} />
-            <div className="relative">
-              <div className="mb-5 flex items-start gap-4">
-                <span className="portfolio-panel-muted flex h-14 w-14 shrink-0 items-center justify-center rounded-lg" style={{ color: selected.accent }}>
-                  <SelectedIcon className="h-7 w-7" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-faint)]">Now Viewing</div>
-                  <h3 className="text-2xl font-black leading-tight text-[var(--color-text)]">{selected.title}</h3>
-                </div>
-              </div>
-
-              <div className="mb-5 grid grid-cols-2 gap-2 sm:grid-cols-5">
-                {highlightTools.map((tool, index) => (
-                  <MotionDiv
-                    key={tool}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.04 }}
-                    className="min-h-20 rounded-lg border p-2 text-center"
-                    style={{ borderColor: "var(--color-border)", background: "var(--color-bg-strong)" }}
-                  >
-                    <div className="mx-auto mb-2 h-1.5 w-8 rounded-full" style={{ backgroundColor: selected.accent }} />
-                    <div className="break-words text-[11px] font-bold leading-tight text-[var(--color-text)]">{tool}</div>
-                  </MotionDiv>
-                ))}
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {selected.tech.map((tool, index) => (
-<MotionSpan
-                    key={tool}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.018 }}
-                    className="portfolio-entry-chip rounded-lg px-3 py-2 text-center text-xs font-semibold sm:text-sm"
-                  >
-                    {tool}
-                  </MotionSpan>
-                ))}
-              </div>
+            <div className="portfolio-panel rounded-2xl p-4">
+              <div className="text-3xl font-black text-[var(--color-text)]">{totalTools}</div>
+              <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-faint)]">Unique Tools</div>
             </div>
           </div>
         </div>
-      </MotionDiv>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {categories.map((category, categoryIndex) => {
+            const CategoryIcon = category.Icon;
+
+            return (
+              <motion.article
+                key={category.title}
+                initial={{ opacity: 0, y: 18 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ delay: categoryIndex * 0.04, duration: 0.32 }}
+                whileHover={{ y: -6 }}
+                className="portfolio-panel group flex min-h-[23rem] flex-col rounded-2xl p-5 transition-shadow hover:shadow-[var(--shadow-elevated)]"
+              >
+                <div className="mb-5 flex items-start justify-between gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-strong)] text-[var(--color-text)] shadow-sm">
+                    <CategoryIcon className="h-5 w-5" />
+                  </div>
+                  <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-2.5 py-1 text-xs font-bold text-[var(--color-muted)]">
+                    {category.tools.length} tools
+                  </span>
+                </div>
+
+                <h3 className="text-lg font-black leading-tight text-[var(--color-text)]">{category.title}</h3>
+                <p className="mt-2 min-h-[3rem] text-sm leading-relaxed text-[var(--color-muted)]">{category.summary}</p>
+
+                <div className="mt-5">
+                  <div className="mb-2 flex items-center justify-between text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-faint)]">
+                    <span>Proficiency</span>
+                    <span>{category.proficiency}%</span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-[var(--color-surface-muted)]">
+                    <motion.div
+                      className="h-full rounded-full bg-[var(--color-text)]"
+                      initial={{ width: 0 }}
+                      whileInView={{ width: `${category.proficiency}%` }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.8, delay: 0.08 * categoryIndex }}
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-5 grid grid-cols-2 gap-2">
+                  {category.tools.map((tool, toolIndex) => {
+                    const ToolIcon = tool.Icon;
+                    return (
+                      <motion.div
+                        key={tool.key}
+                        initial={{ opacity: 0, y: 8 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: toolIndex * 0.025 }}
+                        className="flex min-h-11 items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3 py-2 text-[var(--color-text)] transition-colors group-hover:bg-[var(--color-bg-strong)]"
+                      >
+                        <ToolIcon className="h-4 w-4 shrink-0 text-[var(--color-muted)]" />
+                        <span className="min-w-0 break-words text-xs font-bold leading-tight">{tool.label}</span>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </motion.article>
+            );
+          })}
+        </div>
+      </motion.div>
     </section>
   );
 }

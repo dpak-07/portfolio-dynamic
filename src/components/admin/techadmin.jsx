@@ -46,14 +46,13 @@ const CRTStyles = () => (
 // Default configuration matching your seed.js structure
 const defaultConfig = {
   techStackData: [
-    { title: "Languages", color: "from-purple-400 to-pink-500", tech: ["C", "Python", "Java", "JavaScript", "Dart", "HTML", "CSS", "TypeScript"] },
-    { title: "Frontend", color: "from-blue-500 to-cyan-400", tech: ["React", "Next.js", "Tailwind CSS", "Flutter", "Bootstrap", "Vite"] },
-    { title: "Backend", color: "from-green-500 to-emerald-400", tech: ["Node.js", "Express", "Flask", "FastAPI", "Spring Boot"] },
-    { title: "Databases", color: "from-orange-400 to-amber-500", tech: ["MongoDB", "MySQL", "SQLite", "PostgreSQL", "Firebase"] },
-    { title: "Cloud & DevOps", color: "from-yellow-400 to-lime-400", tech: ["AWS", "Google Cloud", "Docker", "Kubernetes", "Vercel"] },
-    { title: "AI & ML", color: "from-red-400 to-pink-400", tech: ["TensorFlow", "PyTorch", "OpenCV", "Keras", "NumPy", "Pandas"] },
-    { title: "Mobile", color: "from-teal-400 to-green-400", tech: ["React Native", "Flutter", "Android", "iOS", "Expo"] },
-    { title: "Tools", color: "from-indigo-400 to-blue-400", tech: ["Git", "GitHub", "VS Code", "Postman", "Linux", "Figma"] },
+    { title: "Programming Languages", color: "from-zinc-700 to-zinc-500", tech: ["Python", "C", "C++", "Java", "JavaScript", "TypeScript", "Dart"] },
+    { title: "Frontend & Mobile Development", color: "from-zinc-800 to-zinc-500", tech: ["HTML5", "CSS3", "React.js", "Next.js", "React Native", "Flutter", "Tailwind CSS", "Bootstrap", "Vite", "Android", "iOS"] },
+    { title: "Backend Development", color: "from-zinc-700 to-neutral-500", tech: ["Node.js", "Express.js", "Flask", "Django", "FastAPI", "Spring Boot"] },
+    { title: "Databases", color: "from-neutral-700 to-zinc-500", tech: ["MongoDB", "MySQL", "SQLite", "PostgreSQL", "Firebase", "Firestore"] },
+    { title: "Cloud & DevOps", color: "from-slate-800 to-slate-500", tech: ["AWS EC2", "AWS S3", "Docker", "Git", "GitHub", "Linux"] },
+    { title: "AI & Machine Learning", color: "from-zinc-900 to-zinc-500", tech: ["TensorFlow", "PyTorch", "OpenCV", "Keras", "NumPy", "Pandas", "Scikit-learn"] },
+    { title: "Design & Productivity", color: "from-slate-400 to-zinc-500", tech: ["VS Code", "Figma", "Postman"] },
   ],
   lastUpdated: new Date().toISOString(),
   updatedBy: "deepak",

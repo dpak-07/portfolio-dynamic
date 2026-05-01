@@ -203,11 +203,11 @@ const aboutpageconfig = {
 const techStackData = [
   {
     title: "Programming Languages",
-    tech: ["Python", "C", "C++", "Java", "JavaScript", "Dart", "HTML5", "CSS3", "TypeScript"]
+    tech: ["Python", "C", "C++", "Java", "JavaScript", "TypeScript", "Dart"]
   },
   {
-    title: "Frontend Development",
-    tech: ["React.js", "React Native", "Flutter", "Next.js", "Tailwind CSS", "Bootstrap", "Vite"]
+    title: "Frontend & Mobile Development",
+    tech: ["HTML5", "CSS3", "React.js", "Next.js", "React Native", "Flutter", "Tailwind CSS", "Bootstrap", "Vite", "Android", "iOS"]
   },
   {
     title: "Backend Development",
@@ -219,19 +219,15 @@ const techStackData = [
   },
   {
     title: "Cloud & DevOps",
-    tech: ["AWS EC2", "AWS S3", "Docker", "Git", "GitHub", "Linux", "Postman"]
+    tech: ["AWS EC2", "AWS S3", "Docker", "Git", "GitHub", "Linux"]
   },
   {
     title: "AI & Machine Learning",
     tech: ["TensorFlow", "PyTorch", "OpenCV", "Keras", "NumPy", "Pandas", "Scikit-learn"]
   },
   {
-    title: "Tools",
-    tech: ["VS Code", "Figma"]
-  },
-  {
-    title: "Mobile Development",
-    tech: ["Flutter", "React Native", "Dart", "Android", "iOS"]
+    title: "Design & Productivity",
+    tech: ["VS Code", "Figma", "Postman"]
   },
 ];
 

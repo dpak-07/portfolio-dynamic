@@ -328,149 +328,144 @@ export default function GitHubStats() {
     visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
   };
 
+  const statCards = [
+    { label: "Recent Commits", value: stats.totalCommits, Icon: FaCodeBranch },
+    { label: "Day Streak", value: stats.currentStreak, Icon: FaFire },
+    { label: "Repositories", value: stats.totalRepos, Icon: FaGithub },
+    { label: "Stars Earned", value: stats.totalStars, Icon: FaStar },
+  ];
+
   return (
     <section
       id="github-stats"
       ref={sectionRef}
-      className="relative min-h-screen w-full flex flex-col items-center justify-center py-20 px-4 sm:px-6 lg:px-8 overflow-hidden"
+      className="relative w-full overflow-hidden px-4 py-16 scroll-mt-24 sm:px-6 lg:px-8 lg:py-24"
     >
       <motion.div
-        className="w-full max-w-6xl mx-auto"
+        className="mx-auto w-full max-w-7xl"
         variants={containerVariants}
         initial="hidden"
         animate={sectionInView ? "visible" : "hidden"}
       >
-        <motion.div variants={itemVariants} className="text-center mb-12">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-cyansoft mb-4 font-mono">
-            CODING_STATS
-          </h2>
-          <div className="h-1 w-32 bg-gradient-to-r from-transparent via-cyan-400 to-transparent mx-auto" />
-          {stats.error && <p className="mt-3 text-sm text-red-400">{stats.error}</p>}
+        <motion.div variants={itemVariants} className="mb-10 grid gap-5 lg:grid-cols-[0.9fr_0.55fr] lg:items-end">
+          <div>
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-soft)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-faint)]">
+              <FaGithub className="h-3.5 w-3.5" />
+              GitHub Stats
+            </div>
+            <h2 className="portfolio-gradient-text text-4xl font-extrabold leading-tight sm:text-5xl">
+              Code activity snapshot
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[var(--color-muted)] sm:text-base">
+              Repository activity, contribution history, and public profile signals from GitHub.
+            </p>
+            {stats.error && <p className="mt-3 text-sm text-[var(--color-muted)]">{stats.error}</p>}
+          </div>
+
+          <div className="portfolio-panel rounded-2xl p-4 sm:max-w-sm lg:ml-auto">
+            <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-faint)]">Profile</div>
+            <div className="mt-1 flex items-center gap-3">
+              <FaGithub className="h-7 w-7 text-[var(--color-text)]" />
+              <div className="min-w-0">
+                <div className="truncate text-xl font-black text-[var(--color-text)]">@{config.username}</div>
+                <div className="text-sm text-[var(--color-muted)]">Public GitHub activity</div>
+              </div>
+            </div>
+          </div>
         </motion.div>
 
+        {config.showStats && (
+          <motion.div variants={itemVariants} className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+            {statCards.map(({ label, value, Icon }) => (
+              <motion.div
+                key={label}
+                whileHover={{ y: -5 }}
+                className="portfolio-panel rounded-2xl p-5 text-center"
+              >
+                <Icon className="mx-auto mb-4 h-7 w-7 text-[var(--color-text)]" />
+                <div className="mb-1 text-3xl font-black text-[var(--color-text)] sm:text-4xl">
+                  {stats.loading ? "..." : value}
+                </div>
+                <div className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-faint)]">{label}</div>
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+
         {(config.showContributions || config.showStreak) && (
-          <motion.div
-            variants={itemVariants}
-            className="mb-12 bg-gray-900/50 backdrop-blur-sm border border-cyan-400/20 rounded-2xl p-6 sm:p-8"
-          >
-            <div className="flex items-center gap-3 mb-6">
-              <FaGithub className="text-cyan-400 text-2xl" />
-              <h3 className="text-xl sm:text-2xl font-bold text-white font-mono">GITHUB</h3>
+          <motion.div variants={itemVariants} className="portfolio-panel mb-8 rounded-2xl p-4 sm:p-6">
+            <div className="mb-5 flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-xl font-black text-[var(--color-text)]">Contribution Overview</h3>
+                <p className="text-sm text-[var(--color-muted)]">A monochrome read of recent GitHub consistency.</p>
+              </div>
+              <a
+                href={`https://github.com/${config.username}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="portfolio-secondary-button hidden rounded-xl px-4 py-2 text-sm font-bold sm:inline-flex"
+              >
+                Open GitHub
+              </a>
             </div>
 
             {config.showContributions && (
-              <div className="w-full overflow-x-auto">
+              <div className="w-full overflow-x-auto rounded-2xl border border-[var(--color-border)] bg-white p-4">
                 {imageVisible.contributions ? (
                   <img
-                    src={`https://ghchart.rshah.org/00e5ff/${config.username}`}
+                    src={`https://ghchart.rshah.org/9ca3af/${config.username}`}
                     alt="GitHub Contributions"
-                    className="w-full max-w-4xl mx-auto rounded-lg"
+                    className="mx-auto w-full max-w-5xl rounded-lg"
                     style={{ minWidth: "600px" }}
-                    onError={() =>
-                      setImageVisible((prev) => ({ ...prev, contributions: false }))
-                    }
+                    onError={() => setImageVisible((prev) => ({ ...prev, contributions: false }))}
                   />
                 ) : (
-                  <p className="text-center text-gray-400">Contributions graph is temporarily unavailable.</p>
+                  <p className="text-center text-sm text-zinc-500">Contributions graph is temporarily unavailable.</p>
                 )}
               </div>
             )}
 
             {config.showStreak && (
-              <div className="mt-6 flex justify-center">
+              <div className="mt-5 flex justify-center rounded-2xl border border-[var(--color-border)] bg-white p-4">
                 {imageVisible.streak ? (
                   <img
-                    src={`https://streak-stats.demolab.com/?user=${config.username}&theme=dark&hide_border=true&background=0D1117&ring=00E5FF&fire=00E5FF&currStreakLabel=00E5FF&sideLabels=00E5FF&currStreakNum=FFFFFF&sideNums=FFFFFF&dates=8B949E`}
+                    src={`https://streak-stats.demolab.com/?user=${config.username}&hide_border=true&background=FFFFFF&ring=111827&fire=6B7280&currStreakLabel=111827&sideLabels=6B7280&currStreakNum=111827&sideNums=111827&dates=6B7280`}
                     alt="GitHub Streak"
-                    className="rounded-lg max-w-full"
+                    className="max-w-full rounded-lg"
                     onError={() => setImageVisible((prev) => ({ ...prev, streak: false }))}
                   />
                 ) : (
-                  <p className="text-center text-gray-400">Streak card is temporarily unavailable.</p>
+                  <p className="text-center text-sm text-zinc-500">Streak card is temporarily unavailable.</p>
                 )}
               </div>
             )}
           </motion.div>
         )}
 
-        {config.showStats && (
-          <motion.div
-            variants={itemVariants}
-            className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-12"
-          >
-            <motion.div
-              whileHover={{ scale: 1.05, y: -5 }}
-              className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-cyan-400/30 rounded-xl p-6 text-center"
-            >
-              <FaCodeBranch className="text-cyan-400 text-3xl mx-auto mb-3" />
-              <div className="text-3xl sm:text-4xl font-bold text-white mb-2">
-                {stats.loading ? "..." : stats.totalCommits}
+        <motion.div variants={itemVariants} className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-center">
+          <div className="portfolio-panel flex justify-center rounded-2xl bg-white p-4">
+            {imageVisible.summary ? (
+              <img
+                src={`https://github-readme-stats.vercel.app/api?username=${config.username}&show_icons=true&hide_border=true&bg_color=ffffff&title_color=111827&icon_color=6b7280&text_color=4b5563&count_private=true`}
+                alt="GitHub Stats"
+                className="max-w-full rounded-lg"
+                onError={() => setImageVisible((prev) => ({ ...prev, summary: false }))}
+              />
+            ) : (
+              <div className="rounded-xl border border-[var(--color-border)] px-6 py-4 text-sm text-zinc-600">
+                GitHub summary card is temporarily unavailable.
               </div>
-              <div className="text-sm text-gray-400 font-mono">Total Commits</div>
-            </motion.div>
+            )}
+          </div>
 
-            <motion.div
-              whileHover={{ scale: 1.05, y: -5 }}
-              className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-cyan-400/30 rounded-xl p-6 text-center"
-            >
-              <FaFire className="text-orange-400 text-3xl mx-auto mb-3" />
-              <div className="text-3xl sm:text-4xl font-bold text-white mb-2">
-                {stats.loading ? "..." : stats.currentStreak}
-              </div>
-              <div className="text-sm text-gray-400 font-mono">Day Streak</div>
-            </motion.div>
-
-            <motion.div
-              whileHover={{ scale: 1.05, y: -5 }}
-              className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-cyan-400/30 rounded-xl p-6 text-center"
-            >
-              <FaGithub className="text-cyan-400 text-3xl mx-auto mb-3" />
-              <div className="text-3xl sm:text-4xl font-bold text-white mb-2">
-                {stats.loading ? "..." : stats.totalRepos}
-              </div>
-              <div className="text-sm text-gray-400 font-mono">Repositories</div>
-            </motion.div>
-
-            <motion.div
-              whileHover={{ scale: 1.05, y: -5 }}
-              className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm border border-cyan-400/30 rounded-xl p-6 text-center"
-            >
-              <FaStar className="text-yellow-400 text-3xl mx-auto mb-3" />
-              <div className="text-3xl sm:text-4xl font-bold text-white mb-2">
-                {stats.loading ? "..." : stats.totalStars}
-              </div>
-              <div className="text-sm text-gray-400 font-mono">Stars Earned</div>
-            </motion.div>
-          </motion.div>
-        )}
-
-        <motion.div variants={itemVariants} className="text-center">
           <a
             href={`https://github.com/${config.username}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-black px-8 py-4 rounded-full font-bold text-lg hover:scale-105 transition-transform shadow-lg"
-            style={{
-              boxShadow: "0 0 30px rgba(0, 255, 255, 0.4)",
-            }}
+            className="portfolio-primary-button inline-flex items-center justify-center gap-3 rounded-xl px-6 py-4 text-sm font-bold"
           >
-            VIEW_GH <span className="text-2xl">-&gt;</span>
+            View GitHub <span aria-hidden="true">-&gt;</span>
           </a>
-        </motion.div>
-
-        <motion.div variants={itemVariants} className="mt-12 flex justify-center">
-          {imageVisible.summary ? (
-            <img
-              src={`https://github-readme-stats.vercel.app/api?username=${config.username}&show_icons=true&theme=dark&hide_border=true&bg_color=0D1117&title_color=00E5FF&icon_color=00E5FF&text_color=FFFFFF&count_private=true`}
-              alt="GitHub Stats"
-              className="rounded-lg max-w-full"
-              onError={() => setImageVisible((prev) => ({ ...prev, summary: false }))}
-            />
-          ) : (
-            <div className="rounded-lg border border-cyan-400/20 bg-gray-900/40 px-6 py-4 text-gray-300">
-              GitHub summary card is temporarily unavailable.
-            </div>
-          )}
         </motion.div>
       </motion.div>
     </section>

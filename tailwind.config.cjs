@@ -9,10 +9,10 @@ module.exports = {
     extend: {
       // 🌈 Custom Colors
       colors: {
-        cyanglow: '#14b8a6',
-        cyansoft: '#5eead4',
-        'bg-dark': '#07100f',
-        panel: '#101817',
+        cyanglow: '#9ca3af',
+        cyansoft: '#e5e7eb',
+        'bg-dark': '#0a0a0a',
+        panel: '#18181b',
       },
 
       // 🎬 Custom Keyframes for Animations
@@ -133,13 +133,13 @@ module.exports = {
 
       // 🌟 Box Shadows
       boxShadow: {
-        cyanglow: '0 8px 30px rgba(20,184,166,0.08), 0 2px 6px rgba(245,158,11,0.06)',
+        cyanglow: '0 8px 30px rgba(17,24,39,0.08), 0 2px 6px rgba(107,114,128,0.08)',
         // ✨ NEW Timeline Shadows
-        'glow-blue': '0 0 20px rgba(59, 130, 246, 0.5)',
-        'glow-purple': '0 0 20px rgba(139, 92, 246, 0.5)',
-        'glow-pink': '0 0 20px rgba(236, 72, 153, 0.5)',
-        'glow-cyan': '0 0 20px rgba(6, 182, 212, 0.5)',
-        'glow-green': '0 0 20px rgba(16, 185, 129, 0.5)',
+        'glow-blue': '0 0 20px rgba(107, 114, 128, 0.35)',
+        'glow-purple': '0 0 20px rgba(107, 114, 128, 0.35)',
+        'glow-pink': '0 0 20px rgba(107, 114, 128, 0.35)',
+        'glow-cyan': '0 0 20px rgba(107, 114, 128, 0.35)',
+        'glow-green': '0 0 20px rgba(107, 114, 128, 0.35)',
       },
 
       // 📐 Transitions
