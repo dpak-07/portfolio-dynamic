@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { motion, useInView } from "framer-motion";
+import { AnimatePresence, motion, useInView } from "framer-motion";
 import {
   FaArrowRight,
   FaBrain,
@@ -118,24 +118,48 @@ function Badge({ children }) {
   );
 }
 
-function HighlightCard({ card, index }) {
+function HighlightCard({ card, index, expanded, onToggle }) {
   const Icon = iconMap[card.icon] || FaCompass;
   const accents = ["var(--color-accent-a)", "var(--color-accent-b)", "var(--color-accent-c)", "var(--color-accent-d)"];
+  const details = card.long || card.short;
 
   return (
-    <motion.article
+    <motion.button
+      type="button"
+      aria-expanded={expanded}
+      onClick={onToggle}
       variants={itemVariants}
       whileHover={{ y: -5 }}
       style={{ "--accent-local": accents[index % accents.length] }}
-      className="portfolio-panel portfolio-panel-accent rounded-2xl p-4"
+      className="portfolio-panel portfolio-panel-accent w-full rounded-2xl p-4 text-left"
     >
-      <div className="portfolio-accent-icon mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--color-border)]">
-        <Icon className="h-4 w-4" />
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div className="portfolio-accent-icon flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--color-border)]">
+          <Icon className="h-4 w-4" />
+        </div>
+        <span className="portfolio-accent-number text-xs font-black uppercase tracking-[0.16em]">
+          {expanded ? "Less" : "More"}
+        </span>
       </div>
       <div className="portfolio-accent-number text-xs font-bold uppercase tracking-[0.16em]">0{index + 1}</div>
       <h3 className="mt-1 text-base font-black text-[var(--color-text)]">{card.title}</h3>
       <p className="mt-2 text-sm leading-relaxed text-[var(--color-muted)]">{card.short || card.long}</p>
-    </motion.article>
+      <AnimatePresence initial={false}>
+        {expanded && details && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
+            className="overflow-hidden"
+          >
+            <p className="mt-4 border-t border-[var(--color-border)] pt-4 text-sm leading-relaxed text-[var(--color-muted)]">
+              {details}
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.button>
   );
 }
 
@@ -145,6 +169,7 @@ export default function AboutWithDriveImage({ overrideConfig }) {
   const loggedOnce = useRef(false);
   const inView = useInView(sectionRef, { once: true, amount: 0.16, margin: "-80px" });
   const [imgFailed, setImgFailed] = useState(false);
+  const [expandedCardId, setExpandedCardId] = useState(null);
 
   const cfg = useMemo(() => {
     const base = firestoreData || DEFAULT_CONFIG;
@@ -177,8 +202,8 @@ export default function AboutWithDriveImage({ overrideConfig }) {
       ref={sectionRef}
       className="relative overflow-hidden px-4 py-16 scroll-mt-24 sm:px-6 lg:px-8 lg:py-24"
       variants={sectionVariants}
-      initial="hidden"
-      animate={inView ? "visible" : "hidden"}
+      initial={false}
+      animate="visible"
     >
       <div className="mx-auto max-w-7xl">
         {error && (
@@ -193,8 +218,8 @@ export default function AboutWithDriveImage({ overrideConfig }) {
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.58fr)] lg:items-start xl:gap-12">
           <div>
             <motion.div variants={itemVariants} className="mb-6">
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-soft)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-faint)]">
-                <FaLayerGroup className="h-3.5 w-3.5" />
+              <div className="mb-4 inline-flex items-center gap-3 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-soft)] px-5 py-2 text-xl font-black uppercase tracking-[0.1em] text-[var(--color-text)] sm:text-2xl">
+                <FaLayerGroup className="h-5 w-5 text-[var(--color-accent-a)]" />
                 About Me
               </div>
               <h2 className="portfolio-rainbow-text text-4xl font-extrabold leading-tight sm:text-5xl lg:text-6xl">
@@ -279,16 +304,16 @@ export default function AboutWithDriveImage({ overrideConfig }) {
                     alt="Deepak S"
                     loading="lazy"
                     onError={() => setImgFailed(true)}
-                    className="h-full w-full object-cover grayscale"
+                    className="h-full w-full object-cover"
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-zinc-100 to-zinc-300 text-7xl font-black text-zinc-700 dark:from-zinc-900 dark:to-zinc-700 dark:text-zinc-200">
                     D
                   </div>
                 )}
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/78 to-transparent p-5 text-white">
+                <div className="absolute inset-x-4 bottom-4 rounded-xl border border-white/70 bg-white/90 p-4 text-zinc-950 shadow-sm backdrop-blur-md">
                   <h3 className="text-2xl font-black">Deepak S</h3>
-                  <p className="mt-1 text-sm text-white/72">AI & Data Science student - Full-stack builder</p>
+                  <p className="mt-1 text-sm text-zinc-700">AI & Data Science student - Full-stack builder</p>
                 </div>
               </div>
             </motion.aside>
@@ -312,7 +337,16 @@ export default function AboutWithDriveImage({ overrideConfig }) {
 
         <motion.div variants={itemVariants} className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {cards.slice(0, 4).map((card, index) => (
-            <HighlightCard key={card.id || card.title} card={card} index={index} />
+            <HighlightCard
+              key={card.id || card.title}
+              card={card}
+              index={index}
+              expanded={expandedCardId === (card.id || card.title)}
+              onToggle={() => {
+                const cardId = card.id || card.title;
+                setExpandedCardId((current) => (current === cardId ? null : cardId));
+              }}
+            />
           ))}
         </motion.div>
 

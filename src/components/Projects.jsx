@@ -65,7 +65,7 @@ function ProjectImage({ project, className = "", compact = false }) {
       <img
         src={src}
         alt={project.title}
-        className={`h-full w-full object-cover grayscale transition duration-500 group-hover:grayscale-0 ${className}`}
+        className={`h-full w-full object-cover transition duration-500 ${className}`}
         loading="lazy"
         onError={() => setFailed(true)}
       />
@@ -123,23 +123,21 @@ function ProjectCard({ project, index, onOpen }) {
       className="portfolio-panel group overflow-hidden rounded-2xl"
     >
       <button type="button" onClick={() => onOpen(project)} className="block w-full text-left">
-        <div className="relative aspect-[4/3] overflow-hidden bg-[var(--color-surface-muted)]">
+        <div className="relative aspect-video overflow-hidden bg-[var(--color-surface-muted)]">
           <ProjectImage project={project} compact />
-          <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/72 to-transparent" />
           {project.featured && (
             <div className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-white/92 px-2.5 py-1 text-[11px] font-black text-zinc-950 shadow-sm">
               <Star className="h-3.5 w-3.5 fill-zinc-950" />
               Featured
             </div>
           )}
-          <div className="absolute bottom-3 left-3 right-3">
-            <h3 className="text-xl font-black leading-tight text-white">{project.title}</h3>
-            {project.desc && <p className="mt-1 line-clamp-2 text-xs text-white/76">{project.desc}</p>}
-          </div>
         </div>
       </button>
 
       <div className="p-4">
+        <h3 className="mb-1 text-xl font-black leading-tight text-[var(--color-text)]">{project.title}</h3>
+        {project.desc && <p className="mb-4 line-clamp-2 text-xs leading-relaxed text-[var(--color-muted)]">{project.desc}</p>}
+
         <div className="mb-4 flex flex-wrap gap-1.5">
           {project.tech?.slice(0, 5).map((tool) => (
             <span key={tool} className="portfolio-chip rounded-full px-2.5 py-1 text-[11px] font-semibold">
@@ -196,20 +194,17 @@ function SpotlightProject({ project, active, onOpen }) {
       transition={{ duration: 0.35 }}
       className="portfolio-panel mb-5 grid overflow-hidden rounded-2xl lg:grid-cols-[1.12fr_0.88fr]"
     >
-      <button type="button" onClick={() => onOpen(project)} className="group relative block min-h-72 overflow-hidden text-left lg:min-h-[440px]">
+      <button type="button" onClick={() => onOpen(project)} className="group relative block aspect-video overflow-hidden text-left">
         <ProjectImage project={project} className="transition-transform duration-700 group-hover:scale-105" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/84 via-black/16 to-transparent" />
-        <div className="absolute bottom-5 left-5 right-5">
-          <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-black text-zinc-950 shadow-sm">
-            <Star className="h-3.5 w-3.5 fill-zinc-950" />
-            Spotlight
-          </div>
-          <h3 className="max-w-3xl text-3xl font-black leading-tight text-white sm:text-4xl">{project.title}</h3>
+        <div className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-black text-zinc-950 shadow-sm">
+          <Star className="h-3.5 w-3.5 fill-zinc-950" />
+          Spotlight
         </div>
       </button>
 
       <div className="flex flex-col p-5 sm:p-7">
         <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-faint)]">{active}</div>
+        <h3 className="mt-3 text-3xl font-black leading-tight text-[var(--color-text)] sm:text-4xl">{project.title}</h3>
         {project.desc && <p className="mt-3 text-xl font-black leading-tight text-[var(--color-text)]">{project.desc}</p>}
         <p className="mt-4 line-clamp-7 text-sm leading-relaxed text-[var(--color-muted)]">{project.long || project.desc}</p>
 
@@ -252,9 +247,8 @@ function ProjectModal({ project, onClose }) {
         </button>
 
         <div className="grid max-h-[92svh] overflow-y-auto lg:grid-cols-[0.95fr_1.05fr]">
-          <div className="relative min-h-64 overflow-hidden bg-zinc-950 lg:min-h-[520px]">
+          <div className="relative aspect-video overflow-hidden bg-[var(--color-surface-muted)]">
             <ProjectImage project={project} />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/72 via-transparent to-transparent" />
           </div>
           <div className="p-5 sm:p-7">
             {project.featured && (
@@ -304,6 +298,7 @@ export default function Projects() {
   const categoryKeys = useMemo(() => Object.keys(categories).filter((key) => categories[key]?.length), [categories]);
   const [active, setActive] = useState("All");
   const [open, setOpen] = useState(null);
+  const [spotlightIndex, setSpotlightIndex] = useState(0);
 
   useEffect(() => {
     if (sectionInView) logSectionView("projects");
@@ -316,8 +311,23 @@ export default function Projects() {
   const visibleProjects = categories[active] || [];
   const allProjects = categories.All || [];
   const featuredCount = allProjects.filter((project) => project.featured).length;
-  const spotlight = visibleProjects[0];
-  const remaining = visibleProjects.slice(1);
+  const safeSpotlightIndex = visibleProjects.length ? spotlightIndex % visibleProjects.length : 0;
+  const spotlight = visibleProjects[safeSpotlightIndex];
+  const remaining = visibleProjects.filter((_, index) => index !== safeSpotlightIndex);
+
+  useEffect(() => {
+    setSpotlightIndex(0);
+  }, [active]);
+
+  useEffect(() => {
+    if (!sectionInView || open || visibleProjects.length <= 1) return undefined;
+
+    const timer = window.setInterval(() => {
+      setSpotlightIndex((current) => (current + 1) % visibleProjects.length);
+    }, 4200);
+
+    return () => window.clearInterval(timer);
+  }, [open, sectionInView, visibleProjects.length]);
 
   if (loading && !projectsData) {
     return (
@@ -356,6 +366,7 @@ export default function Projects() {
               type="button"
               onClick={() => {
                 setActive(category);
+                setSpotlightIndex(0);
                 logLinkClick(`project_category_${category}`);
               }}
               className={`shrink-0 rounded-full border px-4 py-2 text-sm font-bold transition-all ${

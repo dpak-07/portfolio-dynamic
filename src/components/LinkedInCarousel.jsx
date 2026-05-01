@@ -161,14 +161,14 @@ export default function LinkedInCarousel() {
                     <>
                         <button
                             onClick={goToPrev}
-                            className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white transition-all hover:scale-110"
+                            className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 hover:bg-white backdrop-blur-sm border border-white/70 flex items-center justify-center text-zinc-950 shadow-lg transition-all hover:scale-110"
                             aria-label="Previous post"
                         >
                             <ChevronLeft className="w-6 h-6" />
                         </button>
                         <button
                             onClick={goToNext}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white transition-all hover:scale-110"
+                            className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 hover:bg-white backdrop-blur-sm border border-white/70 flex items-center justify-center text-zinc-950 shadow-lg transition-all hover:scale-110"
                             aria-label="Next post"
                         >
                             <ChevronRight className="w-6 h-6" />
@@ -195,7 +195,7 @@ export default function LinkedInCarousel() {
 
                 {/* Pause indicator */}
                 {isPaused && posts.length > 1 && (
-                    <div className="absolute top-4 right-4 px-3 py-1 bg-black/50 backdrop-blur-sm rounded-full text-white text-xs">
+                    <div className="absolute top-4 right-4 px-3 py-1 bg-white/90 backdrop-blur-sm rounded-full text-zinc-950 text-xs shadow-sm">
                         Paused
                     </div>
                 )}

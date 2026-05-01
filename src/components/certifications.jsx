@@ -502,22 +502,22 @@ export default function CertificationsSection() {
 
                   {selected.images.length > 1 && (
                     <>
-                      <button onClick={prevImage} className="absolute left-3 top-1/2 z-20 -translate-y-1/2 rounded-full border border-white/20 bg-black/70 p-2.5 transition-all hover:bg-black/90 sm:left-4" aria-label="Previous certificate image">
-                        <ChevronLeft className="h-6 w-6 text-white" />
+                      <button onClick={prevImage} className="absolute left-3 top-1/2 z-20 -translate-y-1/2 rounded-full border border-white/70 bg-white/90 p-2.5 text-zinc-950 shadow-lg transition-all hover:bg-white sm:left-4" aria-label="Previous certificate image">
+                        <ChevronLeft className="h-6 w-6" />
                       </button>
-                      <button onClick={nextImage} className="absolute right-3 top-1/2 z-20 -translate-y-1/2 rounded-full border border-white/20 bg-black/70 p-2.5 transition-all hover:bg-black/90 sm:right-4" aria-label="Next certificate image">
-                        <ChevronRight className="h-6 w-6 text-white" />
+                      <button onClick={nextImage} className="absolute right-3 top-1/2 z-20 -translate-y-1/2 rounded-full border border-white/70 bg-white/90 p-2.5 text-zinc-950 shadow-lg transition-all hover:bg-white sm:right-4" aria-label="Next certificate image">
+                        <ChevronRight className="h-6 w-6" />
                       </button>
                     </>
                   )}
 
                   {selected.images.length > 1 && (
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full border border-white/20 bg-black/70 px-3 py-1 text-sm text-white">
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full border border-white/70 bg-white/90 px-3 py-1 text-sm font-bold text-zinc-950 shadow-sm">
                       {imageIndex + 1} / {selected.images.length}
                     </div>
                   )}
 
-                  <button onClick={openOriginalLink} className="absolute right-3 top-3 z-20 flex items-center gap-1 rounded-full border border-white/20 bg-black/70 p-2 text-xs text-white transition-all hover:bg-black/90 sm:right-4 sm:top-4" title="View original">
+                  <button onClick={openOriginalLink} className="absolute right-3 top-3 z-20 flex items-center gap-1 rounded-full border border-white/70 bg-white/90 p-2 text-xs text-zinc-950 shadow-lg transition-all hover:bg-white sm:right-4 sm:top-4" title="View original">
                     <ExternalLink className="h-4 w-4" />
                   </button>
                 </div>
