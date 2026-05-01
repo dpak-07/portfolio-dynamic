@@ -1,6 +1,6 @@
 "use client"
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import { AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Eye, Save, RotateCcw, Download, Upload, Plus, X,
   ArrowUp, ArrowDown, Palette, AlertCircle, CheckCircle, Loader, Wifi, WifiOff
