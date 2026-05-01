@@ -85,8 +85,8 @@ export default function Footer() {
         <>
           <div className="relative z-10 mx-auto grid max-w-6xl grid-cols-1 gap-12 px-6 text-center md:grid-cols-3 md:text-left">
             {footerData.map((section, idx) => (
-              <motion.div key={section.title || idx} variants={fadeUp} custom={0.12 + idx * 0.12} className="space-y-3">
-                <h3 className="mb-3 text-lg font-semibold text-cyansoft">{section.title}</h3>
+<motion.div key={section.title || idx} variants={fadeUp} custom={0.12 + idx * 0.12} className="space-y-3">
+                <h3 className="mb-3 text-lg font-semibold" style={{ color: "var(--color-accent-a)" }}>{section.title}</h3>
 
                 {section.type === "about" && (
                   typeof section.content === "string" ? (
@@ -99,8 +99,8 @@ export default function Footer() {
                 {section.type === "links" && (
                   <ul className="space-y-3 text-sm text-[var(--color-muted)]">
                     {section.links?.map((link) => (
-                      <motion.li key={link} whileHover={{ x: 6 }} transition={{ type: "spring", stiffness: 200 }}>
-                        <a href={`#${toSectionId(link)}`} className="transition hover:text-cyansoft">
+<motion.li key={link} whileHover={{ x: 6 }} transition={{ type: "spring", stiffness: 200 }}>
+                        <a href={`#${toSectionId(link)}`} className="transition hover:text-[var(--color-accent-a)]">
                           {link}
                         </a>
                       </motion.li>
@@ -110,7 +110,7 @@ export default function Footer() {
 
                 {section.type === "contact" && (
                   <>
-                    <button type="button" className="text-sm underline transition hover:text-cyansoft" onClick={copyEmail}>
+<button type="button" className="text-sm underline transition hover:text-[var(--color-accent-a)]" onClick={copyEmail}>
                       {section.email}
                     </button>
                     {section.phone && <p className="mt-1 text-sm text-[var(--color-muted)]">{section.phone}</p>}
@@ -119,17 +119,17 @@ export default function Footer() {
 
                     <div className="mt-5 flex justify-center gap-4 md:justify-start">
                       {section.socials?.map((link, sIdx) => (
-                        <motion.a
+<motion.a
                           key={`${link.href}-${sIdx}`}
                           href={link.href}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="group relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border text-cyansoft"
-                          style={{ borderColor: "var(--color-border)" }}
+                          className="group relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border"
+                          style={{ borderColor: "var(--color-accent-a)", color: "var(--color-accent-a)" }}
                           whileHover={{ scale: 1.12, rotate: 4 }}
                           whileTap={{ scale: 0.94 }}
                         >
-                          <span className="absolute inset-0 bg-cyansoft/20 opacity-0 transition group-hover:opacity-100" />
+                          <span className="absolute inset-0 bg-[var(--color-accent-a)]/20 opacity-0 transition group-hover:opacity-100" />
                           <i className={link.icon} />
                         </motion.a>
                       ))}
@@ -146,13 +146,13 @@ export default function Footer() {
             variants={fadeUp}
             custom={0.5}
           >
-            &copy; {new Date().getFullYear()} Deepak S - Built with <span className="text-cyansoft">React</span>
+&copy; {new Date().getFullYear()} Deepak S - Built with <span style={{ color: "var(--color-accent-a)" }}>React</span>
             <motion.button
               type="button"
               onClick={() => navigate("/admindsh")}
               whileHover={{ scale: 1.08 }}
               whileTap={{ scale: 0.95 }}
-              className="ml-2 text-cyansoft transition hover:text-cyansoft/70"
+className="ml-2 transition hover:text-[var(--color-accent-a)]"
               title="Go to Admin Dashboard"
             >
               Admin
@@ -166,7 +166,8 @@ export default function Footer() {
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 6 }}
-          className="portfolio-panel absolute bottom-20 left-1/2 -translate-x-1/2 rounded-full px-4 py-1 text-sm text-cyansoft"
+className="portfolio-panel absolute bottom-20 left-1/2 -translate-x-1/2 rounded-full px-4 py-1 text-sm"
+        style={{ color: "var(--color-accent-a)" }}
         >
           Copied to clipboard
         </motion.div>

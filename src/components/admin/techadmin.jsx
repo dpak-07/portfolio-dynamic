@@ -16,28 +16,33 @@ const CRTStyles = () => (
   <style>{`
     @keyframes flicker {0%,100%{opacity:.95;}50%{opacity:1;}}
     @keyframes scanline {0%{transform:translateY(-100%);}100%{transform:translateY(100%);}}
+    @keyframes colorShift {0%{color:#00e5ff;}25%{color:#ff00ff;}50%{color:#fbbf24;}75%{color:#ec4899;}100%{color:#00e5ff;}}
     .crt-screen{position:relative;background:radial-gradient(ellipse at center,#0d1f2d 0%,#050a0f 100%);animation:flicker .15s infinite;overflow:hidden;}
     .crt-screen::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,255,255,.03)0px,transparent 1px,transparent 2px,rgba(0,255,255,.03)3px);pointer-events:none;z-index:50;}
     .crt-screen::after{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,transparent 50%,rgba(0,255,255,.02)50%);background-size:100% 4px;pointer-events:none;z-index:51;animation:scanline 8s linear infinite;}
-    .crt-glow{box-shadow:inset 0 0 100px rgba(0,229,255,.1),inset 0 0 50px rgba(0,229,255,.05),0 0 50px rgba(0,229,255,.2);}
+    .crt-glow{box-shadow:inset 0 0 100px rgba(0,229,255,.2),inset 0 0 50px rgba(0,229,255,.1),0 0 50px rgba(0,229,255,.3);}
     .crt-text{color:#00e5ff;text-shadow:0 0 10px rgba(0,229,255,.8),0 0 20px rgba(0,229,255,.4);font-family:'Courier New',monospace;}
-    .crt-button{background:linear-gradient(135deg,rgba(0,229,255,.2),rgba(0,229,255,.1));border:2px solid rgba(0,229,255,.4);box-shadow:0 0 20px rgba(0,229,255,.3),inset 0 0 10px rgba(0,229,255,.1);transition:all .3s ease;cursor:pointer;user-select:none;}
-    .crt-button:hover:not(:disabled){background:linear-gradient(135deg,rgba(0,229,255,.3),rgba(0,229,255,.2));border-color:rgba(0,229,255,.6);box-shadow:0 0 30px rgba(0,229,255,.5),inset 0 0 15px rgba(0,229,255,.2);transform:translateY(-2px);}
+    .crt-button{background:linear-gradient(135deg,rgba(0,229,255,.3),rgba(255,0,255,.1));border:2px solid rgba(0,229,255,.5);box-shadow:0 0 20px rgba(0,229,255,.4),inset 0 0 10px rgba(0,229,255,.2);transition:all .3s ease;cursor:pointer;user-select:none;}
+    .crt-button:hover:not(:disabled){background:linear-gradient(135deg,rgba(255,0,255,.3),rgba(0,229,255,.3));border-color:rgba(255,0,255,.8);box-shadow:0 0 30px rgba(255,0,255,.6),inset 0 0 15px rgba(255,0,255,.3);transform:translateY(-2px);}
     .crt-button:active:not(:disabled){transform:translateY(0);}
     .crt-button:disabled{opacity:.35;cursor:not-allowed;}
-    .crt-input{background:rgba(0,0,0,.6);border:2px solid rgba(0,229,255,.3);color:#00e5ff;box-shadow:inset 0 0 20px rgba(0,229,255,.1);transition:all .2s ease;}
-    .crt-input:focus{outline:none;border-color:rgba(0,229,255,.6);box-shadow:0 0 20px rgba(0,229,255,.3),inset 0 0 20px rgba(0,229,255,.2);}
-    .crt-input:-webkit-autofill{-webkit-box-shadow: inset 0 0 20px rgba(0,229,255,.1);-webkit-text-fill-color:#00e5ff;}
-    .crt-input:-webkit-autofill:focus{-webkit-box-shadow: 0 0 20px rgba(0,229,255,.3), inset 0 0 20px rgba(0,229,255,.2);-webkit-text-fill-color:#00e5ff;}
-    .crt-panel{background:linear-gradient(135deg,rgba(0,20,30,.95),rgba(0,10,20,.98));border:2px solid rgba(0,229,255,.3);box-shadow:0 0 30px rgba(0,229,255,.2),inset 0 0 30px rgba(0,0,0,.5);will-change:auto;}
-    .hide-scrollbar{scrollbar-width:thin;scrollbar-color:rgba(0,229,255,.3) transparent;}
+    .crt-input{background:rgba(0,0,0,.7);border:2px solid rgba(0,229,255,.4);color:#00e5ff;box-shadow:inset 0 0 20px rgba(0,229,255,.15);transition:all .2s ease;}
+    .crt-input:focus{outline:none;border-color:rgba(255,0,255,.8);box-shadow:0 0 30px rgba(255,0,255,.5),inset 0 0 20px rgba(255,0,255,.2);}
+    .crt-input:-webkit-autofill{-webkit-box-shadow: inset 0 0 20px rgba(0,229,255,.15);-webkit-text-fill-color:#00e5ff;}
+    .crt-input:-webkit-autofill:focus{-webkit-box-shadow: 0 0 30px rgba(255,0,255,.5), inset 0 0 20px rgba(255,0,255,.2);-webkit-text-fill-color:#ff00ff;}
+    .crt-panel{background:linear-gradient(135deg,rgba(0,20,30,.98),rgba(0,10,20,.95));border:2px solid rgba(0,229,255,.5);box-shadow:0 0 40px rgba(0,229,255,.3),inset 0 0 30px rgba(0,0,0,.5);will-change:auto;}
+    .crt-panel:nth-child(1){border-color:rgba(0,229,255,.6);box-shadow:0 0 40px rgba(0,229,255,.4),inset 0 0 30px rgba(0,0,0,.5);}
+    .crt-panel:nth-child(2){border-color:rgba(255,0,255,.6);box-shadow:0 0 40px rgba(255,0,255,.4),inset 0 0 30px rgba(0,0,0,.5);}
+    .crt-panel:nth-child(3){border-color:rgba(251,191,36,.6);box-shadow:0 0 40px rgba(251,191,36,.4),inset 0 0 30px rgba(0,0,0,.5);}
+    .hide-scrollbar{scrollbar-width:thin;scrollbar-color:rgba(0,229,255,.5) transparent;}
     .hide-scrollbar::-webkit-scrollbar{width:8px;height:8px;}
     .hide-scrollbar::-webkit-scrollbar-track{background:transparent;}
-    .hide-scrollbar::-webkit-scrollbar-thumb{background:rgba(0,229,255,.3);border-radius:4px;border:2px solid transparent;background-clip:content-box;}
-    .hide-scrollbar::-webkit-scrollbar-thumb:hover{background:rgba(0,229,255,.5);background-clip:content-box;}
-    .status-success{color:#4ade80;text-shadow:0 0 10px rgba(74,222,128,.6);}
-    .status-error{color:#f87171;text-shadow:0 0 10px rgba(248,113,113,.6);}
-    .status-info{color:#60a5fa;text-shadow:0 0 10px rgba(96,165,250,.6);}
+    .hide-scrollbar::-webkit-scrollbar-thumb{background:linear-gradient(180deg,rgba(0,229,255,.5),rgba(255,0,255,.5));border-radius:4px;border:2px solid transparent;background-clip:content-box;}
+    .hide-scrollbar::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,rgba(255,0,255,.7),rgba(251,191,36,.7));background-clip:content-box;}
+    .status-success{color:#4ade80;text-shadow:0 0 15px rgba(74,222,128,.8);}
+    .status-error{color:#f87171;text-shadow:0 0 15px rgba(248,113,113,.8);}
+    .status-info{color:#60a5fa;text-shadow:0 0 15px rgba(96,165,250,.8);}
+    .status-warning{color:#fbbf24;text-shadow:0 0 15px rgba(251,191,36,.8);}
     * { -webkit-user-select: none; -moz-user-select: none; user-select: none; }
     input, textarea { -webkit-user-select: text; -moz-user-select: text; user-select: text; }
   `}</style>
@@ -546,10 +551,10 @@ export default function TechStackAdmin() {
   const activeCat = Number.isInteger(activeCatIndex) && categories[activeCatIndex] ? categories[activeCatIndex] : null;
 
   return (
-    <div className="w-screen min-h-screen lg:h-screen lg:overflow-hidden crt-screen crt-glow">
+    <div className="admin-mobile-shell w-screen min-h-screen lg:h-screen lg:overflow-hidden crt-screen crt-glow">
       <CRTStyles />
       
-      <div className="w-full h-full flex flex-col p-2 sm:p-4 gap-2 sm:gap-4 pb-16 lg:pb-4">
+      <div className="w-full h-full flex flex-col p-2 sm:p-3 md:p-4 gap-2 sm:gap-3 md:gap-4 pb-16 lg:pb-4 overflow-y-auto lg:overflow-y-hidden">
         <motion.div 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}

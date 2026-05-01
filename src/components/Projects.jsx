@@ -98,13 +98,13 @@ function SectionHeader({ totalProjects, featuredCount }) {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:max-w-sm lg:ml-auto">
+<div className="grid grid-cols-2 gap-3 sm:max-w-sm lg:ml-auto">
         <div className="portfolio-panel portfolio-panel-accent rounded-2xl p-4" style={{ "--accent-local": "var(--color-accent-a)" }}>
-          <div className="portfolio-accent-number text-3xl font-black">{totalProjects}</div>
+          <div className="portfolio-accent-number text-3xl font-black" style={{ color: "var(--color-accent-a)" }}>{totalProjects}</div>
           <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-faint)]">Projects</div>
         </div>
         <div className="portfolio-panel portfolio-panel-accent rounded-2xl p-4" style={{ "--accent-local": "var(--color-accent-c)" }}>
-          <div className="portfolio-accent-number text-3xl font-black">{featuredCount}</div>
+          <div className="portfolio-accent-number text-3xl font-black" style={{ color: "var(--color-accent-c)" }}>{featuredCount}</div>
           <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-faint)]">Featured</div>
         </div>
       </div>
@@ -138,30 +138,32 @@ function ProjectCard({ project, index, onOpen }) {
         <h3 className="mb-1 text-xl font-black leading-tight text-[var(--color-text)]">{project.title}</h3>
         {project.desc && <p className="mb-4 line-clamp-2 text-xs leading-relaxed text-[var(--color-muted)]">{project.desc}</p>}
 
-        <div className="mb-4 flex flex-wrap gap-1.5">
-          {project.tech?.slice(0, 5).map((tool) => (
-            <span key={tool} className="portfolio-chip rounded-full px-2.5 py-1 text-[11px] font-semibold">
+<div className="mb-4 flex flex-wrap gap-1.5">
+          {project.tech?.slice(0, 5).map((tool, idx) => (
+            <span key={tool} className="rounded-full px-2.5 py-1 text-[11px] font-semibold" style={{ background: "var(--color-accent-soft)", border: "1px solid var(--color-accent-a)", color: "var(--color-accent-a)" }}>
               {tool}
             </span>
           ))}
         </div>
 
         <div className="flex gap-2">
-          <button
+<button
             type="button"
             onClick={() => onOpen(project)}
-            className="portfolio-primary-button inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-bold"
+            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-white"
+            style={{ background: "linear-gradient(135deg, var(--color-accent-a), var(--color-accent-b))" }}
           >
             Details
             <ArrowUpRight className="h-3.5 w-3.5" />
           </button>
-          {project.url && (
+{project.url && (
             <a
               href={project.url}
               target="_blank"
               rel="noreferrer"
               onClick={() => logLinkClick("project_github")}
-              className="portfolio-secondary-button inline-flex h-9 w-9 items-center justify-center rounded-xl transition-transform hover:-translate-y-0.5"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-xl transition-transform hover:-translate-y-0.5"
+              style={{ border: "1px solid var(--color-accent-a)", color: "var(--color-accent-a)" }}
               aria-label={`${project.title} source code`}
             >
               <Github className="h-4 w-4" />
@@ -173,7 +175,8 @@ function ProjectCard({ project, index, onOpen }) {
               target="_blank"
               rel="noreferrer"
               onClick={() => logLinkClick("project_live")}
-              className="portfolio-secondary-button inline-flex h-9 w-9 items-center justify-center rounded-xl transition-transform hover:-translate-y-0.5"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-xl transition-transform hover:-translate-y-0.5"
+              style={{ border: "1px solid var(--color-accent-c)", color: "var(--color-accent-c)" }}
               aria-label={`${project.title} live demo`}
             >
               <ExternalLink className="h-4 w-4" />
@@ -208,19 +211,20 @@ function SpotlightProject({ project, active, onOpen }) {
         {project.desc && <p className="mt-3 text-xl font-black leading-tight text-[var(--color-text)]">{project.desc}</p>}
         <p className="mt-4 line-clamp-7 text-sm leading-relaxed text-[var(--color-muted)]">{project.long || project.desc}</p>
 
-        <div className="mt-5 flex flex-wrap gap-2">
-          {project.tech?.slice(0, 8).map((tool) => (
-            <span key={tool} className="portfolio-chip rounded-full px-3 py-2 text-xs font-semibold">
+<div className="mt-5 flex flex-wrap gap-2">
+          {project.tech?.slice(0, 8).map((tool, idx) => (
+            <span key={tool} className="rounded-full px-3 py-2 text-xs font-semibold" style={{ background: "var(--color-accent-soft)", border: "1px solid var(--color-accent-a)", color: "var(--color-accent-a)" }}>
               {tool}
             </span>
           ))}
         </div>
 
-        <div className="mt-auto pt-6">
+<div className="mt-auto pt-6">
           <button
             type="button"
             onClick={() => onOpen(project)}
-            className="portfolio-primary-button inline-flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-bold sm:w-auto"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-bold text-white sm:w-auto"
+            style={{ background: "linear-gradient(135deg, var(--color-accent-a), var(--color-accent-b))" }}
           >
             Explore Project
             <ArrowUpRight className="h-4 w-4" />
@@ -261,23 +265,23 @@ function ProjectModal({ project, onClose }) {
             {project.desc && <p className="mt-2 text-sm font-semibold text-[var(--color-muted)]">{project.desc}</p>}
             <p className="mt-5 text-sm leading-relaxed text-[var(--color-muted)]">{project.long || project.desc}</p>
 
-            <div className="mt-6 flex flex-wrap gap-2">
-              {project.tech?.map((tool) => (
-                <span key={tool} className="portfolio-chip rounded-full px-3 py-2 text-xs font-semibold">
+<div className="mt-6 flex flex-wrap gap-2">
+              {project.tech?.map((tool, idx) => (
+                <span key={tool} className="rounded-full px-3 py-2 text-xs font-semibold" style={{ background: "var(--color-accent-soft)", border: "1px solid var(--color-accent-a)", color: "var(--color-accent-a)" }}>
                   {tool}
                 </span>
               ))}
             </div>
 
-            <div className="mt-7 grid gap-3 sm:grid-cols-2">
+<div className="mt-7 grid gap-3 sm:grid-cols-2">
               {project.live && (
-                <a href={project.live} target="_blank" rel="noreferrer" onClick={() => logLinkClick("project_live")} className="portfolio-primary-button inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-bold">
+                <a href={project.live} target="_blank" rel="noreferrer" onClick={() => logLinkClick("project_live")} className="inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-bold text-white" style={{ background: "linear-gradient(135deg, var(--color-accent-a), var(--color-accent-b))" }}>
                   <ExternalLink className="h-4 w-4" />
                   Live Demo
                 </a>
               )}
               {project.url && (
-                <a href={project.url} target="_blank" rel="noreferrer" onClick={() => logLinkClick("project_github")} className="portfolio-secondary-button inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-bold">
+                <a href={project.url} target="_blank" rel="noreferrer" onClick={() => logLinkClick("project_github")} className="inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-bold" style={{ border: "1px solid var(--color-accent-a)", color: "var(--color-accent-a)" }}>
                   <Github className="h-4 w-4" />
                   View Code
                 </a>
@@ -369,10 +373,10 @@ export default function Projects() {
                 setSpotlightIndex(0);
                 logLinkClick(`project_category_${category}`);
               }}
-              className={`shrink-0 rounded-full border px-4 py-2 text-sm font-bold transition-all ${
+className={`shrink-0 rounded-full border px-4 py-2 text-sm font-bold transition-all ${
                 active === category
-                  ? "border-[var(--color-text)] bg-[var(--color-text)] text-[var(--color-bg-strong)]"
-                  : "border-[var(--color-border)] bg-[var(--color-surface-muted)] text-[var(--color-muted)] hover:border-[var(--color-border-strong)] hover:text-[var(--color-text)]"
+                  ? "border-[var(--color-accent-a)] bg-[var(--color-accent-a)] text-white"
+                  : "border-[var(--color-border)] bg-[var(--color-surface-muted)] text-[var(--color-muted)] hover:border-[var(--color-accent-a)] hover:text-[var(--color-accent-a)]"
               }`}
             >
               {category}

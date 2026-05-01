@@ -485,9 +485,9 @@ export default function ResumeAdmin() {
   }, [])
 
   return (
-    <div className="w-screen h-screen crt-screen text-white">
+    <div className="admin-mobile-shell w-screen min-h-screen lg:h-screen crt-screen text-white overflow-y-auto lg:overflow-hidden">
       <CRTStyles />
-      <div className="p-6 flex flex-col h-full gap-4 relative z-10">
+      <div className="p-2 sm:p-3 md:p-6 flex flex-col min-h-full lg:h-full gap-2 sm:gap-3 md:gap-4 relative z-10 pb-16 lg:pb-0">
         <MotionDiv className="crt-panel flex justify-between items-center shrink-0">
           <div className="flex items-center gap-4">
             <h1 className="crt-text text-2xl font-bold">RESUME ADMIN PANEL</h1>

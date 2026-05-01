@@ -662,9 +662,9 @@ export default function CertificatesAdminPanel() {
      UI
   ================================== */
   return (
-    <div className="w-screen h-screen overflow-hidden crt-screen crt-glow">
+    <div className="admin-mobile-shell w-screen min-h-screen lg:h-screen lg:overflow-hidden crt-screen crt-glow">
       <CRTStyles />
-      <div className="w-full h-full flex flex-col p-4 gap-4">
+      <div className="w-full h-full flex flex-col p-2 sm:p-3 md:p-4 gap-2 sm:gap-3 md:gap-4 pb-16 lg:pb-4 overflow-y-auto lg:overflow-y-hidden">
         {/* Top Bar */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}

@@ -164,8 +164,8 @@ export default function BlogEditor() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 p-4 text-white sm:p-6">
-            <div className="max-w-7xl mx-auto">
+        <div className="admin-mobile-shell min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 p-2 sm:p-4 md:p-6 text-white overflow-y-auto">
+            <div className="w-full max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>

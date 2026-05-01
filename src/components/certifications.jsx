@@ -209,24 +209,24 @@ function CertificateCard({ item, index, onOpen }) {
       onClick={() => onOpen(item)}
       className="portfolio-panel group cursor-pointer rounded-2xl p-5 text-left"
     >
-      <div className="mb-5 flex items-start justify-between gap-4">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-strong)] text-[var(--color-text)]">
-          <FileBadge className="h-5 w-5" />
+<div className="mb-5 flex items-start justify-between gap-4">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border" style={{ borderColor: "var(--color-accent-a)", background: "var(--color-accent-soft)" }}>
+          <FileBadge className="h-5 w-5" style={{ color: "var(--color-accent-a)" }} />
         </span>
         <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-2.5 py-1 text-xs font-bold text-[var(--color-muted)]">
           {imageCount ? `${imageCount} image${imageCount > 1 ? "s" : ""}` : "No image"}
         </span>
       </div>
 
-      <div className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-faint)]">Milestone {index + 1}</div>
+<div className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: "var(--color-accent-a)" }}>Milestone {index + 1}</div>
       <h3 className="mt-2 text-lg font-black leading-tight text-[var(--color-text)]">{item.title}</h3>
 
-      <div className="mt-4 space-y-2 text-sm text-[var(--color-muted)]">
+<div className="mt-4 space-y-2 text-sm text-[var(--color-muted)]">
         <div className="flex items-center gap-2">
-          <Building2 className="h-4 w-4 shrink-0 text-[var(--color-faint)]" />
+          <Building2 className="h-4 w-4 shrink-0" style={{ color: "var(--color-accent-b)" }} />
           <span>{item.issuer}</span>
         </div>
-        <div className="flex items-center gap-2 text-xs text-[var(--color-faint)]">
+        <div className="flex items-center gap-2 text-xs" style={{ color: "var(--color-accent-c)" }}>
           <CalendarDays className="h-4 w-4 shrink-0" />
           <span>{item.date}</span>
         </div>
@@ -356,13 +356,13 @@ export default function CertificationsSection() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 sm:max-w-sm lg:ml-auto">
-            <div className="portfolio-panel rounded-2xl p-4">
-              <div className="text-3xl font-black text-[var(--color-text)]">{certificateData.categories.length}</div>
+<div className="grid grid-cols-2 gap-3 sm:max-w-sm lg:ml-auto">
+            <div className="portfolio-panel portfolio-panel-accent rounded-2xl p-4" style={{ "--accent-local": "var(--color-accent-a)" }}>
+              <div className="text-3xl font-black" style={{ color: "var(--color-accent-a)" }}>{certificateData.categories.length}</div>
               <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-faint)]">Groups</div>
             </div>
-            <div className="portfolio-panel rounded-2xl p-4">
-              <div className="text-3xl font-black text-[var(--color-text)]">{totalItems}</div>
+            <div className="portfolio-panel portfolio-panel-accent rounded-2xl p-4" style={{ "--accent-local": "var(--color-accent-c)" }}>
+              <div className="text-3xl font-black" style={{ color: "var(--color-accent-c)" }}>{totalItems}</div>
               <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-faint)]">Milestones</div>
             </div>
           </div>
@@ -376,10 +376,10 @@ export default function CertificationsSection() {
               onClick={() => handleCategoryChange(cat.id)}
               whileHover={{ y: -2 }}
               whileTap={{ scale: 0.98 }}
-              className={`flex items-center gap-2 rounded-full border px-5 py-2 text-sm font-bold transition-all ${
+className={`flex items-center gap-2 rounded-full border px-5 py-2 text-sm font-bold transition-all ${
                 active === cat.id
-                  ? "border-[var(--color-text)] bg-[var(--color-text)] text-[var(--color-bg-strong)]"
-                  : "border-[var(--color-border)] bg-[var(--color-surface-muted)] text-[var(--color-muted)] hover:text-[var(--color-text)]"
+                  ? "border-[var(--color-accent-a)] bg-[var(--color-accent-a)] text-white"
+                  : "border-[var(--color-border)] bg-[var(--color-surface-muted)] text-[var(--color-muted)] hover:border-[var(--color-accent-a)] hover:text-[var(--color-accent-a)]"
               }`}
             >
               {cat.iconNode}
@@ -413,13 +413,14 @@ export default function CertificationsSection() {
                 className="portfolio-panel absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-2xl"
               >
                 {certificateData.categories.map((cat) => (
-                  <button
+<button
                     key={cat.id}
                     type="button"
                     onClick={() => handleCategoryChange(cat.id)}
                     className={`flex w-full items-center gap-2 border-b border-[var(--color-border)] px-4 py-3 text-left text-sm font-bold last:border-b-0 ${
-                      active === cat.id ? "bg-[var(--color-text)] text-[var(--color-bg-strong)]" : "text-[var(--color-muted)]"
+                      active === cat.id ? "text-white" : "text-[var(--color-muted)]"
                     }`}
+                    style={active === cat.id ? { background: "linear-gradient(135deg, var(--color-accent-a), var(--color-accent-b))" } : {}}
                   >
                     {cat.iconNode}
                     {cat.label}

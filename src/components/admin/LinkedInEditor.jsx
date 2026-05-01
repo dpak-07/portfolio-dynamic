@@ -106,8 +106,8 @@ export default function LinkedInEditor() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-white p-6">
-            <div className="max-w-5xl mx-auto">
+        <div className="admin-mobile-shell min-h-screen bg-gradient-to-br from-slate-950 via-pink-950 to-slate-900 text-white p-2 sm:p-4 md:p-6 overflow-y-auto">
+            <div className="w-full max-w-5xl mx-auto">
                 {/* Header */}
                 <div className="flex justify-between items-center mb-8">
                     <div className="flex items-center gap-3">

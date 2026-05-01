@@ -78,15 +78,15 @@ const CRTStyles = () => (
       font-family: 'Courier New', monospace;
     }
     .crt-button {
-      background: linear-gradient(135deg, rgba(0,229,255,0.2), rgba(0,229,255,0.1));
-      border: 2px solid rgba(0,229,255,0.4);
-      box-shadow: 0 0 20px rgba(0,229,255,0.3), inset 0 0 10px rgba(0,229,255,0.1);
+      background: linear-gradient(135deg, rgba(0,229,255,0.3), rgba(255,0,255,0.1));
+      border: 2px solid rgba(0,229,255,0.5);
+      box-shadow: 0 0 20px rgba(0,229,255,0.4), inset 0 0 10px rgba(0,229,255,0.2);
       transition: all 0.3s ease;
     }
     .crt-button:hover {
-      background: linear-gradient(135deg, rgba(0,229,255,0.3), rgba(0,229,255,0.2));
-      border-color: rgba(0,229,255,0.6);
-      box-shadow: 0 0 30px rgba(0,229,255,0.5), inset 0 0 15px rgba(0,229,255,0.2);
+      background: linear-gradient(135deg, rgba(255,0,255,0.3), rgba(0,229,255,0.3));
+      border-color: rgba(255,0,255,0.8);
+      box-shadow: 0 0 30px rgba(255,0,255,0.6), inset 0 0 15px rgba(255,0,255,0.3);
       transform: translateY(-2px);
     }
     .crt-button:disabled {
@@ -94,20 +94,20 @@ const CRTStyles = () => (
       cursor: not-allowed;
     }
     .crt-input {
-      background: rgba(0,0,0,0.6);
-      border: 2px solid rgba(0,229,255,0.3);
+      background: rgba(0,0,0,0.7);
+      border: 2px solid rgba(0,229,255,0.4);
       color: #00e5ff;
-      box-shadow: inset 0 0 20px rgba(0,229,255,0.1);
+      box-shadow: inset 0 0 20px rgba(0,229,255,0.15);
     }
     .crt-input:focus {
       outline: none;
-      border-color: rgba(0,229,255,0.6);
-      box-shadow: 0 0 20px rgba(0,229,255,0.3), inset 0 0 20px rgba(0,229,255,0.2);
+      border-color: rgba(255,0,255,0.8);
+      box-shadow: 0 0 30px rgba(255,0,255,0.5), inset 0 0 20px rgba(255,0,255,0.2);
     }
     .crt-panel {
-      background: linear-gradient(135deg, rgba(0,20,30,0.95), rgba(0,10,20,0.98));
-      border: 2px solid rgba(0,229,255,0.3);
-      box-shadow: 0 0 30px rgba(0,229,255,0.2), inset 0 0 30px rgba(0,0,0,0.5);
+      background: linear-gradient(135deg, rgba(0,20,30,0.98), rgba(0,10,20,0.95));
+      border: 2px solid rgba(0,229,255,0.5);
+      box-shadow: 0 0 40px rgba(0,229,255,0.3), inset 0 0 30px rgba(0,0,0,0.5);
     }
     .crt-header {
       animation: textGlow 2s infinite;
@@ -123,13 +123,14 @@ const CRTStyles = () => (
     .hide-scrollbar::-webkit-scrollbar { width: 8px; }
     .hide-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
     .hide-scrollbar::-webkit-scrollbar-thumb { 
-      background: rgba(0,229,255,0.3); 
+      background: linear-gradient(180deg, rgba(0,229,255,0.5), rgba(255,0,255,0.5)); 
       border-radius: 4px;
     }
-    .hide-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(0,229,255,0.5); }
-    .status-success { color: #4ade80; text-shadow: 0 0 10px rgba(74,222,128,0.6); }
-    .status-error { color: #f87171; text-shadow: 0 0 10px rgba(248,113,113,0.6); }
-    .status-info { color: #60a5fa; text-shadow: 0 0 10px rgba(96,165,250,0.6); }
+    .hide-scrollbar::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, rgba(255,0,255,0.7), rgba(251,191,36,0.7)); }
+    .status-success { color: #4ade80; text-shadow: 0 0 15px rgba(74,222,128,0.8); }
+    .status-error { color: #f87171; text-shadow: 0 0 15px rgba(248,113,113,0.8); }
+    .status-info { color: #60a5fa; text-shadow: 0 0 15px rgba(96,165,250,0.8); }
+    .status-warning { color: #fbbf24; text-shadow: 0 0 15px rgba(251,191,36,0.8); }
   `}</style>
 );
 
@@ -601,10 +602,10 @@ export default function CRTAdminPanel() {
   }
 
   return (
-    <div className="w-screen h-screen overflow-hidden crt-screen crt-glow">
+    <div className="admin-mobile-shell w-screen min-h-screen lg:h-screen lg:overflow-hidden crt-screen crt-glow">
       <CRTStyles />
 
-      <div className="w-full h-full flex flex-col p-4 gap-4">
+      <div className="w-full h-full flex flex-col p-2 sm:p-3 md:p-4 gap-2 sm:gap-3 md:gap-4 pb-16 lg:pb-4 overflow-y-auto lg:overflow-y-hidden">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}

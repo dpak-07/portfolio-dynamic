@@ -63,9 +63,9 @@ const CRTStyles = () => (
     }
     .crt-glow {
       box-shadow: 
-        inset 0 0 100px rgba(0,229,255,0.1),
-        inset 0 0 50px rgba(0,229,255,0.05),
-        0 0 50px rgba(0,229,255,0.2);
+        inset 0 0 100px rgba(0,229,255,0.2),
+        inset 0 0 50px rgba(0,229,255,0.1),
+        0 0 50px rgba(0,229,255,0.3);
     }
     .crt-text {
       color: #00e5ff;
@@ -73,9 +73,9 @@ const CRTStyles = () => (
       font-family: 'Courier New', monospace;
     }
     .crt-button {
-      background: linear-gradient(135deg, rgba(0,229,255,0.2), rgba(0,229,255,0.1));
-      border: 2px solid rgba(0,229,255,0.4);
-      box-shadow: 0 0 20px rgba(0,229,255,0.3), inset 0 0 10px rgba(0,229,255,0.1);
+      background: linear-gradient(135deg, rgba(0,229,255,0.3), rgba(255,0,255,0.1));
+      border: 2px solid rgba(0,229,255,0.5);
+      box-shadow: 0 0 20px rgba(0,229,255,0.4), inset 0 0 10px rgba(0,229,255,0.2);
       transition: all 0.3s ease;
     }
     .crt-button:hover {
@@ -1001,10 +1001,10 @@ export default function ProjectsAdminCRT() {
   }
 
   return (
-    <div className="w-screen h-screen overflow-hidden crt-screen crt-glow">
+    <div className="admin-mobile-shell w-screen min-h-screen lg:h-screen lg:overflow-hidden crt-screen crt-glow">
       <CRTStyles />
 
-      <div className="w-full h-full flex flex-col p-4 gap-4">
+      <div className="w-full h-full flex flex-col p-2 sm:p-3 md:p-4 gap-2 sm:gap-3 md:gap-4 pb-16 lg:pb-4 overflow-y-auto lg:overflow-y-hidden">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
