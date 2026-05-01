@@ -22,7 +22,7 @@ const db = getFirestore(app);
    🎛️ Load Control Flags
    Set to true to load that collection, false to skip
 ------------------------------------------------------- */
-const LOAD_FLAGS = {
+const DEFAULT_LOAD_FLAGS = {
   admin: false,
   sections: true,
   profile: false,
@@ -42,6 +42,43 @@ const LOAD_FLAGS = {
 /* -------------------------------------------------------
    🧩 Admin Data
 ------------------------------------------------------- */
+function resolveLoadFlags() {
+  const requestedCollections = (process.env.SEED_COLLECTIONS || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  if (requestedCollections.length === 0) {
+    return { ...DEFAULT_LOAD_FLAGS };
+  }
+
+  const flags = Object.fromEntries(Object.keys(DEFAULT_LOAD_FLAGS).map((key) => [key, false]));
+  const aliases = {
+    tech: "techStack",
+    techstack: "techStack",
+    "tech-stack": "techStack",
+    project: "projects",
+    aboutpage: "about",
+  };
+
+  requestedCollections.forEach((collection) => {
+    const normalized = collection.replace(/[^a-zA-Z0-9-]/g, "").toLowerCase();
+    const target =
+      aliases[normalized] ||
+      Object.keys(DEFAULT_LOAD_FLAGS).find((key) => key.toLowerCase() === normalized);
+
+    if (!target || !(target in flags)) {
+      throw new Error(`Unknown SEED_COLLECTIONS entry: ${collection}`);
+    }
+
+    flags[target] = true;
+  });
+
+  return flags;
+}
+
+const LOAD_FLAGS = resolveLoadFlags();
+
 const adminData = {
   user: "deepak",
   password: "",

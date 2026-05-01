@@ -27,6 +27,11 @@
   --color-accent: #4b5563;
   --color-accent-soft: rgba(17, 24, 39, 0.08);
   --color-accent-strong: #111827;
+  --color-accent-a: #06b6d4;
+  --color-accent-b: #8b5cf6;
+  --color-accent-c: #f97316;
+  --color-accent-d: #22c55e;
+  --color-accent-e: #ec4899;
   --color-warm: #6b7280;
   --shadow-elevated: 0 18px 50px rgba(17, 24, 39, 0.14);
   --shadow-soft: 0 10px 30px rgba(17, 24, 39, 0.08);
@@ -50,6 +55,11 @@
   --color-accent: #d1d5db;
   --color-accent-soft: rgba(249, 250, 251, 0.08);
   --color-accent-strong: #ffffff;
+  --color-accent-a: #22d3ee;
+  --color-accent-b: #a78bfa;
+  --color-accent-c: #fb923c;
+  --color-accent-d: #4ade80;
+  --color-accent-e: #f472b6;
   --color-warm: #9ca3af;
   --shadow-elevated: 0 20px 60px rgba(0, 0, 0, 0.36);
   --shadow-soft: 0 12px 34px rgba(0, 0, 0, 0.24);
@@ -327,10 +337,53 @@ body::before {
   color: transparent;
 }
 
+.portfolio-rainbow-text {
+  background-image: linear-gradient(
+    90deg,
+    var(--color-text) 0%,
+    var(--color-accent-a) 28%,
+    var(--color-accent-b) 50%,
+    var(--color-accent-c) 72%,
+    var(--color-text) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
 .portfolio-panel {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow-soft);
+}
+
+.portfolio-panel-accent {
+  position: relative;
+  overflow: hidden;
+}
+
+.portfolio-panel-accent::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: linear-gradient(180deg, var(--accent-local, var(--color-accent-a)), transparent 88%);
+  opacity: 0.95;
+}
+
+.portfolio-accent-icon {
+  color: var(--accent-local, var(--color-accent-a));
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent-local, var(--color-accent-a)) 16%, transparent), transparent 70%),
+    var(--color-bg-strong);
+}
+
+.portfolio-accent-number {
+  color: var(--accent-local, var(--color-accent-a));
+}
+
+.portfolio-accent-bar {
+  background: linear-gradient(90deg, var(--color-accent-a), var(--color-accent-b), var(--color-accent-c));
 }
 
 .portfolio-panel-muted {

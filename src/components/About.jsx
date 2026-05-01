@@ -120,17 +120,19 @@ function Badge({ children }) {
 
 function HighlightCard({ card, index }) {
   const Icon = iconMap[card.icon] || FaCompass;
+  const accents = ["var(--color-accent-a)", "var(--color-accent-b)", "var(--color-accent-c)", "var(--color-accent-d)"];
 
   return (
     <motion.article
       variants={itemVariants}
       whileHover={{ y: -5 }}
-      className="portfolio-panel rounded-2xl p-4"
+      style={{ "--accent-local": accents[index % accents.length] }}
+      className="portfolio-panel portfolio-panel-accent rounded-2xl p-4"
     >
-      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-strong)] text-[var(--color-text)]">
+      <div className="portfolio-accent-icon mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--color-border)]">
         <Icon className="h-4 w-4" />
       </div>
-      <div className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-faint)]">0{index + 1}</div>
+      <div className="portfolio-accent-number text-xs font-bold uppercase tracking-[0.16em]">0{index + 1}</div>
       <h3 className="mt-1 text-base font-black text-[var(--color-text)]">{card.title}</h3>
       <p className="mt-2 text-sm leading-relaxed text-[var(--color-muted)]">{card.short || card.long}</p>
     </motion.article>
@@ -188,14 +190,14 @@ export default function AboutWithDriveImage({ overrideConfig }) {
           </motion.div>
         )}
 
-        <div className="grid gap-8 lg:grid-cols-[1fr_0.86fr] lg:items-start xl:gap-12">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.58fr)] lg:items-start xl:gap-12">
           <div>
             <motion.div variants={itemVariants} className="mb-6">
               <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-soft)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-faint)]">
                 <FaLayerGroup className="h-3.5 w-3.5" />
                 About Me
               </div>
-              <h2 className="portfolio-gradient-text text-4xl font-extrabold leading-tight sm:text-5xl lg:text-6xl">
+              <h2 className="portfolio-rainbow-text text-4xl font-extrabold leading-tight sm:text-5xl lg:text-6xl">
                 Building useful systems with clean product thinking.
               </h2>
               <p className="mt-5 max-w-3xl text-base leading-8 text-[var(--color-muted)] sm:text-lg">
@@ -210,9 +212,13 @@ export default function AboutWithDriveImage({ overrideConfig }) {
             </motion.div>
 
             <motion.div variants={itemVariants} className="mb-7 grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {counters.map((counter) => (
-                <div key={counter.id || counter.label} className="portfolio-panel rounded-2xl p-4">
-                  <div className="text-3xl font-black text-[var(--color-text)]">{counter.value}</div>
+              {counters.map((counter, index) => (
+                <div
+                  key={counter.id || counter.label}
+                  style={{ "--accent-local": ["var(--color-accent-a)", "var(--color-accent-b)", "var(--color-accent-c)"][index % 3] }}
+                  className="portfolio-panel portfolio-panel-accent rounded-2xl p-4"
+                >
+                  <div className="portfolio-accent-number text-3xl font-black">{counter.value}</div>
                   <div className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-faint)]">{counter.label}</div>
                 </div>
               ))}
@@ -264,7 +270,7 @@ export default function AboutWithDriveImage({ overrideConfig }) {
             </motion.div>
           </div>
 
-          <div className="grid gap-4">
+          <div className="grid gap-4 lg:sticky lg:top-24">
             <motion.aside variants={itemVariants} className="portfolio-panel overflow-hidden rounded-2xl">
               <div className="relative aspect-[4/5] bg-[var(--color-surface-muted)] sm:aspect-[5/4] lg:aspect-[4/5]">
                 {imageUrl && !imgFailed ? (
@@ -301,21 +307,21 @@ export default function AboutWithDriveImage({ overrideConfig }) {
                 <span>Chennai, India</span>
               </div>
             </motion.div>
-
-            <motion.div variants={itemVariants} className="grid gap-3 sm:grid-cols-2">
-              {cards.slice(0, 4).map((card, index) => (
-                <HighlightCard key={card.id || card.title} card={card} index={index} />
-              ))}
-            </motion.div>
-
-            <motion.div variants={itemVariants} className="portfolio-panel rounded-2xl p-5">
-              <h3 className="text-sm font-black uppercase tracking-[0.16em] text-[var(--color-text)]">Interests</h3>
-              <p className="mt-3 text-sm leading-relaxed text-[var(--color-muted)]">
-                {interests || "Computer Vision, NLP, Cloud AI, MLOps, full-stack systems, and product design."}
-              </p>
-            </motion.div>
           </div>
         </div>
+
+        <motion.div variants={itemVariants} className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {cards.slice(0, 4).map((card, index) => (
+            <HighlightCard key={card.id || card.title} card={card} index={index} />
+          ))}
+        </motion.div>
+
+        <motion.div variants={itemVariants} className="portfolio-panel mt-3 rounded-2xl p-5">
+          <h3 className="text-sm font-black uppercase tracking-[0.16em] text-[var(--color-text)]">Interests</h3>
+          <p className="mt-3 text-sm leading-relaxed text-[var(--color-muted)]">
+            {interests || "Computer Vision, NLP, Cloud AI, MLOps, full-stack systems, and product design."}
+          </p>
+        </motion.div>
       </div>
     </motion.section>
   );

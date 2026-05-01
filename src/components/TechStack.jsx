@@ -356,7 +356,7 @@ export default function SkillsSection() {
               <FaCode className="h-3.5 w-3.5" />
               Skills Showcase
             </div>
-            <h2 id="skills-title" className="portfolio-gradient-text text-4xl font-extrabold leading-tight sm:text-5xl">
+            <h2 id="skills-title" className="portfolio-rainbow-text text-4xl font-extrabold leading-tight sm:text-5xl">
               Clean, focused tech stack
             </h2>
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[var(--color-muted)] sm:text-base">
@@ -365,12 +365,12 @@ export default function SkillsSection() {
           </div>
 
           <div className="grid grid-cols-2 gap-3 sm:max-w-sm lg:ml-auto">
-            <div className="portfolio-panel rounded-2xl p-4">
-              <div className="text-3xl font-black text-[var(--color-text)]">{categories.length}</div>
+            <div className="portfolio-panel portfolio-panel-accent rounded-2xl p-4" style={{ "--accent-local": "var(--color-accent-b)" }}>
+              <div className="portfolio-accent-number text-3xl font-black">{categories.length}</div>
               <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-faint)]">Categories</div>
             </div>
-            <div className="portfolio-panel rounded-2xl p-4">
-              <div className="text-3xl font-black text-[var(--color-text)]">{totalTools}</div>
+            <div className="portfolio-panel portfolio-panel-accent rounded-2xl p-4" style={{ "--accent-local": "var(--color-accent-d)" }}>
+              <div className="portfolio-accent-number text-3xl font-black">{totalTools}</div>
               <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-faint)]">Unique Tools</div>
             </div>
           </div>
@@ -388,10 +388,11 @@ export default function SkillsSection() {
                 viewport={{ once: true, amount: 0.2 }}
                 transition={{ delay: categoryIndex * 0.04, duration: 0.32 }}
                 whileHover={{ y: -6 }}
-                className="portfolio-panel group flex min-h-[23rem] flex-col rounded-2xl p-5 transition-shadow hover:shadow-[var(--shadow-elevated)]"
+                style={{ "--accent-local": ["var(--color-accent-a)", "var(--color-accent-b)", "var(--color-accent-c)", "var(--color-accent-d)", "var(--color-accent-e)"][categoryIndex % 5] }}
+                className="portfolio-panel portfolio-panel-accent group flex min-h-[23rem] flex-col rounded-2xl p-5 transition-shadow hover:shadow-[var(--shadow-elevated)]"
               >
                 <div className="mb-5 flex items-start justify-between gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-strong)] text-[var(--color-text)] shadow-sm">
+                  <div className="portfolio-accent-icon flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[var(--color-border)] shadow-sm">
                     <CategoryIcon className="h-5 w-5" />
                   </div>
                   <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-2.5 py-1 text-xs font-bold text-[var(--color-muted)]">
@@ -409,7 +410,7 @@ export default function SkillsSection() {
                   </div>
                   <div className="h-2 overflow-hidden rounded-full bg-[var(--color-surface-muted)]">
                     <motion.div
-                      className="h-full rounded-full bg-[var(--color-text)]"
+                      className="portfolio-accent-bar h-full rounded-full"
                       initial={{ width: 0 }}
                       whileInView={{ width: `${category.proficiency}%` }}
                       viewport={{ once: true }}
@@ -430,7 +431,7 @@ export default function SkillsSection() {
                         transition={{ delay: toolIndex * 0.025 }}
                         className="flex min-h-11 items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3 py-2 text-[var(--color-text)] transition-colors group-hover:bg-[var(--color-bg-strong)]"
                       >
-                        <ToolIcon className="h-4 w-4 shrink-0 text-[var(--color-muted)]" />
+                        <ToolIcon className="h-4 w-4 shrink-0 text-[var(--accent-local)]" />
                         <span className="min-w-0 break-words text-xs font-bold leading-tight">{tool.label}</span>
                       </motion.div>
                     );

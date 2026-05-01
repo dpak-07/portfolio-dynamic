@@ -90,7 +90,7 @@ function SectionHeader({ totalProjects, featuredCount }) {
           <FolderKanban className="h-3.5 w-3.5" />
           Project Gallery
         </div>
-        <h2 className="portfolio-gradient-text text-4xl font-extrabold leading-tight sm:text-5xl">
+        <h2 className="portfolio-rainbow-text text-4xl font-extrabold leading-tight sm:text-5xl">
           Selected work, shipped with intent
         </h2>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[var(--color-muted)] sm:text-base">
@@ -99,12 +99,12 @@ function SectionHeader({ totalProjects, featuredCount }) {
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:max-w-sm lg:ml-auto">
-        <div className="portfolio-panel rounded-2xl p-4">
-          <div className="text-3xl font-black text-[var(--color-text)]">{totalProjects}</div>
+        <div className="portfolio-panel portfolio-panel-accent rounded-2xl p-4" style={{ "--accent-local": "var(--color-accent-a)" }}>
+          <div className="portfolio-accent-number text-3xl font-black">{totalProjects}</div>
           <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-faint)]">Projects</div>
         </div>
-        <div className="portfolio-panel rounded-2xl p-4">
-          <div className="text-3xl font-black text-[var(--color-text)]">{featuredCount}</div>
+        <div className="portfolio-panel portfolio-panel-accent rounded-2xl p-4" style={{ "--accent-local": "var(--color-accent-c)" }}>
+          <div className="portfolio-accent-number text-3xl font-black">{featuredCount}</div>
           <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-faint)]">Featured</div>
         </div>
       </div>
@@ -127,7 +127,7 @@ function ProjectCard({ project, index, onOpen }) {
           <ProjectImage project={project} compact />
           <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/72 to-transparent" />
           {project.featured && (
-            <div className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-black text-zinc-950 shadow-sm">
+            <div className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-white/92 px-2.5 py-1 text-[11px] font-black text-zinc-950 shadow-sm">
               <Star className="h-3.5 w-3.5 fill-zinc-950" />
               Featured
             </div>
