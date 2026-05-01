@@ -46,13 +46,13 @@ const CRTStyles = () => (
 // Default configuration matching your seed.js structure
 const defaultConfig = {
   techStackData: [
-    { title: "Programming Languages", color: "from-zinc-700 to-zinc-500", tech: ["Python", "C", "C++", "Java", "JavaScript", "TypeScript", "Dart"] },
-    { title: "Frontend & Mobile Development", color: "from-zinc-800 to-zinc-500", tech: ["HTML5", "CSS3", "React.js", "Next.js", "React Native", "Flutter", "Tailwind CSS", "Bootstrap", "Vite", "Android", "iOS"] },
-    { title: "Backend Development", color: "from-zinc-700 to-neutral-500", tech: ["Node.js", "Express.js", "Flask", "Django", "FastAPI", "Spring Boot"] },
-    { title: "Databases", color: "from-neutral-700 to-zinc-500", tech: ["MongoDB", "MySQL", "SQLite", "PostgreSQL", "Firebase", "Firestore"] },
-    { title: "Cloud & DevOps", color: "from-slate-800 to-slate-500", tech: ["AWS EC2", "AWS S3", "Docker", "Git", "GitHub", "Linux"] },
-    { title: "AI & Machine Learning", color: "from-zinc-900 to-zinc-500", tech: ["TensorFlow", "PyTorch", "OpenCV", "Keras", "NumPy", "Pandas", "Scikit-learn"] },
-    { title: "Design & Productivity", color: "from-slate-400 to-zinc-500", tech: ["VS Code", "Figma", "Postman"] },
+    { title: "Programming Languages", color: "from-zinc-700 to-zinc-500", proficiency: 86, tech: ["Python", "C", "C++", "Java", "JavaScript", "TypeScript", "Dart"] },
+    { title: "Frontend & Mobile Development", color: "from-zinc-800 to-zinc-500", proficiency: 91, tech: ["HTML5", "CSS3", "React.js", "Next.js", "React Native", "Flutter", "Tailwind CSS", "Bootstrap", "Vite", "Android", "iOS"] },
+    { title: "Backend Development", color: "from-zinc-700 to-neutral-500", proficiency: 84, tech: ["Node.js", "Express.js", "Flask", "Django", "FastAPI", "Spring Boot"] },
+    { title: "Databases", color: "from-neutral-700 to-zinc-500", proficiency: 80, tech: ["MongoDB", "MySQL", "SQLite", "PostgreSQL", "Firebase", "Firestore"] },
+    { title: "Cloud & DevOps", color: "from-slate-800 to-slate-500", proficiency: 78, tech: ["AWS EC2", "AWS S3", "Docker", "Git", "GitHub", "Linux"] },
+    { title: "AI & Machine Learning", color: "from-zinc-900 to-zinc-500", proficiency: 82, tech: ["TensorFlow", "PyTorch", "OpenCV", "Keras", "NumPy", "Pandas", "Scikit-learn"] },
+    { title: "Design & Productivity", color: "from-slate-400 to-zinc-500", proficiency: 88, tech: ["VS Code", "Figma", "Postman"] },
   ],
   lastUpdated: new Date().toISOString(),
   updatedBy: "deepak",
@@ -72,6 +72,7 @@ function normalizeTechStackData(data) {
       techStackData: data.techStackData.map(cat => ({
         title: cat.title || "Untitled Category",
         color: cat.color || "from-cyan-400 to-blue-400",
+        proficiency: cat.proficiency !== undefined ? Number(cat.proficiency) : 80,
         tech: Array.isArray(cat.tech) ? cat.tech : []
       }))
     };
@@ -450,7 +451,7 @@ export default function TechStackAdmin() {
       if (!copy.techStackData) {
         copy.techStackData = [];
       }
-      copy.techStackData.push({ title: "New Category", color: "from-cyan-400 to-blue-400", tech: [] });
+      copy.techStackData.push({ title: "New Category", color: "from-cyan-400 to-blue-400", proficiency: 80, tech: [] });
       return copy;
     });
   }, []);
@@ -517,6 +518,15 @@ export default function TechStackAdmin() {
     });
   }, []);
 
+  const updateCategoryProficiency = useCallback((idx, value) => {
+    setDraft(prevDraft => {
+      if (!prevDraft || !prevDraft.techStackData || !prevDraft.techStackData[idx]) return prevDraft;
+      const copy = JSON.parse(JSON.stringify(prevDraft));
+      copy.techStackData[idx].proficiency = Math.min(100, Math.max(0, Number(value) || 0));
+      return copy;
+    });
+  }, []);
+
   if (!draft) {
     return (
       <div className="w-screen h-screen crt-screen crt-glow flex items-center justify-center">
@@ -536,19 +546,19 @@ export default function TechStackAdmin() {
   const activeCat = Number.isInteger(activeCatIndex) && categories[activeCatIndex] ? categories[activeCatIndex] : null;
 
   return (
-    <div className="w-screen h-screen overflow-hidden crt-screen crt-glow">
+    <div className="w-screen min-h-screen lg:h-screen lg:overflow-hidden crt-screen crt-glow">
       <CRTStyles />
       
-      <div className="w-full h-full flex flex-col p-4 gap-4">
+      <div className="w-full h-full flex flex-col p-2 sm:p-4 gap-2 sm:gap-4 pb-16 lg:pb-4">
         <motion.div 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="crt-panel rounded-lg p-4"
+          className="crt-panel rounded-lg p-3 sm:p-4"
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <h1 className="text-2xl font-bold crt-text">
-                TECH STACK ADMIN TERMINAL
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-base sm:text-2xl font-bold crt-text">
+                TECH STACK ADMIN
               </h1>
               <div className="text-xs crt-text opacity-60">v2.0.1</div>
               <div className="flex items-center gap-2">
@@ -612,17 +622,17 @@ export default function TechStackAdmin() {
           </div>
         </motion.div>
 
-        <div className="flex-1 flex gap-4 overflow-hidden">
+        <div className="flex-1 flex flex-col lg:flex-row gap-2 sm:gap-4 overflow-hidden">
           {!previewMode ? (
             <>
               <motion.div 
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="w-64 crt-panel rounded-lg p-4 flex flex-col gap-4"
+                className="w-full lg:w-64 crt-panel rounded-lg p-3 sm:p-4 flex flex-row lg:flex-col gap-3 sm:gap-4 overflow-x-auto lg:overflow-x-visible"
               >
                 <div>
-                  <h3 className="text-sm crt-text mb-3 opacity-60">NAVIGATION</h3>
-                  <div className="space-y-2">
+                  <h3 className="text-sm crt-text mb-2 lg:mb-3 opacity-60 hidden lg:block">NAVIGATION</h3>
+                  <div className="flex flex-row lg:flex-col gap-2 flex-shrink-0">
                     {sidebarTabs.map((tabKey, i) => {
                       const isActive = activeTab === tabKey;
                       const label =
@@ -634,7 +644,7 @@ export default function TechStackAdmin() {
                           key={i}
                           whileHover={{ x: 5 }}
                           onClick={() => setActiveTab(tabKey)}
-                          className={`w-full text-left px-3 py-2 rounded transition-all ${
+                          className={`whitespace-nowrap lg:whitespace-normal w-auto lg:w-full text-left px-3 py-2 rounded transition-all text-sm ${
                             isActive ? "crt-button crt-text" : "text-cyan-400/60 hover:text-cyan-400"
                           }`}
                         >
@@ -645,9 +655,9 @@ export default function TechStackAdmin() {
                   </div>
                 </div>
 
-                <div className="flex-1" />
+                <div className="hidden lg:block flex-1" />
 
-                <div>
+                <div className="hidden lg:block">
                   <h3 className="text-sm crt-text mb-3 opacity-60">ACTIONS</h3>
                   <div className="space-y-2">
                     <button 
@@ -674,7 +684,7 @@ export default function TechStackAdmin() {
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex-1 crt-panel rounded-lg p-6 overflow-hidden"
+                className="flex-1 crt-panel rounded-lg p-3 sm:p-6 overflow-hidden"
               >
                 <div className="h-full overflow-y-auto hide-scrollbar">
                   <AnimatePresence mode="wait">
@@ -888,6 +898,27 @@ export default function TechStackAdmin() {
             </motion.div>
           )}
         </div>
+      </div>
+
+      {/* Mobile floating action bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 flex lg:hidden items-center justify-around gap-2 p-3 bg-[rgba(0,10,20,0.96)] border-t-2 border-cyan-500/30">
+        <button
+          onClick={initiateSaveConfirmation}
+          disabled={!hasChanges}
+          className="crt-button px-3 py-2 rounded crt-text flex items-center gap-1.5 text-xs"
+        >
+          <Save size={14} /> SAVE
+        </button>
+        <button onClick={exportJson} className="crt-button px-3 py-2 rounded crt-text flex items-center gap-1.5 text-xs">
+          <Download size={14} /> EXPORT
+        </button>
+        <button onClick={resetToDefault} className="crt-button px-3 py-2 rounded crt-text flex items-center gap-1.5 text-xs">
+          <RotateCcw size={14} /> RESET
+        </button>
+        <label className="crt-button px-3 py-2 rounded crt-text flex items-center gap-1.5 text-xs cursor-pointer">
+          <Upload size={14} /> IMPORT
+          <input type="file" accept=".json" onChange={importJson} className="hidden" />
+        </label>
       </div>
 
       {/* Changes confirmation modal */}

@@ -44,17 +44,17 @@ const iconMap = {
 };
 
 const ACCENT_HEX = {
-  blue: "#d1d5db",
-  orange: "#a3a3a3",
-  emerald: "#e5e7eb",
-  fuchsia: "#9ca3af",
-  violet: "#d4d4d8",
-  indigo: "#a1a1aa",
-  cyan: "#f5f5f5",
-  rose: "#b3b3b3",
+  blue: "#3b82f6",
+  orange: "#f97316",
+  emerald: "#10b981",
+  fuchsia: "#d946ef",
+  violet: "#8b5cf6",
+  indigo: "#6366f1",
+  cyan: "#06b6d4",
+  rose: "#f43f5e",
 };
 
-const ACCENTS = ["#f5f5f5", "#d1d5db", "#a3a3a3", "#e5e7eb", "#9ca3af", "#fafafa"];
+const ACCENTS = ["#06b6d4", "#8b5cf6", "#f97316", "#10b981", "#f43f5e", "#6366f1"];
 const MotionArticle = motion.article;
 const MotionDiv = motion.div;
 
@@ -248,7 +248,7 @@ export default function AutoScrollCarouselTimeline() {
                     className={`portfolio-panel relative block rounded-lg p-4 text-left transition-transform hover:-translate-y-1 sm:p-5 ${alignRight ? "sm:col-start-2" : "sm:col-start-1"}`}
                   >
                     <div className="mb-3 flex items-center justify-between gap-3">
-                      <span className="rounded-full px-3 py-1 text-xs font-black text-slate-950" style={{ backgroundColor: accent }}>
+                      <span className="rounded-full px-3 py-1 text-xs font-black text-white" style={{ backgroundColor: accent }}>
                         {event.year}
                       </span>
                       <span className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--color-faint)]">{event.period}</span>

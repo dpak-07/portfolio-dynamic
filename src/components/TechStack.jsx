@@ -219,7 +219,7 @@ const ICON_BY_TECH = {
   postman: SiPostman,
 };
 
-const PROFICIENCY_BY_CATEGORY = {
+const DEFAULT_PROFICIENCY_BY_CATEGORY = {
   "Programming Languages": 86,
   "Frontend & Mobile Development": 91,
   "Backend Development": 84,
@@ -262,6 +262,15 @@ function normalizeCategories(firestoreData) {
   const grouped = new Map(CATEGORY_META.map((category) => [category.title, []]));
   const seen = new Set();
 
+  // Build a proficiency map from Firestore data (if available)
+  const firestoreProficiency = {};
+  source.forEach((category) => {
+    const title = normalizeTitle(category?.title);
+    if (category?.proficiency !== undefined && category?.proficiency !== null) {
+      firestoreProficiency[title] = Number(category.proficiency);
+    }
+  });
+
   source.forEach((category) => {
     const sourceTitle = normalizeTitle(category?.title);
     const tools = Array.isArray(category?.tech) ? category.tech : [];
@@ -283,7 +292,7 @@ function normalizeCategories(firestoreData) {
   return CATEGORY_META.map((meta) => ({
     ...meta,
     tools: grouped.get(meta.title) || [],
-    proficiency: PROFICIENCY_BY_CATEGORY[meta.title] || 78,
+    proficiency: firestoreProficiency[meta.title] ?? DEFAULT_PROFICIENCY_BY_CATEGORY[meta.title] ?? 78,
   })).filter((category) => category.tools.length > 0);
 }
 
@@ -376,7 +385,7 @@ export default function SkillsSection() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" style={{ gridAutoRows: 'auto' }}>
           {categories.map((category, categoryIndex) => {
             const CategoryIcon = category.Icon;
 
@@ -389,7 +398,7 @@ export default function SkillsSection() {
                 transition={{ delay: categoryIndex * 0.04, duration: 0.32 }}
                 whileHover={{ y: -6 }}
                 style={{ "--accent-local": ["var(--color-accent-a)", "var(--color-accent-b)", "var(--color-accent-c)", "var(--color-accent-d)", "var(--color-accent-e)"][categoryIndex % 5] }}
-                className="portfolio-panel portfolio-panel-accent group flex min-h-[23rem] flex-col rounded-2xl p-5 transition-shadow hover:shadow-[var(--shadow-elevated)]"
+                className="portfolio-panel portfolio-panel-accent group flex min-h-0 sm:min-h-[23rem] flex-col rounded-2xl p-4 sm:p-5 transition-shadow hover:shadow-[var(--shadow-elevated)]"
               >
                 <div className="mb-5 flex items-start justify-between gap-4">
                   <div className="portfolio-accent-icon flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[var(--color-border)] shadow-sm">
@@ -419,7 +428,7 @@ export default function SkillsSection() {
                   </div>
                 </div>
 
-                <div className="mt-5 grid grid-cols-2 gap-2">
+                <div className="mt-4 sm:mt-5 grid grid-cols-2 gap-1.5 sm:gap-2">
                   {category.tools.map((tool, toolIndex) => {
                     const ToolIcon = tool.Icon;
                     return (
@@ -429,7 +438,7 @@ export default function SkillsSection() {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ delay: toolIndex * 0.025 }}
-                        className="flex min-h-11 items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3 py-2 text-[var(--color-text)] transition-colors group-hover:bg-[var(--color-bg-strong)]"
+                        className="flex min-h-9 sm:min-h-11 items-center gap-1.5 sm:gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-2 sm:px-3 py-1.5 sm:py-2 text-[var(--color-text)] transition-colors group-hover:bg-[var(--color-bg-strong)]"
                       >
                         <ToolIcon className="h-4 w-4 shrink-0 text-[var(--accent-local)]" />
                         <span className="min-w-0 break-words text-xs font-bold leading-tight">{tool.label}</span>

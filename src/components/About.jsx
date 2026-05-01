@@ -216,7 +216,8 @@ export default function AboutWithDriveImage({ overrideConfig }) {
         )}
 
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.58fr)] lg:items-start xl:gap-12">
-          <div>
+          {/* Photo column - shown first on mobile via order */}
+          <div className="order-2 lg:order-1">
             <motion.div variants={itemVariants} className="mb-6">
               <div className="mb-4 inline-flex items-center gap-3 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-soft)] px-5 py-2 text-xl font-black uppercase tracking-[0.1em] text-[var(--color-text)] sm:text-2xl">
                 <FaLayerGroup className="h-5 w-5 text-[var(--color-accent-a)]" />
@@ -295,7 +296,7 @@ export default function AboutWithDriveImage({ overrideConfig }) {
             </motion.div>
           </div>
 
-          <div className="grid gap-4 lg:sticky lg:top-24">
+          <div className="order-1 lg:order-2 grid gap-4 lg:sticky lg:top-24">
             <motion.aside variants={itemVariants} className="portfolio-panel overflow-hidden rounded-2xl">
               <div className="relative aspect-[4/5] bg-[var(--color-surface-muted)] sm:aspect-[5/4] lg:aspect-[4/5]">
                 {imageUrl && !imgFailed ? (

@@ -313,6 +313,16 @@ const projectsData = {
     ],
     "Full-Stack Applications": [
       {
+        title: "CiviSense - Civic Issue Reporting Platform",
+        desc: "Full-Stack Monorepo with AI-Powered Civic Intelligence",
+        long: "CiviSense is a comprehensive civic issue reporting platform built as a monorepo with a Node.js/Express backend, FastAPI AI engine for priority scoring and duplicate detection, a React/Vite web app, and an Expo mobile app. Citizens can report local civic problems which are intelligently triaged using AI. Features JWT authentication, complaint routing, notifications, MongoDB integration, AWS S3, and GitHub Actions CI/CD pipeline.",
+        img: "",
+        tech: ["React", "Node.js", "Express", "FastAPI", "Python", "MongoDB", "Expo", "TypeScript", "AWS S3", "AI Integration", "CI/CD"],
+        url: "https://github.com/dpak-07/CIVISENSE",
+        live: null,
+        featured: true
+      },
+      {
         title: "Study Spark - AI Learning Platform",
         desc: "MERN Stack with Advanced AI Integration",
         long: "Comprehensive educational platform built with MERN stack featuring AI-powered teaching bot, intelligent content summarizer, interactive mind map generator, and Q&A system powered by Llama 3 model. Developed during VECT Hackelite 2025 hackathon with team collaboration. Designed to revolutionize learning experiences through cutting-edge AI capabilities.",
