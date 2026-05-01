@@ -713,22 +713,35 @@ export default function TechStackAdmin() {
                             </div>
                           ) : (
                             categories.map((cat, idx) => (
-                              <div key={`cat-${idx}`} className="crt-panel p-4 rounded">
-                                <div className="flex items-center gap-3 mb-3">
+<div key={`cat-${idx}`} className="crt-panel p-4 rounded">
+                                <div className="flex items-center gap-2 mb-3 flex-wrap">
                                   <Palette className="text-cyan-400 flex-shrink-0" size={18} />
                                   <input
                                     type="text"
                                     value={cat.title || ""}
                                     onChange={(e) => updateCategoryTitle(idx, e.target.value)}
-                                    className="crt-input px-3 py-1 rounded text-sm flex-1"
+                                    className="crt-input px-3 py-1 rounded text-sm flex-1 min-w-[120px]"
                                     placeholder="Category Title"
                                     autoComplete="off"
                                   />
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-xs text-cyan-400/60">%</span>
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      max="100"
+                                      value={cat.proficiency || 80}
+                                      onChange={(e) => updateCategoryProficiency(idx, e.target.value)}
+                                      className="crt-input px-2 py-1 rounded text-sm w-16 text-center"
+                                      placeholder="80"
+                                      autoComplete="off"
+                                    />
+                                  </div>
                                   <input
                                     type="text"
                                     value={cat.color || ""}
                                     onChange={(e) => updateCategoryColor(idx, e.target.value)}
-                                    className="crt-input px-3 py-1 rounded text-sm w-56"
+                                    className="crt-input px-3 py-1 rounded text-sm w-40 sm:w-56"
                                     placeholder="Tailwind Gradient"
                                     autoComplete="off"
                                   />

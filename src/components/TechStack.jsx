@@ -313,7 +313,7 @@ function StatusState({ sectionRef, error }) {
 export default function SkillsSection() {
   const sectionRef = useRef(null);
   const loggedOnce = useRef(false);
-  const inView = useInView(sectionRef, { once: true, amount: 0.14, margin: "-80px" });
+  const inView = useInView(sectionRef, { once: true, amount: 0.1, margin: "-50px" });
   const { data: firestoreData, loading, error } = useFirestoreData("techStack", "categories");
   const categories = useMemo(() => normalizeCategories(firestoreData), [firestoreData]);
   const totalTools = useMemo(() => new Set(categories.flatMap((category) => category.tools.map((tool) => tool.key))).size, [categories]);
@@ -346,12 +346,12 @@ export default function SkillsSection() {
     return <StatusState sectionRef={sectionRef} error={error} />;
   }
 
-  return (
+return (
     <section
       id="tech-stack"
       ref={sectionRef}
       aria-labelledby="skills-title"
-      className="relative overflow-hidden px-4 py-16 scroll-mt-24 sm:px-6 lg:px-8 lg:py-24"
+      className="relative overflow-hidden px-3 py-12 scroll-mt-20 sm:px-6 lg:px-8 lg:py-24"
     >
       <motion.div
         className="mx-auto max-w-7xl"
@@ -359,7 +359,7 @@ export default function SkillsSection() {
         animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 28 }}
         transition={{ duration: 0.45, ease: "easeOut" }}
       >
-        <div className="mb-10 grid gap-5 lg:grid-cols-[0.9fr_0.55fr] lg:items-end">
+        <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-[0.9fr_0.55fr] lg:items-end">
           <div>
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-soft)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-faint)]">
               <FaCode className="h-3.5 w-3.5" />
@@ -385,7 +385,7 @@ export default function SkillsSection() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" style={{ gridAutoRows: 'auto' }}>
+<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 overflow-x-hidden">
           {categories.map((category, categoryIndex) => {
             const CategoryIcon = category.Icon;
 
@@ -397,8 +397,8 @@ export default function SkillsSection() {
                 viewport={{ once: true, amount: 0.2 }}
                 transition={{ delay: categoryIndex * 0.04, duration: 0.32 }}
                 whileHover={{ y: -6 }}
-                style={{ "--accent-local": ["var(--color-accent-a)", "var(--color-accent-b)", "var(--color-accent-c)", "var(--color-accent-d)", "var(--color-accent-e)"][categoryIndex % 5] }}
-                className="portfolio-panel portfolio-panel-accent group flex min-h-0 sm:min-h-[23rem] flex-col rounded-2xl p-4 sm:p-5 transition-shadow hover:shadow-[var(--shadow-elevated)]"
+style={{ "--accent-local": ["var(--color-accent-a)", "var(--color-accent-b)", "var(--color-accent-c)", "var(--color-accent-d)", "var(--color-accent-e)"][categoryIndex % 5] }}
+                className="portfolio-panel portfolio-panel-accent group flex min-h-0 sm:min-h-[23rem] flex-col rounded-2xl p-3 sm:p-5 transition-shadow hover:shadow-[var(--shadow-elevated)]"
               >
                 <div className="mb-5 flex items-start justify-between gap-4">
                   <div className="portfolio-accent-icon flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[var(--color-border)] shadow-sm">
