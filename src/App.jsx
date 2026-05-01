@@ -27,7 +27,7 @@ import Contact from "./components/Contact";
 import Certifications from "./components/certifications";
 import TimelineSection from "./components/timeline";
 import Footer from "./components/Footer";
-import Loader from "./components/LoadingScreen";
+import Loader from "./components/ModernLoadingScreen";
 import OfflinePage from "./components/offiline";
 
 import AdminLogin from "./components/admin/adminlogin";

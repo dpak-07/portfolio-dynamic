@@ -66,23 +66,9 @@ export default function ModernLoadingScreen() {
                 </div>
             )}
 
-            {/* Main Content */}
+{/* Main Content */}
             <div className="relative z-10 flex flex-col items-center gap-6">
-                {/* Logo/Icon - Simple D */}
-                <motion.div
-                    initial={{ scale: 0, rotate: -180 }}
-                    animate={{ scale: 1, rotate: 0 }}
-                    transition={{ duration: 0.6, type: "spring", bounce: 0.5 }}
-                    className={`w-20 h-20 rounded-full flex items-center justify-center ${
-                        isDark 
-                            ? "bg-gradient-to-br from-cyan-500 to-purple-500 shadow-lg shadow-cyan-500/30" 
-                            : "bg-black shadow-lg shadow-gray-300"
-                    }`}
-                >
-                    <span className={`text-2xl font-bold ${isDark ? "text-white" : "text-white"}`}>D</span>
-                </motion.div>
-
-                {/* Loading Text */}
+                {/* Loading Text - Simple and Clean */}
                 <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -90,12 +76,12 @@ export default function ModernLoadingScreen() {
                     className="text-center"
                 >
                     {isDark ? (
-                        <h2 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                            Loading
+                        <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                            Deepak
                         </h2>
                     ) : (
-                        <h2 className="text-2xl font-bold text-black">
-                            Loading
+                        <h2 className="text-3xl font-bold text-black">
+                            Deepak
                         </h2>
                     )}
                     <motion.p
