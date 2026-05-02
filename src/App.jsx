@@ -14,6 +14,7 @@ import {
 import { isAdminAuthenticated, touchAdminSession } from "./utils/adminSession";
 import { preloadFirestoreEntries } from "./utils/firestoreCache";
 import { useLightweightMotion } from "./hooks/useLightweightMotion";
+import { scrollToSection } from "./utils/scrollToSection";
 
 import Navbar from "./components/Navbar";
 import GlobalBackgroundEffects from "./components/GlobalBackgroundEffects";
@@ -254,12 +255,56 @@ function AdminNavbar() {
 }
 
 function HomeShell({ sectionsConfig, theme, onThemeToggle }) {
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    let cancelled = false;
+    let retryTimer = null;
+
+    const scrollToHash = ({ behavior = "smooth" } = {}) => {
+      const target = window.location.hash.replace("#", "").trim();
+      if (!target) return;
+
+      const isVisibleTarget = target === "home" || Boolean(sectionsConfig[target]);
+      if (!isVisibleTarget) return;
+
+      let attempts = 0;
+      const tryScroll = () => {
+        if (cancelled) return;
+
+        const scrolled = scrollToSection(target, {
+          behavior,
+          offset: 88,
+          updateHash: false,
+        });
+
+        attempts += 1;
+        if (!scrolled && attempts < 16) {
+          retryTimer = window.setTimeout(tryScroll, 120);
+        }
+      };
+
+      window.requestAnimationFrame(tryScroll);
+    };
+
+    scrollToHash({ behavior: "smooth" });
+
+    const handleHashChange = () => scrollToHash({ behavior: "smooth" });
+    window.addEventListener("hashchange", handleHashChange);
+
+    return () => {
+      cancelled = true;
+      if (retryTimer) window.clearTimeout(retryTimer);
+      window.removeEventListener("hashchange", handleHashChange);
+    };
+  }, [sectionsConfig]);
+
   return (
     <div className="portfolio-shell relative overflow-x-hidden" data-theme={theme}>
       <GlobalBackgroundEffects />
       <Navbar sectionsConfig={sectionsConfig} theme={theme} onThemeToggle={onThemeToggle} />
 
-      {sectionsConfig.home && <Header />}
+      {sectionsConfig.home && <Header showBlogLink={Boolean(sectionsConfig.blog)} />}
 
       <main className="relative z-10">
         {sectionsConfig.about && <About />}

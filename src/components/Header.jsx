@@ -13,6 +13,7 @@ import {
   FaTwitter,
   FaGlobe,
   FaChevronDown,
+  FaBookOpen,
 } from "react-icons/fa";
 import { useRef, useState, useEffect, useMemo } from "react";
 import { useFirestoreData } from "@/hooks/useFirestoreData";
@@ -21,7 +22,7 @@ import { useLightweightMotion } from "@/hooks/useLightweightMotion";
 import { logSectionView, logLinkClick, logDownload, logResumeOpen } from "../utils/analytics";
 import { scrollToSection } from "@/utils/scrollToSection";
 
-export default function Header() {
+export default function Header({ showBlogLink = false }) {
   const {
     data: firestoreProfileData,
     loading: firestoreLoading,
@@ -313,18 +314,37 @@ export default function Header() {
         </motion.div>
 
         <motion.div className="mt-12 flex w-full justify-center sm:mt-16" variants={itemVariants}>
-          <button
-            onClick={(event) => {
-              event.preventDefault();
-              scrollToSection("about", { offset: 88 });
-            }}
-            className="group flex flex-col items-center gap-2 text-cyansoft transition-colors hover:text-cyan-300"
-          >
-            <span className="text-sm font-medium opacity-75 transition-opacity group-hover:opacity-100">
-              Explore More
-            </span>
-            <FaChevronDown className="h-5 w-5 transition-transform group-hover:scale-125" />
-          </button>
+          <div className="flex flex-col items-center gap-4">
+            <button
+              onClick={(event) => {
+                event.preventDefault();
+                scrollToSection("about", { offset: 88 });
+              }}
+              className="group flex flex-col items-center gap-2 text-cyansoft transition-colors hover:text-cyan-300"
+            >
+              <span className="text-sm font-medium opacity-75 transition-opacity group-hover:opacity-100">
+                Explore More
+              </span>
+              <FaChevronDown className="h-5 w-5 transition-transform group-hover:scale-125" />
+            </button>
+
+            {showBlogLink && (
+              <motion.a
+                href="/blog"
+                onClick={() => logLinkClick("header_blog")}
+                initial={lightweightMotion ? false : { opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                whileHover={lightweightMotion ? undefined : { y: -3, scale: 1.03 }}
+                whileTap={lightweightMotion ? undefined : { scale: 0.97 }}
+                className="group inline-flex items-center gap-2 rounded-full border border-[var(--color-border-strong)] bg-[var(--color-surface)]/80 px-5 py-3 text-sm font-bold text-[var(--color-text)] shadow-lg shadow-black/10 backdrop-blur-xl transition hover:border-cyansoft hover:text-cyansoft sm:text-base"
+              >
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-teal-400 to-amber-300 text-slate-950 transition group-hover:scale-105">
+                  <FaBookOpen className="h-3.5 w-3.5" />
+                </span>
+                Visit My Blog
+              </motion.a>
+            )}
+          </div>
         </motion.div>
       </motion.div>
 

@@ -1,160 +1,261 @@
-import React, { useMemo, useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { 
-  FaShareAlt, 
-  FaClock, 
-  FaTags, 
-  FaUser, 
-  FaHeart, 
-  FaSearch,
-  FaArrowLeft,
-  FaBookmark,
-  FaEye,
-  FaComment,
-  FaCalendar,
-  FaFilter,
-  FaTimes
-} from "react-icons/fa";
-import { useBlogData } from "../hooks/useBlogData";
-import { getUniqueTags } from "../utils/blogHelpers";
+import React, { useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
-  logBlogView,
+  ArrowRight,
+  BookOpen,
+  Calendar,
+  Clock,
+  ExternalLink,
+  Eye,
+  Heart,
+  Home,
+  Search,
+  Share2,
+  Tag,
+  X,
+} from "lucide-react";
+import { useBlogData } from "../hooks/useBlogData";
+import { formatDate, getUniqueTags } from "../utils/blogHelpers";
+import {
   logBlogLike,
   logBlogReadTime,
+  logBlogView,
   logDeviceInfo,
+  logPageDuration,
+  logPageLoad,
   logTrafficSource,
   logUniqueUser,
-  logPageLoad,
-  logPageDuration,
 } from "../utils/analytics";
-import LinkedInCarousel from "./LinkedInCarousel";
+import { db } from "../firebase";
+import { doc, increment, updateDoc } from "firebase/firestore";
+import { useLightweightMotion } from "../hooks/useLightweightMotion";
 
-export default function MassiveAnimatedBlogPage() {
-  const { posts: firestorePosts, loading: postsLoading, error: postsError } = useBlogData(true);
+const FALLBACK_COVER =
+  "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=1600&h=1000&fit=crop";
 
-  // UI state
+const fadeUp = {
+  hidden: { opacity: 0, y: 22 },
+  show: { opacity: 1, y: 0 },
+};
+
+const gentleSpring = {
+  type: "spring",
+  stiffness: 220,
+  damping: 24,
+};
+
+function stripHtml(html = "") {
+  return String(html).replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function getPostId(post) {
+  return post.id || post.slug || post.title;
+}
+
+function getPostSlug(post) {
+  return post.slug || post.id || post.title;
+}
+
+function getStoredSet(key, storage = "local") {
+  if (typeof window === "undefined") return new Set();
+
+  try {
+    const store = storage === "session" ? window.sessionStorage : window.localStorage;
+    return new Set(JSON.parse(store.getItem(key) || "[]"));
+  } catch {
+    return new Set();
+  }
+}
+
+function saveStoredSet(key, value, storage = "local") {
+  if (typeof window === "undefined") return;
+
+  try {
+    const store = storage === "session" ? window.sessionStorage : window.localStorage;
+    store.setItem(key, JSON.stringify([...value]));
+  } catch {
+    // Storage can be unavailable in private browsing. Firestore updates still run.
+  }
+}
+
+export default function BlogPage() {
+  const { posts: firestorePosts, loading, error } = useBlogData(true);
   const [query, setQuery] = useState("");
-  const [selectedTag, setSelectedTag] = useState(null);
-  const [active, setActive] = useState(null);
-  const [likedPosts, setLikedPosts] = useState(new Set());
-  const [bookmarkedPosts, setBookmarkedPosts] = useState(new Set());
+  const [selectedTag, setSelectedTag] = useState("All");
+  const [activePost, setActivePost] = useState(null);
+  const [likedPosts, setLikedPosts] = useState(() => getStoredSet("portfolio.blog.likedPosts"));
+  const [viewedPosts, setViewedPosts] = useState(() => getStoredSet("portfolio.blog.viewedPosts", "session"));
+  const [countDeltas, setCountDeltas] = useState({});
   const [readStartTime, setReadStartTime] = useState(null);
-  const [pageLoadTime] = useState(Date.now());
-  const [viewMode, setViewMode] = useState("grid"); // grid or list
-  const [showFilters, setShowFilters] = useState(false);
+  const [pageLoadTime] = useState(() => Date.now());
+  const [copiedPost, setCopiedPost] = useState("");
+  const lightweightMotion = useLightweightMotion();
 
-  const posts = firestorePosts || [];
-  const allTags = useMemo(() => getUniqueTags(posts), [posts]);
+  const posts = useMemo(() => firestorePosts || [], [firestorePosts]);
+  const tags = useMemo(() => ["All", ...getUniqueTags(posts)], [posts]);
+  const featured = posts[0];
 
-  const filtered = useMemo(() => {
-    let list = posts.slice();
-    if (query) {
-      const q = query.toLowerCase();
-      list = list.filter(
-        (p) =>
-          p.title.toLowerCase().includes(q) ||
-          p.excerpt.toLowerCase().includes(q) ||
-          (p.tags && p.tags.join(" ").toLowerCase().includes(q))
-      );
-    }
-    if (selectedTag) list = list.filter((p) => p.tags && p.tags.includes(selectedTag));
-    list.sort((a, b) => new Date(b.date) - new Date(a.date));
-    return list;
+  const filteredPosts = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+
+    return posts.filter((post) => {
+      const searchText = [
+        post.title,
+        post.excerpt,
+        stripHtml(post.content),
+        post.author,
+        ...(post.tags || []),
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      const matchesQuery = !normalizedQuery || searchText.includes(normalizedQuery);
+      const matchesTag = selectedTag === "All" || post.tags?.includes(selectedTag);
+      return matchesQuery && matchesTag;
+    });
   }, [posts, query, selectedTag]);
 
   useEffect(() => {
-    document.documentElement.style.scrollBehavior = "smooth";
     const loadTime = Date.now() - pageLoadTime;
     logPageLoad("blog", loadTime);
     logDeviceInfo();
     logTrafficSource();
     logUniqueUser();
 
-    const pageStartTime = Date.now();
-    return () => {
-      document.documentElement.style.scrollBehavior = "auto";
-      const duration = Date.now() - pageStartTime;
-      logPageDuration("blog", duration);
-    };
+    const pageStart = Date.now();
+    return () => logPageDuration("blog", Date.now() - pageStart);
   }, [pageLoadTime]);
 
-  const handlePostView = (post) => {
-    setActive(post);
+  useEffect(() => {
+    if (!activePost) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [activePost]);
+
+  const getCount = (post, field) => {
+    const id = getPostId(post);
+    return Number(post[field] || 0) + Number(countDeltas[id]?.[field] || 0);
+  };
+
+  const updatePostCount = async (post, field) => {
+    const id = getPostId(post);
+    if (!id) return;
+
+    setCountDeltas((current) => ({
+      ...current,
+      [id]: {
+        ...current[id],
+        [field]: Number(current[id]?.[field] || 0) + 1,
+      },
+    }));
+
+    try {
+      await updateDoc(doc(db, "blog", id), {
+        [field]: increment(1),
+      });
+    } catch (error) {
+      console.error(`Error updating blog ${field}:`, error);
+      setCountDeltas((current) => ({
+        ...current,
+        [id]: {
+          ...current[id],
+          [field]: Math.max(Number(current[id]?.[field] || 0) - 1, 0),
+        },
+      }));
+    }
+  };
+
+  const openPost = (post) => {
+    const id = getPostId(post);
+    setActivePost(post);
     setReadStartTime(Date.now());
-    logBlogView(post.slug || post.id, post.title);
-  };
+    logBlogView(getPostSlug(post), post.title);
 
-  const handleLike = (postSlug) => {
-    if (likedPosts.has(postSlug)) return;
-    setLikedPosts(new Set([...likedPosts, postSlug]));
-    logBlogLike(postSlug);
-  };
-
-  const handleBookmark = (postSlug) => {
-    const newBookmarks = new Set(bookmarkedPosts);
-    if (newBookmarks.has(postSlug)) {
-      newBookmarks.delete(postSlug);
-    } else {
-      newBookmarks.add(postSlug);
+    if (!viewedPosts.has(id)) {
+      const nextViewed = new Set([...viewedPosts, id]);
+      setViewedPosts(nextViewed);
+      saveStoredSet("portfolio.blog.viewedPosts", nextViewed, "session");
+      updatePostCount(post, "views");
     }
-    setBookmarkedPosts(newBookmarks);
   };
 
-  const handleClosePost = () => {
-    if (readStartTime && active) {
-      const readTime = (Date.now() - readStartTime) / 1000;
-      logBlogReadTime(active.slug || active.id, readTime);
+  const closePost = () => {
+    if (activePost && readStartTime) {
+      logBlogReadTime(getPostSlug(activePost), (Date.now() - readStartTime) / 1000);
     }
-    setActive(null);
+
+    setActivePost(null);
     setReadStartTime(null);
   };
 
-  const container = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
+  const likePost = (post) => {
+    const id = getPostId(post);
+    if (likedPosts.has(id)) return;
+
+    const nextLiked = new Set([...likedPosts, id]);
+    setLikedPosts(nextLiked);
+    saveStoredSet("portfolio.blog.likedPosts", nextLiked);
+    logBlogLike(getPostSlug(post));
+    updatePostCount(post, "likes");
   };
 
-  const item = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 },
+  const sharePost = async (post) => {
+    const url = `${window.location.origin}/blog#${getPostSlug(post)}`;
+    try {
+      await navigator.clipboard?.writeText(url);
+      setCopiedPost(getPostId(post));
+      setTimeout(() => setCopiedPost(""), 1800);
+    } catch {
+      window.prompt("Copy this blog link", url);
+    }
   };
 
-  if (postsLoading) {
+  const motionProps = lightweightMotion
+    ? {
+        initial: false,
+        animate: "show",
+        transition: { duration: 0.12 },
+      }
+    : {
+        initial: "hidden",
+        animate: "show",
+        transition: { duration: 0.5, ease: "easeOut" },
+      };
+
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="animate-pulse space-y-8">
-            <div className="h-32 bg-gradient-to-r from-blue-200 to-purple-200 rounded-3xl"></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="h-96 bg-white/60 rounded-2xl"></div>
-              ))}
-            </div>
+      <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
+        <div className="mx-auto max-w-6xl px-5 py-8 sm:px-6 lg:px-8">
+          <div className="h-14 animate-pulse rounded-lg bg-[var(--color-surface-soft)]" />
+          <div className="mt-16 h-72 animate-pulse rounded-lg bg-[var(--color-surface-soft)]" />
+          <div className="mt-10 grid gap-5 md:grid-cols-3">
+            {[1, 2, 3].map((item) => (
+              <div key={item} className="h-80 animate-pulse rounded-lg bg-[var(--color-surface-soft)]" />
+            ))}
           </div>
         </div>
       </div>
     );
   }
 
-  if (postsError) {
+  if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 flex items-center justify-center">
-        <div className="text-center bg-white rounded-3xl p-12 shadow-2xl">
-          <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <FaTimes className="text-4xl text-red-500" />
-          </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-3">Oops! Something went wrong</h2>
-          <p className="text-gray-600 mb-6">{postsError}</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+      <div className="flex min-h-screen items-center justify-center bg-[var(--color-bg)] px-5 text-[var(--color-text)]">
+        <div className="max-w-lg rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center shadow-[var(--shadow-elevated)]">
+          <BookOpen className="mx-auto mb-4 h-10 w-10 text-[var(--color-accent-a)]" />
+          <h1 className="text-2xl font-semibold">Blog could not load</h1>
+          <p className="mt-3 text-sm text-[var(--color-muted)]">{error}</p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="mt-6 rounded-lg bg-[var(--color-accent-a)] px-5 py-3 text-sm font-semibold text-black"
           >
-            Try Again
+            Refresh
           </button>
         </div>
       </div>
@@ -162,578 +263,439 @@ export default function MassiveAnimatedBlogPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50">
-      {/* Floating Navigation */}
-      <motion.nav 
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        className="sticky top-0 z-40 backdrop-blur-xl bg-white/70 border-b border-gray-200/50 shadow-sm"
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
-            <motion.a
-              href="/"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex items-center gap-3 text-gray-900 font-bold text-xl"
-            >
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
-                <FaArrowLeft className="text-white" />
-              </div>
-              <span className="hidden sm:block">Back to Home</span>
-            </motion.a>
+    <div className="min-h-screen overflow-x-hidden bg-[var(--color-bg)] text-[var(--color-text)]">
+      <div className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(circle_at_20%_12%,color-mix(in_srgb,var(--color-accent-a)_18%,transparent),transparent_28%),radial-gradient(circle_at_78%_8%,color-mix(in_srgb,var(--color-accent-b)_16%,transparent),transparent_24%),linear-gradient(180deg,var(--color-bg),var(--color-bg-strong))]" />
 
-            <div className="flex items-center gap-4">
-              <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full">
-                <FaEye className="text-gray-500" />
-                <span className="text-sm font-medium text-gray-700">{filtered.length} posts</span>
-              </div>
-              
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className="p-3 rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors md:hidden"
-              >
-                <FaFilter className="text-gray-700" />
-              </button>
-            </div>
-          </div>
+      <motion.nav
+        initial={lightweightMotion ? false : { y: -28, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: lightweightMotion ? 0.1 : 0.35, ease: "easeOut" }}
+        className="sticky top-0 z-50 border-b border-[var(--color-border)] bg-[var(--color-nav)]/90 backdrop-blur-2xl"
+      >
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-5 sm:px-6 lg:px-8">
+          <motion.a
+            href="/blog"
+            whileHover={lightweightMotion ? undefined : { scale: 1.02 }}
+            whileTap={lightweightMotion ? undefined : { scale: 0.98 }}
+            className="flex items-center gap-3 font-semibold tracking-tight"
+          >
+            <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-soft)] text-[var(--color-accent-a)]">
+              <BookOpen size={20} />
+            </span>
+            <span>Deepak's Blog</span>
+          </motion.a>
+
+          <motion.a
+            href="/"
+            whileHover={lightweightMotion ? undefined : { y: -2 }}
+            whileTap={lightweightMotion ? undefined : { scale: 0.98 }}
+            className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-soft)] px-4 py-2 text-sm font-semibold text-[var(--color-text)] transition hover:border-[var(--color-accent-a)] hover:text-[var(--color-accent-a)]"
+          >
+            <Home size={16} />
+            <span className="hidden sm:inline">Visit My Portfolio</span>
+            <span className="sm:hidden">Portfolio</span>
+          </motion.a>
         </div>
       </motion.nav>
 
-      {/* Hero Section */}
-      <header className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500 opacity-90"></div>
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjEiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIvPjwvc3ZnPg==')] opacity-20"></div>
-        
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-center"
-          >
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-              className="inline-block mb-6"
-            >
-              <div className="px-6 py-2 bg-white/20 backdrop-blur-md rounded-full border border-white/30">
-                <span className="text-white/90 text-sm font-semibold tracking-wide">✨ CREATIVE STORIES</span>
-              </div>
-            </motion.div>
-
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="text-5xl lg:text-7xl font-black text-white mb-6 leading-tight"
-            >
-              Thoughts, Ideas & 
-              <br />
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-yellow-300 via-pink-300 to-purple-300">
-                Creative Stories
-              </span>
-            </motion.h1>
-
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-              className="text-xl text-white/90 max-w-3xl mx-auto mb-10 leading-relaxed"
-            >
-              Exploring the intersection of code, design, and gaming. 
-              Join me on this journey of discovery and innovation.
-            </motion.p>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}
-              className="flex flex-col sm:flex-row gap-4 justify-center"
-            >
-              <a
-                href="#posts"
-                className="group px-8 py-4 bg-white text-purple-600 rounded-2xl font-bold hover:shadow-2xl hover:scale-105 transition-all duration-300"
-              >
-                <span className="flex items-center justify-center gap-2">
-                  Start Reading
-                  <motion.span
-                    animate={{ x: [0, 5, 0] }}
-                    transition={{ repeat: Infinity, duration: 1.5 }}
-                  >
-                    →
-                  </motion.span>
-                </span>
-              </a>
-              <a
-                href="#write"
-                className="px-8 py-4 bg-white/10 backdrop-blur-md text-white border-2 border-white/30 rounded-2xl font-bold hover:bg-white/20 transition-all duration-300"
-              >
-                Write a Post
-              </a>
-            </motion.div>
-          </motion.div>
-        </div>
-
-        {/* Decorative Elements */}
-        <div className="absolute top-20 left-10 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-        <div className="absolute top-40 right-10 w-72 h-72 bg-yellow-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-        <div className="absolute -bottom-8 left-1/2 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
-      </header>
-
-      {/* LinkedIn Carousel */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-10 mb-16 relative z-10">
-        <LinkedInCarousel />
-      </div>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20" id="posts">
-        {/* Search & Filter Section */}
+      <header className="relative mx-auto max-w-6xl px-5 pb-12 pt-14 sm:px-6 lg:px-8 lg:pb-16 lg:pt-20">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-12"
+          variants={fadeUp}
+          {...motionProps}
+          className="max-w-4xl"
         >
-          <div className="bg-white rounded-3xl shadow-xl p-6 lg:p-8 border border-gray-100">
-            {/* Search Bar */}
-            <div className="relative mb-6">
-              <FaSearch className="absolute left-6 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl" />
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search articles, topics, or keywords..."
-                className="w-full pl-16 pr-6 py-5 bg-gray-50 border-2 border-gray-200 rounded-2xl text-gray-900 placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:bg-white transition-all text-lg"
-              />
-            </div>
-
-            {/* Tags */}
-            <div className={`${showFilters ? 'block' : 'hidden md:block'} space-y-4`}>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wide flex items-center gap-2">
-                  <FaTags className="text-purple-500" />
-                  Filter by Topic
-                </h3>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
-                    className="hidden lg:flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors"
-                  >
-                    {viewMode === "grid" ? "📱 Grid View" : "📋 List View"}
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-3">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setSelectedTag(null)}
-                  className={`px-6 py-3 rounded-xl font-semibold transition-all ${
-                    !selectedTag
-                      ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  All Posts
-                </motion.button>
-                {allTags.map((tag) => (
-                  <motion.button
-                    key={tag}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setSelectedTag(tag === selectedTag ? null : tag)}
-                    className={`px-6 py-3 rounded-xl font-semibold transition-all ${
-                      selectedTag === tag
-                        ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
-                  >
-                    {tag}
-                  </motion.button>
-                ))}
-              </div>
-            </div>
+          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-soft)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent-a)]">
+            <span className="h-2 w-2 rounded-full bg-[var(--color-accent-d)]" />
+            Builder Notes
           </div>
+          <h1 className="max-w-4xl text-4xl font-black leading-tight tracking-normal sm:text-5xl lg:text-7xl">
+            The journey, the lessons, and the path behind the work.
+          </h1>
+          <p className="mt-6 max-w-3xl text-base leading-8 text-[var(--color-muted)] sm:text-lg">
+            A focused space for project stories, engineering decisions, career growth, hackathon notes, AI experiments, and the practical learning that shaped my portfolio.
+          </p>
         </motion.div>
 
-        {/* Posts Grid/List */}
         <motion.div
-          variants={container}
-          initial="hidden"
-          animate="show"
-          className={`grid gap-8 ${
-            viewMode === "grid"
-              ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-              : "grid-cols-1"
-          }`}
+          variants={{
+            hidden: {},
+            show: { transition: { staggerChildren: lightweightMotion ? 0 : 0.08 } },
+          }}
+          {...motionProps}
+          className="mt-10 grid gap-4 sm:grid-cols-3"
         >
-          {filtered.map((post, index) => (
-            <motion.article
-              key={post.id}
-              variants={item}
-              whileHover={{ y: -8, transition: { duration: 0.3 } }}
-              className={`group bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 ${
-                viewMode === "list" ? "flex flex-col md:flex-row" : ""
-              }`}
+          {[
+            ["Posts", posts.length],
+            ["Topics", Math.max(tags.length - 1, 0)],
+            ["Latest", featured?.date ? formatDate(featured.date) : "Coming soon"],
+          ].map(([label, value]) => (
+            <motion.div
+              key={label}
+              variants={fadeUp}
+              whileHover={lightweightMotion ? undefined : { y: -4 }}
+              className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-soft)] p-5 transition-colors hover:border-[var(--color-accent-a)]"
             >
-              {/* Image */}
-              <div className={`relative overflow-hidden ${viewMode === "list" ? "md:w-1/3" : "h-56"}`}>
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 z-10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <img
-                  src={post.cover}
-                  alt={post.title}
-                  className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
-                />
-                
-                {/* Bookmark Icon */}
-                <button
-                  onClick={() => handleBookmark(post.id)}
-                  className="absolute top-4 right-4 z-20 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition-all shadow-lg"
-                >
-                  <FaBookmark
-                    className={`${
-                      bookmarkedPosts.has(post.id) ? "text-purple-500" : "text-gray-400"
-                    } transition-colors`}
-                  />
-                </button>
-
-                {/* Featured Badge */}
-                {index === 0 && (
-                  <div className="absolute top-4 left-4 z-20 px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full">
-                    <span className="text-white text-xs font-bold">⭐ FEATURED</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Content */}
-              <div className={`p-6 ${viewMode === "list" ? "md:w-2/3 flex flex-col justify-between" : ""}`}>
-                {/* Meta Info */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-4 text-sm text-gray-500">
-                    <span className="flex items-center gap-1">
-                      <FaCalendar className="text-purple-500" />
-                      {new Date(post.date).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <FaClock className="text-blue-500" />
-                      {post.readTime}
-                    </span>
-                  </div>
-                  
-                  <button
-                    onClick={() => {
-                      navigator.clipboard?.writeText(window.location.href + `#post=${post.id}`);
-                      alert("Link copied to clipboard!");
-                    }}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                  >
-                    <FaShareAlt className="text-gray-400 hover:text-purple-500 transition-colors" />
-                  </button>
-                </div>
-
-                {/* Tags */}
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {post.tags.slice(0, 2).map((tag) => (
-                    <span
-                      key={tag}
-                      className="px-3 py-1 bg-purple-50 text-purple-600 rounded-lg text-xs font-semibold"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-
-                {/* Title */}
-                <h3 className="text-2xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-purple-600 transition-colors">
-                  {post.title}
-                </h3>
-
-                {/* Excerpt */}
-                <p className="text-gray-600 mb-6 line-clamp-3 leading-relaxed">
-                  {post.excerpt}
-                </p>
-
-                {/* Footer */}
-                <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                  {/* Author */}
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
-                      <span className="text-white font-bold text-sm">
-                        {post.author?.[0] || "A"}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900">{post.author}</p>
-                      <p className="text-xs text-gray-500">Author</p>
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => handleLike(post.id)}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold transition-all ${
-                        likedPosts.has(post.id)
-                          ? "bg-red-500 text-white"
-                          : "bg-gray-100 text-gray-700 hover:bg-red-50"
-                      }`}
-                    >
-                      <FaHeart
-                        className={likedPosts.has(post.id) ? "text-white" : "text-red-500"}
-                      />
-                      <span>{(post.likes || 0) + (likedPosts.has(post.id) ? 1 : 0)}</span>
-                    </button>
-                    
-                    <button
-                      onClick={() => handlePostView(post)}
-                      className="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl font-semibold hover:shadow-lg hover:scale-105 transition-all"
-                    >
-                      Read
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </motion.article>
+              <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-faint)]">{label}</div>
+              <div className="mt-2 text-2xl font-bold text-[var(--color-text)]">{value}</div>
+            </motion.div>
           ))}
         </motion.div>
+      </header>
 
-        {/* Empty State */}
-        {filtered.length === 0 && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-center py-20"
+      <main className="mx-auto max-w-6xl px-5 pb-20 sm:px-6 lg:px-8">
+        {featured && (
+          <motion.section
+            variants={fadeUp}
+            initial={lightweightMotion ? false : "hidden"}
+            whileInView="show"
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: lightweightMotion ? 0.12 : 0.5, ease: "easeOut" }}
+            className="mb-10 overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-elevated)]"
           >
-            <div className="w-32 h-32 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <FaSearch className="text-6xl text-gray-400" />
+            <div className="grid lg:grid-cols-[1.05fr_0.95fr]">
+              <div className="relative min-h-72">
+                <img
+                  src={featured.cover || FALLBACK_COVER}
+                  alt={featured.title}
+                  className="absolute inset-0 h-full w-full object-cover transition duration-700 hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent lg:hidden" />
+              </div>
+              <div className="p-6 sm:p-8 lg:p-10">
+                <div className="mb-4 inline-flex rounded-full bg-[var(--color-accent-a)]/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-accent-a)]">
+                  Featured Story
+                </div>
+                <h2 className="text-3xl font-black leading-tight sm:text-4xl">{featured.title}</h2>
+                <p className="mt-4 leading-7 text-[var(--color-muted)]">{featured.excerpt}</p>
+                <div className="mt-6 flex flex-wrap items-center gap-4 text-sm text-[var(--color-faint)]">
+                  <span className="inline-flex items-center gap-2">
+                    <Calendar size={16} /> {formatDate(featured.date)}
+                  </span>
+                  <span className="inline-flex items-center gap-2">
+                    <Clock size={16} /> {featured.readTime}
+                  </span>
+                  <span className="inline-flex items-center gap-2">
+                    <Eye size={16} /> {getCount(featured, "views")} views
+                  </span>
+                  <span className="inline-flex items-center gap-2">
+                    <Heart size={16} /> {getCount(featured, "likes")} likes
+                  </span>
+                </div>
+                <motion.button
+                  type="button"
+                  onClick={() => openPost(featured)}
+                  whileHover={lightweightMotion ? undefined : { y: -2, scale: 1.02 }}
+                  whileTap={lightweightMotion ? undefined : { scale: 0.98 }}
+                  className="mt-8 inline-flex items-center gap-2 rounded-lg bg-[var(--color-accent-a)] px-5 py-3 text-sm font-bold text-black transition hover:brightness-110"
+                >
+                  Read the journey <ArrowRight size={16} />
+                </motion.button>
+              </div>
             </div>
-            <h3 className="text-3xl font-bold text-gray-900 mb-3">No posts found</h3>
-            <p className="text-gray-600 mb-8">
-              Try adjusting your search or filters to find what you're looking for.
-            </p>
-            <button
-              onClick={() => {
-                setQuery("");
-                setSelectedTag(null);
-              }}
-              className="px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-2xl font-semibold hover:shadow-lg hover:scale-105 transition-all"
-            >
-              Clear Filters
-            </button>
-          </motion.div>
+          </motion.section>
         )}
 
-        {/* Write Section */}
         <motion.section
-          id="write"
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="mt-20 bg-gradient-to-br from-purple-500 via-blue-500 to-purple-600 rounded-3xl p-8 lg:p-12 shadow-2xl relative overflow-hidden"
+          variants={fadeUp}
+          initial={lightweightMotion ? false : "hidden"}
+          whileInView="show"
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ duration: lightweightMotion ? 0.12 : 0.45, ease: "easeOut" }}
+          className="mb-8 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-soft)] p-4 sm:p-5"
         >
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjEiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIvPjwvc3ZnPg==')] opacity-10"></div>
-          
-          <div className="relative z-10">
-            <div className="text-center mb-10">
-              <h2 className="text-4xl lg:text-5xl font-black text-white mb-4">
-                Share Your Story
-              </h2>
-              <p className="text-xl text-white/90 max-w-2xl mx-auto">
-                Got something to share? Write about your experiences, learnings, or ideas.
-              </p>
-            </div>
-
-            <div className="max-w-3xl mx-auto space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <input
-                  type="text"
-                  placeholder="Article Title"
-                  className="md:col-span-2 px-6 py-4 bg-white/10 backdrop-blur-md border-2 border-white/30 rounded-2xl text-white placeholder-white/60 focus:outline-none focus:border-white transition-all"
-                />
-                <select className="px-6 py-4 bg-white/10 backdrop-blur-md border-2 border-white/30 rounded-2xl text-white focus:outline-none focus:border-white transition-all appearance-none cursor-pointer">
-                  <option value="" className="bg-purple-600">Select Tag</option>
-                  {allTags.map((tag) => (
-                    <option key={tag} value={tag} className="bg-purple-600">
-                      {tag}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <textarea
-                placeholder="Write your story here..."
-                rows="6"
-                className="w-full px-6 py-4 bg-white/10 backdrop-blur-md border-2 border-white/30 rounded-2xl text-white placeholder-white/60 focus:outline-none focus:border-white transition-all resize-none"
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <label className="relative flex-1">
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--color-faint)]" />
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search the path, projects, topics..."
+                className="h-12 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] pl-12 pr-4 text-sm text-[var(--color-text)] outline-none transition placeholder:text-[var(--color-faint)] focus:border-[var(--color-accent-a)]"
               />
-
-              <div className="flex flex-col sm:flex-row gap-4">
-                <button className="flex-1 px-8 py-4 bg-white text-purple-600 rounded-2xl font-bold hover:shadow-2xl hover:scale-105 transition-all">
-                  Publish Post
-                </button>
-                <button className="px-8 py-4 bg-white/10 backdrop-blur-md border-2 border-white/30 text-white rounded-2xl font-bold hover:bg-white/20 transition-all">
-                  Save Draft
-                </button>
-              </div>
+            </label>
+            <div className="flex gap-2 overflow-x-auto pb-1 lg:max-w-xl">
+              {tags.map((tag) => (
+                <motion.button
+                  key={tag}
+                  type="button"
+                  onClick={() => setSelectedTag(tag)}
+                  layout
+                  whileHover={lightweightMotion ? undefined : { y: -2 }}
+                  whileTap={lightweightMotion ? undefined : { scale: 0.96 }}
+                  className={`shrink-0 rounded-lg border px-4 py-2 text-sm font-semibold transition ${
+                    selectedTag === tag
+                      ? "border-[var(--color-accent-a)] bg-[var(--color-accent-a)] text-black"
+                      : "border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-muted)] hover:text-[var(--color-text)]"
+                  }`}
+                >
+                  {tag}
+                </motion.button>
+              ))}
             </div>
           </div>
         </motion.section>
+
+        <motion.section layout className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          <AnimatePresence mode="popLayout">
+            {filteredPosts.map((post, index) => {
+              const id = getPostId(post);
+              const isLiked = likedPosts.has(id);
+
+              return (
+                <motion.article
+                  layout
+                  key={id}
+                  variants={fadeUp}
+                  initial={lightweightMotion ? false : "hidden"}
+                  animate="show"
+                  exit={{ opacity: 0, scale: 0.96, y: 12 }}
+                  viewport={{ once: true, margin: "-80px" }}
+                  transition={{ duration: lightweightMotion ? 0.12 : 0.35, delay: Math.min(index * 0.035, 0.2) }}
+                  whileHover={lightweightMotion ? undefined : { y: -6 }}
+                  className="group flex min-h-[30rem] flex-col overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-soft)] transition-colors hover:border-[var(--color-accent-a)]"
+                >
+                <div className="relative h-52 overflow-hidden">
+                  <img
+                    src={post.cover || FALLBACK_COVER}
+                    alt={post.title}
+                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/55 to-transparent" />
+                  <div className="absolute left-4 top-4 rounded-full bg-black/55 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
+                    {post.tags?.[0] || "Blog"}
+                  </div>
+                </div>
+
+                <div className="flex flex-1 flex-col p-5">
+                  <div className="flex flex-wrap items-center gap-3 text-xs text-[var(--color-faint)]">
+                    <span className="inline-flex items-center gap-1.5">
+                      <Calendar size={14} /> {formatDate(post.date)}
+                    </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <Clock size={14} /> {post.readTime}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <Eye size={14} /> {getCount(post, "views")}
+                  </span>
+                </div>
+                  <h3 className="mt-4 text-xl font-bold leading-snug text-[var(--color-text)]">{post.title}</h3>
+                  <p className="mt-3 line-clamp-3 text-sm leading-7 text-[var(--color-muted)]">{post.excerpt}</p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {(post.tags || []).slice(0, 3).map((tag) => (
+                      <span key={tag} className="inline-flex items-center gap-1 rounded-full border border-[var(--color-border)] px-2.5 py-1 text-xs text-[var(--color-muted)]">
+                        <Tag size={12} /> {tag}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="mt-auto flex items-center justify-between border-t border-[var(--color-border)] pt-5">
+                    <motion.button
+                      type="button"
+                      onClick={() => likePost(post)}
+                      whileTap={lightweightMotion ? undefined : { scale: 0.9 }}
+                      className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition ${
+                        isLiked
+                          ? "bg-[var(--color-accent-e)] text-white"
+                          : "bg-[var(--color-surface-soft)] text-[var(--color-muted)] hover:text-[var(--color-accent-e)]"
+                      }`}
+                    >
+                      <motion.span
+                        animate={isLiked && !lightweightMotion ? { scale: [1, 1.25, 1] } : undefined}
+                        transition={{ duration: 0.28 }}
+                      >
+                        <Heart size={16} fill={isLiked ? "currentColor" : "none"} />
+                      </motion.span>
+                      {getCount(post, "likes")}
+                    </motion.button>
+                    <motion.button
+                      type="button"
+                      onClick={() => openPost(post)}
+                      whileHover={lightweightMotion ? undefined : { x: 2 }}
+                      whileTap={lightweightMotion ? undefined : { scale: 0.98 }}
+                      className="inline-flex items-center gap-2 rounded-lg bg-[var(--color-accent-a)] px-4 py-2 text-sm font-bold text-black transition hover:brightness-110"
+                    >
+                      Read <ArrowRight size={15} />
+                    </motion.button>
+                  </div>
+                </div>
+                </motion.article>
+              );
+            })}
+          </AnimatePresence>
+        </motion.section>
+
+        {filteredPosts.length === 0 && (
+          <motion.div
+            initial={lightweightMotion ? false : { opacity: 0, scale: 0.96, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: lightweightMotion ? 0.12 : 0.32 }}
+            className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-soft)] px-6 py-16 text-center"
+          >
+            <Search className="mx-auto mb-4 h-10 w-10 text-[var(--color-faint)]" />
+            <h2 className="text-2xl font-bold">No posts matched that search</h2>
+            <p className="mt-2 text-[var(--color-muted)]">Try a different topic or clear your filters.</p>
+          </motion.div>
+        )}
       </main>
 
-      {/* Post Modal */}
       <AnimatePresence>
-        {active && (
+        {activePost && (
           <motion.div
-            initial={{ opacity: 0 }}
+            initial={lightweightMotion ? { opacity: 1 } : { opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="portfolio-modal-backdrop fixed inset-0 z-[1001] flex items-center justify-center p-3 sm:p-4"
-            onClick={handleClosePost}
+            transition={{ duration: lightweightMotion ? 0.08 : 0.22 }}
+            className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/75 p-3 backdrop-blur-md sm:p-6"
+            onClick={closePost}
           >
             <motion.article
-              initial={{ scale: 0.9, y: 50 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 50 }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              onClick={(e) => e.stopPropagation()}
-              className="relative max-h-[92svh] w-full max-w-4xl overflow-hidden overflow-y-auto rounded-lg bg-white shadow-2xl"
+              initial={lightweightMotion ? { opacity: 1 } : { opacity: 0, y: 36, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={lightweightMotion ? { opacity: 0 } : { opacity: 0, y: 28, scale: 0.98 }}
+              transition={lightweightMotion ? { duration: 0.1 } : gentleSpring}
+              onClick={(event) => event.stopPropagation()}
+              className="max-h-[92svh] w-full max-w-4xl overflow-y-auto rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] shadow-2xl"
             >
-              {/* Header Image */}
-              {active.cover && (
-                <div className="relative h-80 overflow-hidden">
-                  <img
-                    src={active.cover}
-                    alt={active.title}
-                    className="w-full h-full object-cover"
-                  />
-                  {/* Close Button */}
-                  <button
-                    onClick={handleClosePost}
-                    className="absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white/90 shadow-lg backdrop-blur-sm transition-all hover:bg-white sm:right-6 sm:top-6"
-                  >
-                    <FaTimes className="text-gray-900 text-xl" />
-                  </button>
-                </div>
-              )}
+              <div className="relative h-64 overflow-hidden sm:h-80">
+                <img
+                  src={activePost.cover || FALLBACK_COVER}
+                  alt={activePost.title}
+                  className="h-full w-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
+                <motion.button
+                  type="button"
+                  onClick={closePost}
+                  whileHover={lightweightMotion ? undefined : { rotate: 4, scale: 1.05 }}
+                  whileTap={lightweightMotion ? undefined : { scale: 0.92 }}
+                  className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-lg bg-black/55 text-white backdrop-blur transition hover:bg-black/75"
+                  aria-label="Close post"
+                >
+                  <X size={20} />
+                </motion.button>
+              </div>
 
-              {/* Content */}
-              <div className="p-8 lg:p-12">
-                {/* Tags */}
-                <div className="flex flex-wrap gap-2 mb-6">
-                  {active.tags.map((tag) => (
-                    <span
+              <motion.div
+                initial={lightweightMotion ? false : { opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: lightweightMotion ? 0 : 0.1, duration: 0.35 }}
+                className="p-6 sm:p-8 lg:p-10"
+              >
+                <motion.div
+                  initial={lightweightMotion ? false : "hidden"}
+                  animate="show"
+                  variants={{ hidden: {}, show: { transition: { staggerChildren: 0.045 } } }}
+                  className="flex flex-wrap gap-2"
+                >
+                  {(activePost.tags || []).map((tag) => (
+                    <motion.span
                       key={tag}
-                      className="px-4 py-2 bg-purple-50 text-purple-600 rounded-xl text-sm font-semibold"
+                      variants={fadeUp}
+                      className="rounded-full bg-[var(--color-accent-a)]/15 px-3 py-1 text-xs font-semibold text-[var(--color-accent-a)]"
                     >
                       {tag}
-                    </span>
+                    </motion.span>
                   ))}
+                </motion.div>
+                <h1 className="mt-5 text-3xl font-black leading-tight sm:text-5xl">{activePost.title}</h1>
+                <div className="mt-5 flex flex-wrap items-center gap-4 text-sm text-[var(--color-muted)]">
+                  <span>{activePost.author}</span>
+                  <span className="inline-flex items-center gap-2">
+                    <Calendar size={16} /> {formatDate(activePost.date)}
+                  </span>
+                  <span className="inline-flex items-center gap-2">
+                    <Clock size={16} /> {activePost.readTime}
+                  </span>
+                  <span className="inline-flex items-center gap-2">
+                    <Eye size={16} /> {getCount(activePost, "views")} views
+                  </span>
                 </div>
 
-                {/* Title */}
-                <h1 className="text-4xl lg:text-5xl font-black text-gray-900 mb-6 leading-tight">
-                  {active.title}
-                </h1>
-
-                {/* Meta */}
-                <div className="flex flex-wrap items-center gap-6 pb-6 mb-8 border-b border-gray-200">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
-                      <span className="text-white font-bold">{active.author?.[0] || "A"}</span>
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-900">{active.author}</p>
-                      <p className="text-sm text-gray-500">Author</p>
-                    </div>
-                  </div>
-
-                  <div className="h-8 w-px bg-gray-200"></div>
-
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <FaCalendar className="text-purple-500" />
-                    <span className="text-sm">{new Date(active.date).toLocaleDateString()}</span>
-                  </div>
-
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <FaClock className="text-blue-500" />
-                    <span className="text-sm">{active.readTime}</span>
-                  </div>
-                </div>
-
-                {/* Article Content */}
-                <div 
-                  className="prose prose-lg max-w-none prose-headings:font-black prose-headings:text-gray-900 prose-p:text-gray-700 prose-p:leading-relaxed prose-a:text-purple-600 prose-a:no-underline hover:prose-a:underline prose-img:rounded-2xl prose-img:shadow-xl"
-                  dangerouslySetInnerHTML={{ __html: active.content }}
+                <div
+                  className="blog-article-content mt-8 max-w-none text-[var(--color-muted)]"
+                  dangerouslySetInnerHTML={{ __html: activePost.content }}
                 />
 
-                {/* Actions */}
-                <div className="flex flex-wrap items-center gap-4 mt-12 pt-8 border-t border-gray-200">
-                  <button
-                    onClick={() => handleLike(active.id)}
-                    className={`flex items-center gap-3 px-6 py-3 rounded-2xl font-semibold transition-all ${
-                      likedPosts.has(active.id)
-                        ? "bg-red-500 text-white shadow-lg"
-                        : "bg-gray-100 text-gray-700 hover:bg-red-50"
-                    }`}
+                <div className="sticky bottom-0 -mx-6 mt-10 flex flex-wrap gap-3 border-t border-[var(--color-border)] bg-[var(--color-bg)]/92 px-6 pt-6 backdrop-blur-xl sm:static sm:mx-0 sm:bg-transparent sm:px-0 sm:backdrop-blur-0">
+                  <motion.button
+                    type="button"
+                    onClick={() => likePost(activePost)}
+                    whileTap={lightweightMotion ? undefined : { scale: 0.94 }}
+                    className="inline-flex items-center gap-2 rounded-lg bg-[var(--color-surface-soft)] px-4 py-2 text-sm font-semibold text-[var(--color-text)]"
                   >
-                    <FaHeart className={likedPosts.has(active.id) ? "text-white" : "text-red-500"} />
-                    <span>{(active.likes || 0) + (likedPosts.has(active.id) ? 1 : 0)} Likes</span>
-                  </button>
-
-                  <button
-                    onClick={() => handleBookmark(active.id)}
-                    className={`flex items-center gap-3 px-6 py-3 rounded-2xl font-semibold transition-all ${
-                      bookmarkedPosts.has(active.id)
-                        ? "bg-purple-500 text-white shadow-lg"
-                        : "bg-gray-100 text-gray-700 hover:bg-purple-50"
-                    }`}
+                    <Heart size={16} fill={likedPosts.has(getPostId(activePost)) ? "currentColor" : "none"} />
+                    Appreciate ({getCount(activePost, "likes")})
+                  </motion.button>
+                  <motion.button
+                    type="button"
+                    onClick={() => sharePost(activePost)}
+                    whileTap={lightweightMotion ? undefined : { scale: 0.94 }}
+                    className="inline-flex items-center gap-2 rounded-lg bg-[var(--color-surface-soft)] px-4 py-2 text-sm font-semibold text-[var(--color-text)]"
                   >
-                    <FaBookmark
-                      className={bookmarkedPosts.has(active.id) ? "text-white" : "text-purple-500"}
-                    />
-                    <span>
-                      {bookmarkedPosts.has(active.id) ? "Bookmarked" : "Bookmark"}
-                    </span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      navigator.clipboard?.writeText(window.location.href + `#post=${active.id}`);
-                      alert("Link copied to clipboard!");
-                    }}
-                    className="flex items-center gap-3 px-6 py-3 bg-gray-100 text-gray-700 rounded-2xl font-semibold hover:bg-gray-200 transition-all"
+                    <Share2 size={16} />
+                    {copiedPost === getPostId(activePost) ? "Copied" : "Copy link"}
+                  </motion.button>
+                  <motion.a
+                    href="/"
+                    whileHover={lightweightMotion ? undefined : { y: -2 }}
+                    whileTap={lightweightMotion ? undefined : { scale: 0.98 }}
+                    className="inline-flex items-center gap-2 rounded-lg bg-[var(--color-accent-a)] px-4 py-2 text-sm font-bold text-black"
                   >
-                    <FaShareAlt />
-                    <span>Share</span>
-                  </button>
+                    Visit My Portfolio <ExternalLink size={16} />
+                  </motion.a>
                 </div>
-              </div>
+              </motion.div>
             </motion.article>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* CSS for animations */}
+      <AnimatePresence>
+        {copiedPost && !activePost && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            className="fixed bottom-5 left-1/2 z-[1001] -translate-x-1/2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2 text-sm font-semibold text-[var(--color-text)] shadow-[var(--shadow-elevated)]"
+          >
+            Blog link copied
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <style jsx>{`
-        @keyframes blob {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          25% { transform: translate(20px, -50px) scale(1.1); }
-          50% { transform: translate(-20px, 20px) scale(0.9); }
-          75% { transform: translate(50px, 50px) scale(1.05); }
+        .blog-article-content :global(h2),
+        .blog-article-content :global(h3) {
+          color: var(--color-text);
+          font-weight: 800;
+          line-height: 1.2;
+          margin: 2rem 0 0.85rem;
         }
-        .animate-blob {
-          animation: blob 7s infinite;
+        .blog-article-content :global(h2) {
+          font-size: clamp(1.6rem, 3vw, 2.25rem);
         }
-        .animation-delay-2000 {
-          animation-delay: 2s;
+        .blog-article-content :global(h3) {
+          font-size: clamp(1.25rem, 2.2vw, 1.65rem);
         }
-        .animation-delay-4000 {
-          animation-delay: 4s;
+        .blog-article-content :global(p),
+        .blog-article-content :global(li) {
+          font-size: 1rem;
+          line-height: 1.85;
+          margin: 0.9rem 0;
+        }
+        .blog-article-content :global(ul),
+        .blog-article-content :global(ol) {
+          margin: 1rem 0;
+          padding-left: 1.35rem;
+        }
+        .blog-article-content :global(a) {
+          color: var(--color-accent-a);
+          font-weight: 700;
+        }
+        .blog-article-content :global(img) {
+          border-radius: 0.5rem;
+          margin: 1.5rem 0;
+          max-width: 100%;
         }
       `}</style>
     </div>

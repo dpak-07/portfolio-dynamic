@@ -247,6 +247,20 @@ export default function Navbar({ sectionsConfig, theme = "light", onThemeToggle 
             </button>
 
             <div className="flex items-center gap-2">
+              {resolvedSectionsConfig.blog && (
+                <motion.a
+                  href="/blog"
+                  onClick={() => logLinkClick("nav_blog_mobile_top")}
+                  whileTap={lightweightMotion ? undefined : { scale: 0.94 }}
+                  className="flex h-10 w-10 items-center justify-center rounded-lg border text-[var(--color-muted)] transition-colors hover:text-[var(--color-text)]"
+                  style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface-soft)" }}
+                  aria-label="Visit blog"
+                  title="Blog"
+                >
+                  <BookOpen size={17} />
+                </motion.a>
+              )}
+
               <button
                 type="button"
                 onClick={toggleTheme}
