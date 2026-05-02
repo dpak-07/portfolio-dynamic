@@ -158,7 +158,7 @@ function HighQualityImage({ src, alt, className, onLoad, onError, priority = fal
   }
 
   return (
-    <div className="relative">
+    <div className="relative h-full w-full">
       {isLoading && (
         <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-[var(--color-surface-muted)]">
           <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }}>
@@ -199,40 +199,106 @@ function normalizeCategories(certsData) {
   });
 }
 
+function getCertificateImages(item) {
+  return Array.isArray(item?.images) ? item.images.filter(Boolean) : [];
+}
+
 function CertificateCard({ item, index, onOpen }) {
-  const imageCount = Array.isArray(item.images) ? item.images.length : 0;
+  const images = getCertificateImages(item);
+  const imageCount = images.length;
+  const [activeImage, setActiveImage] = useState(0);
+
+  useEffect(() => {
+    setActiveImage(0);
+  }, [item]);
+
+  useEffect(() => {
+    if (imageCount <= 1) return undefined;
+
+    const timer = setInterval(() => {
+      setActiveImage((current) => (current + 1) % imageCount);
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, [imageCount]);
 
   return (
     <motion.article
       variants={cardVariants}
       whileHover={{ y: -6 }}
       onClick={() => onOpen(item)}
-      className="portfolio-panel group cursor-pointer rounded-2xl p-5 text-left"
+      className="portfolio-panel group cursor-pointer overflow-hidden rounded-2xl text-left"
     >
-<div className="mb-5 flex items-start justify-between gap-4">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border" style={{ borderColor: "var(--color-accent-a)", background: "var(--color-accent-soft)" }}>
-          <FileBadge className="h-5 w-5" style={{ color: "var(--color-accent-a)" }} />
-        </span>
-        <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-2.5 py-1 text-xs font-bold text-[var(--color-muted)]">
-          {imageCount ? `${imageCount} image${imageCount > 1 ? "s" : ""}` : "No image"}
-        </span>
+      <div className="relative aspect-[4/3] overflow-hidden bg-[var(--color-surface-muted)]">
+        {imageCount ? (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`${item.title}-${activeImage}`}
+              initial={{ opacity: 0.2, scale: 1.02 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0.2, scale: 0.99 }}
+              transition={{ duration: 0.45, ease: "easeOut" }}
+              className="absolute inset-0"
+            >
+              <HighQualityImage
+                src={images[activeImage]}
+                alt={`${item.title} certificate ${activeImage + 1}`}
+                className="h-full w-full object-cover"
+                priority={index < 3 && activeImage === 0}
+              />
+            </motion.div>
+          </AnimatePresence>
+        ) : (
+          <div className="flex h-full items-center justify-center text-[var(--color-muted)]">
+            <div className="text-center">
+              <FileBadge className="mx-auto mb-2 h-10 w-10 opacity-50" />
+              <p className="text-sm">No image</p>
+            </div>
+          </div>
+        )}
+
+        <div className="absolute left-3 top-3 rounded-full border border-white/70 bg-white/90 px-2.5 py-1 text-xs font-black text-zinc-950 shadow-sm">
+          {imageCount ? `${activeImage + 1} / ${imageCount}` : "0"}
+        </div>
+
+        {imageCount > 1 && (
+          <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5 rounded-full bg-black/35 px-2 py-1 backdrop-blur-sm">
+            {images.map((image, dotIndex) => (
+              <span
+                key={`${image}-${dotIndex}`}
+                className={`h-1.5 rounded-full transition-all ${dotIndex === activeImage ? "w-5 bg-white" : "w-1.5 bg-white/55"}`}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
-<div className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: "var(--color-accent-a)" }}>Milestone {index + 1}</div>
-<h3 className="mt-2 text-lg font-black leading-tight" style={{ color: "var(--color-accent-a)" }}>{item.title}</h3>
+      <div className="p-5">
+        <div className="mb-4 flex items-start justify-between gap-4">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border" style={{ borderColor: "var(--color-accent-a)", background: "var(--color-accent-soft)" }}>
+            <FileBadge className="h-5 w-5" style={{ color: "var(--color-accent-a)" }} />
+          </span>
+          <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-2.5 py-1 text-xs font-bold text-[var(--color-muted)]">
+            {imageCount ? `${imageCount} photo${imageCount > 1 ? "s" : ""}` : "No photo"}
+          </span>
+        </div>
 
-<div className="mt-4 space-y-2 text-sm text-[var(--color-muted)]">
-        <div className="flex items-center gap-2">
-          <Building2 className="h-4 w-4 shrink-0" style={{ color: "var(--color-accent-b)" }} />
-          <span>{item.issuer}</span>
+        <div className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: "var(--color-accent-c)" }}>Milestone {index + 1}</div>
+        <h3 className="mt-2 text-lg font-black leading-tight" style={{ color: "var(--color-accent-a)" }}>{item.title}</h3>
+
+        <div className="mt-4 space-y-2 text-sm text-[var(--color-muted)]">
+          <div className="flex items-center gap-2">
+            <Building2 className="h-4 w-4 shrink-0" style={{ color: "var(--color-accent-b)" }} />
+            <span>{item.issuer}</span>
+          </div>
+          <div className="flex items-center gap-2 text-xs" style={{ color: "var(--color-accent-c)" }}>
+            <CalendarDays className="h-4 w-4 shrink-0" />
+            <span>{item.date}</span>
+          </div>
         </div>
-        <div className="flex items-center gap-2 text-xs" style={{ color: "var(--color-accent-c)" }}>
-          <CalendarDays className="h-4 w-4 shrink-0" />
-          <span>{item.date}</span>
-        </div>
+
+        <p className="mt-4 line-clamp-4 text-sm leading-relaxed text-[var(--color-muted)]">{item.desc}</p>
       </div>
-
-      <p className="mt-4 line-clamp-4 text-sm leading-relaxed text-[var(--color-muted)]">{item.desc}</p>
     </motion.article>
   );
 }
@@ -246,6 +312,7 @@ export default function CertificationsSection() {
   const [imageIndex, setImageIndex] = useState(0);
   const [loading, setLoading] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const selectedImages = useMemo(() => getCertificateImages(selected), [selected]);
 
   const sectionRef = useRef(null);
   const dropdownRef = useRef(null);
@@ -269,8 +336,8 @@ export default function CertificationsSection() {
   }, [activeCategory]);
 
   useEffect(() => {
-    if (selected?.images) preloadImages(selected.images);
-  }, [selected]);
+    preloadImages(selectedImages);
+  }, [selectedImages]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -288,12 +355,12 @@ export default function CertificationsSection() {
   }, [selected]);
 
   useEffect(() => {
-    if (!selected?.images || selected.images.length <= 1) return undefined;
+    if (selectedImages.length <= 1) return undefined;
     const timer = setInterval(() => {
-      setImageIndex((prev) => (prev + 1) % selected.images.length);
+      setImageIndex((prev) => (prev + 1) % selectedImages.length);
     }, 5000);
     return () => clearInterval(timer);
-  }, [selected]);
+  }, [selectedImages]);
 
   const handleCategoryChange = (cat) => {
     setLoading(true);
@@ -305,19 +372,19 @@ export default function CertificationsSection() {
   };
 
   const nextImage = () => {
-    if (!selected?.images) return;
-    setImageIndex((prev) => (prev + 1) % selected.images.length);
+    if (!selectedImages.length) return;
+    setImageIndex((prev) => (prev + 1) % selectedImages.length);
   };
 
   const prevImage = () => {
-    if (!selected?.images) return;
-    setImageIndex((prev) => (prev - 1 + selected.images.length) % selected.images.length);
+    if (!selectedImages.length) return;
+    setImageIndex((prev) => (prev - 1 + selectedImages.length) % selectedImages.length);
   };
 
   const openOriginalLink = () => {
-    if (selected?.images?.[imageIndex]) {
+    if (selectedImages[imageIndex]) {
       logLinkClick("certificate_original");
-      window.open(selected.images[imageIndex], "_blank", "noopener noreferrer");
+      window.open(selectedImages[imageIndex], "_blank", "noopener noreferrer");
     }
   };
 
@@ -477,31 +544,20 @@ className={`flex items-center gap-2 rounded-full border px-5 py-2 text-sm font-b
               className="portfolio-modal-card relative max-h-[92svh] w-full max-w-4xl overflow-y-auto rounded-2xl p-5 sm:p-6"
               onClick={(event) => event.stopPropagation()}
             >
-              <button onClick={() => setSelected(null)} className="portfolio-secondary-button absolute right-3 top-3 z-10 rounded-full p-2 transition-colors" aria-label="Close certificate modal">
+              <button onClick={() => setSelected(null)} className="portfolio-secondary-button absolute right-3 top-3 z-30 rounded-full p-2 transition-colors" aria-label="Close certificate modal">
                 <X size={20} />
               </button>
 
-<h3 className="mb-2 pr-10 text-2xl font-black" style={{ color: "var(--color-accent-a)" }}>{selected.title}</h3>
-              <div className="mb-2 flex items-center gap-2 text-[var(--color-muted)]">
-                <Building2 className="h-4 w-4" />
-                <span>{selected.issuer}</span>
-              </div>
-              <div className="mb-4 flex items-center gap-2 text-sm text-[var(--color-faint)]">
-                <CalendarDays className="h-4 w-4" />
-                <span>{selected.date}</span>
-              </div>
-              <p className="mb-6 text-sm leading-relaxed text-[var(--color-muted)]">{selected.desc}</p>
-
-              {selected.images && selected.images.length > 0 ? (
-                <div className="portfolio-panel-muted relative flex items-center justify-center rounded-2xl p-3 sm:p-4">
+              {selectedImages.length > 0 ? (
+                <div className="portfolio-panel-muted relative mb-6 flex items-center justify-center rounded-2xl p-3 sm:p-4">
                   <HighQualityImage
-                    src={selected.images[imageIndex]}
+                    src={selectedImages[imageIndex]}
                     alt={`${selected.title}-${imageIndex}`}
                     className="max-h-[60vh] rounded-xl border border-[var(--color-border)] object-contain shadow-lg"
                     priority={imageIndex === 0}
                   />
 
-                  {selected.images.length > 1 && (
+                  {selectedImages.length > 1 && (
                     <>
                       <button onClick={prevImage} className="absolute left-3 top-1/2 z-20 -translate-y-1/2 rounded-full border border-white/70 bg-white/90 p-2.5 text-zinc-950 shadow-lg transition-all hover:bg-white sm:left-4" aria-label="Previous certificate image">
                         <ChevronLeft className="h-6 w-6" />
@@ -512,9 +568,9 @@ className={`flex items-center gap-2 rounded-full border px-5 py-2 text-sm font-b
                     </>
                   )}
 
-                  {selected.images.length > 1 && (
+                  {selectedImages.length > 1 && (
                     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full border border-white/70 bg-white/90 px-3 py-1 text-sm font-bold text-zinc-950 shadow-sm">
-                      {imageIndex + 1} / {selected.images.length}
+                      {imageIndex + 1} / {selectedImages.length}
                     </div>
                   )}
 
@@ -523,11 +579,29 @@ className={`flex items-center gap-2 rounded-full border px-5 py-2 text-sm font-b
                   </button>
                 </div>
               ) : (
-                <div className="rounded-2xl border-2 border-dashed border-[var(--color-border)] py-12 text-center text-[var(--color-muted)]">
+                <div className="mb-6 rounded-2xl border-2 border-dashed border-[var(--color-border)] py-12 text-center text-[var(--color-muted)]">
                   <FileBadge className="mx-auto mb-4 h-12 w-12 opacity-50" />
                   <p>No certificate image available</p>
                 </div>
               )}
+
+              <div className="rounded-2xl border p-4 sm:p-5" style={{ borderColor: "var(--color-border)", background: "color-mix(in srgb, var(--color-surface-soft) 78%, transparent)" }}>
+                <div className="mb-3 text-xs font-bold uppercase tracking-[0.18em]" style={{ color: "var(--color-accent-c)" }}>
+                  Certificate Details
+                </div>
+                <h3 className="pr-10 text-2xl font-black" style={{ color: "var(--color-accent-a)" }}>{selected.title}</h3>
+                <div className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
+                  <div className="flex items-center gap-2 text-[var(--color-muted)]">
+                    <Building2 className="h-4 w-4" style={{ color: "var(--color-accent-b)" }} />
+                    <span>{selected.issuer}</span>
+                  </div>
+                  <div className="flex items-center gap-2" style={{ color: "var(--color-accent-c)" }}>
+                    <CalendarDays className="h-4 w-4" />
+                    <span>{selected.date}</span>
+                  </div>
+                </div>
+                <p className="mt-4 text-sm leading-relaxed text-[var(--color-muted)]">{selected.desc}</p>
+              </div>
             </motion.div>
           </motion.div>
         )}

@@ -69,20 +69,30 @@ export default function Resume() {
   }
 
   return (
-    <section id="resume" ref={sectionRef} className="relative overflow-hidden px-4 py-16 scroll-mt-24 sm:px-6 lg:px-8 lg:py-20">
+    <section
+      id="resume"
+      ref={sectionRef}
+      className="relative overflow-hidden px-4 py-16 scroll-mt-24 sm:px-6 lg:px-8 lg:py-20"
+      style={{
+        background:
+          "linear-gradient(135deg, color-mix(in srgb, var(--color-accent-a) 10%, transparent), transparent 34%), linear-gradient(225deg, color-mix(in srgb, var(--color-accent-c) 9%, transparent), transparent 36%)",
+      }}
+    >
       <div className="mx-auto max-w-6xl">
         <motion.div
-          className="portfolio-panel relative overflow-hidden rounded-lg"
+          className="portfolio-panel relative overflow-hidden rounded-lg border"
+          style={{ borderColor: "color-mix(in srgb, var(--color-accent-a) 30%, var(--color-border))" }}
           initial={{ opacity: 0, y: 28 }}
           animate={sectionInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 28 }}
           transition={{ duration: 0.45, ease: "easeOut" }}
         >
+          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[var(--color-accent-a)] via-[var(--color-accent-b)] to-[var(--color-accent-c)]" />
           <div className="pointer-events-none absolute inset-0 opacity-70" style={{ background: "linear-gradient(135deg, rgba(45,212,191,0.14), transparent 38%), linear-gradient(315deg, rgba(245,158,11,0.12), transparent 34%)" }} />
 
           <div className="relative grid gap-0 lg:grid-cols-[1.02fr_0.98fr]">
             <div className="border-b p-5 sm:p-8 lg:border-b-0 lg:border-r lg:p-10" style={{ borderColor: "var(--color-border)" }}>
-              <div className="mb-5 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-faint)]" style={{ borderColor: "var(--color-border)" }}>
-                <Sparkles className="h-3.5 w-3.5 text-cyan-500" />
+              <div className="mb-5 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]" style={{ borderColor: "color-mix(in srgb, var(--color-accent-b) 36%, var(--color-border))", color: "var(--color-accent-b)", background: "color-mix(in srgb, var(--color-accent-b) 10%, transparent)" }}>
+                <Sparkles className="h-3.5 w-3.5" />
                 Career Snapshot
               </div>
 
@@ -93,14 +103,14 @@ export default function Resume() {
               )}
 
               <div className="mt-6 grid grid-cols-2 gap-3">
-                <div className="portfolio-panel-muted rounded-lg p-3">
-                  <Layers3 className="mb-2 h-5 w-5 text-cyan-500" />
-                  <div className="text-2xl font-black text-[var(--color-text)]">{skills.length}</div>
+                <div className="rounded-lg border p-3" style={{ borderColor: "color-mix(in srgb, var(--color-accent-a) 34%, var(--color-border))", background: "color-mix(in srgb, var(--color-accent-a) 9%, var(--color-surface-soft))" }}>
+                  <Layers3 className="mb-2 h-5 w-5" style={{ color: "var(--color-accent-a)" }} />
+                  <div className="text-2xl font-black" style={{ color: "var(--color-accent-a)" }}>{skills.length}</div>
                   <div className="text-xs font-semibold text-[var(--color-faint)]">skills listed</div>
                 </div>
-                <div className="portfolio-panel-muted rounded-lg p-3">
-                  <CalendarDays className="mb-2 h-5 w-5 text-amber-500" />
-                  <div className="text-sm font-black text-[var(--color-text)]">{updated || "Live"}</div>
+                <div className="rounded-lg border p-3" style={{ borderColor: "color-mix(in srgb, var(--color-accent-c) 34%, var(--color-border))", background: "color-mix(in srgb, var(--color-accent-c) 9%, var(--color-surface-soft))" }}>
+                  <CalendarDays className="mb-2 h-5 w-5" style={{ color: "var(--color-accent-c)" }} />
+                  <div className="text-sm font-black" style={{ color: "var(--color-accent-c)" }}>{updated || "Live"}</div>
                   <div className="text-xs font-semibold text-[var(--color-faint)]">last updated</div>
                 </div>
               </div>
@@ -110,7 +120,8 @@ export default function Resume() {
                   type="button"
                   onClick={handleViewResume}
                   disabled={!embedLink}
-                  className="portfolio-primary-button inline-flex w-full items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-bold text-white shadow-lg transition disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                  style={{ background: "linear-gradient(135deg, var(--color-accent-a), var(--color-accent-b))" }}
                 >
                   <Eye className="h-4 w-4" />
                   View Resume
@@ -120,7 +131,8 @@ export default function Resume() {
                   <a
                     href={downloadLink}
                     onClick={handleDownload}
-                    className="portfolio-secondary-button inline-flex w-full items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-bold sm:w-auto"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg border px-5 py-3 text-sm font-bold transition hover:bg-[var(--color-surface-soft)] sm:w-auto"
+                    style={{ borderColor: "var(--color-accent-c)", color: "var(--color-accent-c)" }}
                   >
                     <Download className="h-4 w-4" />
                     Download PDF
@@ -135,7 +147,7 @@ export default function Resume() {
                   <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-faint)]">Skill Cloud</div>
                   <div className="text-xl font-black text-[var(--color-text)]">What the resume highlights</div>
                 </div>
-                <div className="portfolio-panel-muted hidden rounded-lg p-3 text-cyan-500 sm:block">
+                <div className="portfolio-panel-muted hidden rounded-lg p-3 sm:block" style={{ color: "var(--color-accent-b)" }}>
                   <Award className="h-6 w-6" />
                 </div>
               </div>
@@ -147,7 +159,12 @@ export default function Resume() {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.025 }}
-                    className="portfolio-chip rounded-lg px-3 py-2 text-xs font-semibold sm:text-sm"
+                    className="rounded-lg border px-3 py-2 text-xs font-semibold sm:text-sm"
+                    style={{
+                      borderColor: index % 3 === 0 ? "var(--color-accent-a)" : index % 3 === 1 ? "var(--color-accent-b)" : "var(--color-accent-c)",
+                      color: index % 3 === 0 ? "var(--color-accent-a)" : index % 3 === 1 ? "var(--color-accent-b)" : "var(--color-accent-c)",
+                      background: "color-mix(in srgb, var(--color-surface-soft) 78%, transparent)",
+                    }}
                   >
                     {skill}
                   </motion.span>
@@ -155,13 +172,13 @@ export default function Resume() {
               </div>
 
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                <div className="portfolio-panel-muted rounded-lg p-4">
-                  <UserCheck className="mb-3 h-5 w-5 text-cyan-500" />
+                <div className="portfolio-panel-muted rounded-lg border p-4" style={{ borderColor: "color-mix(in srgb, var(--color-accent-d) 30%, var(--color-border))" }}>
+                  <UserCheck className="mb-3 h-5 w-5" style={{ color: "var(--color-accent-d)" }} />
                   <div className="text-sm font-bold text-[var(--color-text)]">Updated by</div>
                   <p className="mt-1 text-sm text-[var(--color-muted)]">{resumeData.updatedBy || "Firestore"}</p>
                 </div>
-                <div className="portfolio-panel-muted rounded-lg p-4">
-                  <FileText className="mb-3 h-5 w-5 text-amber-500" />
+                <div className="portfolio-panel-muted rounded-lg border p-4" style={{ borderColor: "color-mix(in srgb, var(--color-accent-c) 30%, var(--color-border))" }}>
+                  <FileText className="mb-3 h-5 w-5" style={{ color: "var(--color-accent-c)" }} />
                   <div className="text-sm font-bold text-[var(--color-text)]">Source</div>
                   <p className="mt-1 text-sm text-[var(--color-muted)]">{resumeData.resumeDriveLink ? "Drive resume linked" : "No resume link published"}</p>
                 </div>
