@@ -163,7 +163,7 @@ export default function Header({ showBlogLink = false }) {
     <header
       id="home"
       ref={sectionRef}
-      className="relative flex min-h-[100svh] w-full scroll-mt-24 flex-col items-center justify-center overflow-hidden text-[var(--color-text)]"
+      className="relative flex min-h-[100svh] w-full scroll-mt-24 flex-col items-center justify-start overflow-hidden px-0 pb-10 pt-[calc(5.75rem+env(safe-area-inset-top))] text-[var(--color-text)] sm:pb-12 sm:pt-28 md:justify-center xl:pt-24"
     >
       <div className="absolute inset-0 -z-10 overflow-hidden">
         <div
