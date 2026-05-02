@@ -219,7 +219,7 @@ function CertificateCard({ item, index, onOpen }) {
       </div>
 
 <div className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: "var(--color-accent-a)" }}>Milestone {index + 1}</div>
-      <h3 className="mt-2 text-lg font-black leading-tight text-[var(--color-text)]">{item.title}</h3>
+<h3 className="mt-2 text-lg font-black leading-tight" style={{ color: "var(--color-accent-a)" }}>{item.title}</h3>
 
 <div className="mt-4 space-y-2 text-sm text-[var(--color-muted)]">
         <div className="flex items-center gap-2">
@@ -481,7 +481,7 @@ className={`flex items-center gap-2 rounded-full border px-5 py-2 text-sm font-b
                 <X size={20} />
               </button>
 
-              <h3 className="mb-2 pr-10 text-2xl font-black text-[var(--color-text)]">{selected.title}</h3>
+<h3 className="mb-2 pr-10 text-2xl font-black" style={{ color: "var(--color-accent-a)" }}>{selected.title}</h3>
               <div className="mb-2 flex items-center gap-2 text-[var(--color-muted)]">
                 <Building2 className="h-4 w-4" />
                 <span>{selected.issuer}</span>

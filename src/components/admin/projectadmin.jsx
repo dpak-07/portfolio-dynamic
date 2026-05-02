@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { doc, setDoc, getDoc, Timestamp } from "firebase/firestore";
 import { db } from "@/firebase";
+import AdminResponsiveStyles from "./AdminResponsiveStyles";
 
 const STORAGE_DRAFT_KEY = "projects_config_draft";
 const FIRESTORE_PROJECTS_DOC = "projects/data";
@@ -1000,8 +1001,9 @@ export default function ProjectsAdminCRT() {
     );
   }
 
-  return (
+return (
     <div className="admin-mobile-shell w-screen min-h-screen lg:h-screen lg:overflow-hidden crt-screen crt-glow">
+      <AdminResponsiveStyles />
       <CRTStyles />
 
       <div className="w-full h-full flex flex-col p-2 sm:p-3 md:p-4 gap-2 sm:gap-3 md:gap-4 pb-16 lg:pb-4 overflow-y-auto lg:overflow-y-hidden">

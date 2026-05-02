@@ -135,7 +135,7 @@ function ProjectCard({ project, index, onOpen }) {
       </button>
 
       <div className="p-4">
-        <h3 className="mb-1 text-xl font-black leading-tight text-[var(--color-text)]">{project.title}</h3>
+<h3 className="mb-1 text-xl font-black leading-tight" style={{ color: "var(--color-accent-a)" }}>{project.title}</h3>
         {project.desc && <p className="mb-4 line-clamp-2 text-xs leading-relaxed text-[var(--color-muted)]">{project.desc}</p>}
 
 <div className="mb-4 flex flex-wrap gap-1.5">
@@ -207,8 +207,8 @@ function SpotlightProject({ project, active, onOpen }) {
 
       <div className="flex flex-col p-5 sm:p-7">
         <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-faint)]">{active}</div>
-        <h3 className="mt-3 text-3xl font-black leading-tight text-[var(--color-text)] sm:text-4xl">{project.title}</h3>
-        {project.desc && <p className="mt-3 text-xl font-black leading-tight text-[var(--color-text)]">{project.desc}</p>}
+<h3 className="mt-3 text-3xl font-black leading-tight sm:text-4xl" style={{ color: "var(--color-accent-a)" }}>{project.title}</h3>
+        {project.desc && <p className="mt-3 text-xl font-black leading-tight" style={{ color: "var(--color-accent-b)" }}>{project.desc}</p>}
         <p className="mt-4 line-clamp-7 text-sm leading-relaxed text-[var(--color-muted)]">{project.long || project.desc}</p>
 
 <div className="mt-5 flex flex-wrap gap-2">
@@ -261,8 +261,8 @@ function ProjectModal({ project, onClose }) {
                 Featured Project
               </div>
             )}
-            <h3 className="pr-10 text-3xl font-black leading-tight text-[var(--color-text)]">{project.title}</h3>
-            {project.desc && <p className="mt-2 text-sm font-semibold text-[var(--color-muted)]">{project.desc}</p>}
+<h3 className="pr-10 text-3xl font-black leading-tight" style={{ color: "var(--color-accent-a)" }}>{project.title}</h3>
+            {project.desc && <p className="mt-2 text-sm font-semibold" style={{ color: "var(--color-accent-b)" }}>{project.desc}</p>}
             <p className="mt-5 text-sm leading-relaxed text-[var(--color-muted)]">{project.long || project.desc}</p>
 
 <div className="mt-6 flex flex-wrap gap-2">

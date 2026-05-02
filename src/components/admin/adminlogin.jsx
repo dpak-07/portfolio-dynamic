@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../firebase";
 import { createAdminSession, getAdminSession } from "../../utils/adminSession";
+import AdminResponsiveStyles from "./AdminResponsiveStyles";
 
 // Constants for better maintainability
 const CONSTANTS = {
@@ -182,10 +183,11 @@ export default function AdminLogin() {
     }
   };
 
-  // Show loading while fetching credentials
+// Show loading while fetching credentials
   if (!adminCredentials && !error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-gray-900 to-purple-900 text-white">
+      <div className="admin-mobile-shell min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-gray-900 to-purple-900 text-white">
+        <AdminResponsiveStyles />
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -199,8 +201,9 @@ export default function AdminLogin() {
     );
   }
 
-  return (
-    <div className="min-h-screen flex items-center justify-center text-white relative overflow-hidden">
+return (
+    <div className="admin-mobile-shell min-h-screen flex items-center justify-center text-white relative overflow-hidden">
+      <AdminResponsiveStyles />
 
       {/* Enhanced Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
