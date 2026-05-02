@@ -223,14 +223,17 @@ export default function AdminResponsiveStyles() {
         /* --- Shell & Root Containers --- */
         .admin-mobile-shell {
           overflow-x: hidden;
+          min-height: 100svh;
         }
 
         /* Fix fixed-viewport containers to be scrollable */
+        .admin-mobile-shell.crt-screen,
+        .admin-mobile-shell.crt-glow,
         .admin-mobile-shell .crt-screen,
         .admin-mobile-shell .crt-glow {
           width: 100% !important;
           max-width: 100% !important;
-          min-height: 100vh !important;
+          min-height: 100svh !important;
           height: auto !important;
           overflow-x: hidden !important;
           overflow-y: auto !important;
@@ -239,7 +242,7 @@ export default function AdminResponsiveStyles() {
         /* Inner wrapper */
         .admin-mobile-shell .crt-screen > div,
         .admin-mobile-shell .crt-glow > div {
-          min-height: 100vh;
+          min-height: 100svh;
           width: 100%;
           height: auto !important;
         }
@@ -259,11 +262,14 @@ export default function AdminResponsiveStyles() {
         .admin-mobile-shell .flex-1.flex.gap-3 {
           flex-direction: column !important;
           overflow: visible !important;
+          min-height: 0 !important;
         }
 
         /* --- Sidebar: Full width on mobile --- */
         .admin-mobile-shell .w-64.crt-panel,
-        .admin-mobile-shell .w-64 {
+        .admin-mobile-shell .w-72.crt-panel,
+        .admin-mobile-shell .w-64,
+        .admin-mobile-shell .w-72 {
           width: 100% !important;
           max-width: none !important;
           flex: none !important;
@@ -271,6 +277,7 @@ export default function AdminResponsiveStyles() {
 
         /* Make sidebar navigation horizontal on mobile */
         .admin-mobile-shell .w-64.crt-panel > div:first-child > div.space-y-2,
+        .admin-mobile-shell .w-72.crt-panel > div:first-child > div.space-y-2,
         .admin-mobile-shell .w-64 > div:first-child > .space-y-2 {
           display: flex !important;
           flex-direction: row !important;
@@ -282,6 +289,7 @@ export default function AdminResponsiveStyles() {
         }
 
         .admin-mobile-shell .w-64.crt-panel > div:first-child > div.space-y-2 > *,
+        .admin-mobile-shell .w-72.crt-panel > div:first-child > div.space-y-2 > *,
         .admin-mobile-shell .w-64 > div:first-child > .space-y-2 > * {
           white-space: nowrap !important;
           flex-shrink: 0 !important;
@@ -289,14 +297,9 @@ export default function AdminResponsiveStyles() {
           font-size: 0.8rem !important;
         }
 
-        /* Hide sidebar spacer and actions section on mobile (use floating bar) */
-        .admin-mobile-shell .w-64.crt-panel > .flex-1,
-        .admin-mobile-shell .w-64.crt-panel > div:last-child:not(:first-child) {
-          display: none !important;
-        }
-
-        /* Show only the navigation div on mobile */
-        .admin-mobile-shell .w-64.crt-panel > div:first-child {
+        /* Keep sidebar content available on mobile; these pages do not all render a separate floating action bar. */
+        .admin-mobile-shell .w-64.crt-panel > div:first-child,
+        .admin-mobile-shell .w-72.crt-panel > div:first-child {
           display: block !important;
         }
 
@@ -543,8 +546,6 @@ export default function AdminResponsiveStyles() {
           box-shadow: 0 0 15px rgba(236,72,153,0.5) !important;
         }
       }
-        }
-      }
 
       @media (min-width: 1025px) {
         .admin-mobile-fab {
@@ -634,18 +635,27 @@ export default function AdminResponsiveStyles() {
 
       /* ---------- MODALS & DIALOGS ---------- */
       @media (max-width: 1024px) {
-        .admin-mobile-shell .fixed.inset-0,
+        .admin-mobile-shell .fixed.inset-0.z-50,
+        .admin-mobile-shell .fixed.inset-0.z-\\[50\\],
+        .admin-mobile-shell .fixed.inset-0.z-\\[999\\],
+        .admin-mobile-shell .fixed.inset-0.z-\\[1000\\],
         .admin-mobile-shell .modal {
           position: fixed !important;
           inset: 0 !important;
           z-index: 1000 !important;
+          padding-top: 4.75rem !important;
+          padding-bottom: max(1rem, env(safe-area-inset-bottom)) !important;
+          align-items: flex-start !important;
         }
 
-        .admin-mobile-shell .fixed.inset-0 .max-w-2xl,
-        .admin-mobile-shell .fixed.inset-0 .modal-dialog,
-        .admin-mobile-shell .fixed.inset-0 .crt-panel {
+        .admin-mobile-shell .fixed.inset-0.z-50 .max-w-2xl,
+        .admin-mobile-shell .fixed.inset-0.z-50 .modal-dialog,
+        .admin-mobile-shell .fixed.inset-0.z-50 .crt-panel,
+        .admin-mobile-shell .modal .max-w-2xl,
+        .admin-mobile-shell .modal .modal-dialog,
+        .admin-mobile-shell .modal .crt-panel {
           max-width: 90vw !important;
-          max-height: 85vh !important;
+          max-height: calc(100svh - 6rem) !important;
           width: 90vw !important;
           margin: auto !important;
           overflow-y: auto !important;
@@ -653,8 +663,10 @@ export default function AdminResponsiveStyles() {
         }
 
         /* Close buttons on modals */
-        .admin-mobile-shell .fixed.inset-0 [class*="btn-close"],
-        .admin-mobile-shell .fixed.inset-0 button:has(svg) {
+        .admin-mobile-shell .fixed.inset-0.z-50 [class*="btn-close"],
+        .admin-mobile-shell .fixed.inset-0.z-50 button:has(svg),
+        .admin-mobile-shell .modal [class*="btn-close"],
+        .admin-mobile-shell .modal button:has(svg) {
           min-width: 36px;
           min-height: 36px;
           padding: 0.5rem !important;
@@ -908,12 +920,17 @@ export default function AdminResponsiveStyles() {
       }
 
       /* Modal overlay colors */
-      .admin-mobile-shell .fixed.inset-0 {
+      .admin-mobile-shell .fixed.inset-0.z-50,
+      .admin-mobile-shell .fixed.inset-0.z-\\[50\\],
+      .admin-mobile-shell .fixed.inset-0.z-\\[999\\],
+      .admin-mobile-shell .fixed.inset-0.z-\\[1000\\],
+      .admin-mobile-shell .modal {
         background: linear-gradient(135deg, rgba(0,0,0,0.7), rgba(0,229,255,0.1), rgba(0,0,0,0.7)) !important;
         backdrop-filter: blur(4px) !important;
       }
 
-      .admin-mobile-shell .fixed.inset-0 .crt-panel {
+      .admin-mobile-shell .fixed.inset-0.z-50 .crt-panel,
+      .admin-mobile-shell .modal .crt-panel {
         border: 2px solid #00e5ff;
         box-shadow: 0 0 40px rgba(0,229,255,0.3), inset 0 0 30px rgba(0,229,255,0.1);
       }

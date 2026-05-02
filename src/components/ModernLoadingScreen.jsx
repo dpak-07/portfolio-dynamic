@@ -1,114 +1,99 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
-export default function ModernLoadingScreen() {
-    const [progress, setProgress] = useState(0);
-    const [isDark, setIsDark] = useState(false);
+const rings = [
+  { size: "h-32 w-32", color: "var(--color-accent-a)", delay: 0 },
+  { size: "h-24 w-24", color: "var(--color-accent-b)", delay: 0.16 },
+  { size: "h-16 w-16", color: "var(--color-accent-c)", delay: 0.32 },
+];
 
-    useEffect(() => {
-        // Check current theme
-        const checkTheme = () => {
-            const dark = document.documentElement.getAttribute("data-theme") === "dark" ||
-                window.matchMedia("(prefers-color-scheme: dark)").matches;
-            setIsDark(dark);
-        };
-        checkTheme();
-        
-        const observer = new MutationObserver(checkTheme);
-        observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-        
-        // Progress animation
-        const interval = setInterval(() => {
-            setProgress((prev) => {
-                if (prev >= 100) {
-                    clearInterval(interval);
-                    return 100;
-                }
-                return prev + Math.random() * 15;
-            });
-        }, 150);
+export default function ModernLoadingScreen({ ready = false }) {
+  const [isDark, setIsDark] = useState(false);
 
-        return () => {
-            clearInterval(interval);
-            observer.disconnect();
-        };
-    }, []);
+  useEffect(() => {
+    const checkTheme = () => {
+      setIsDark(document.documentElement.getAttribute("data-theme") === "dark");
+    };
 
-    return (
-        <div 
-            className={`fixed inset-0 z-[9999] flex items-center justify-center overflow-hidden ${
-                isDark 
-                    ? "bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950" 
-                    : "bg-white"
-            }`}
-        >
-            {/* Dark mode: Animated background orbs */}
-            {isDark && (
-                <div className="absolute inset-0 overflow-hidden">
-                    <motion.div
-                        animate={{
-                            scale: [1, 1.2, 1],
-                            opacity: [0.3, 0.5, 0.3],
-                            x: [0, 100, 0],
-                        }}
-                        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-                        className="absolute top-0 left-0 w-96 h-96 bg-cyan-500 rounded-full blur-[120px]"
-                    />
-                    <motion.div
-                        animate={{
-                            scale: [1, 1.3, 1],
-                            opacity: [0.3, 0.6, 0.3],
-                            x: [0, -100, 0],
-                        }}
-                        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                        className="absolute bottom-0 right-0 w-96 h-96 bg-purple-500 rounded-full blur-[120px]"
-                    />
-                </div>
-            )}
+    checkTheme();
+    const observer = new MutationObserver(checkTheme);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
-{/* Main Content */}
-            <div className="relative z-10 flex flex-col items-center gap-6">
-                {/* Loading Text - Simple and Clean */}
-                <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="text-center"
-                >
-                    {isDark ? (
-                        <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                            Deepak
-                        </h2>
-                    ) : (
-                        <h2 className="text-3xl font-bold text-black">
-                            Deepak
-                        </h2>
-                    )}
-                    <motion.p
-                        animate={{ opacity: [0.4, 0.8, 0.4] }}
-                        transition={{ duration: 1.5, repeat: Infinity }}
-                        className={`text-sm mt-1 ${isDark ? "text-white/50" : "text-gray-400"}`}
-                    >
-                        Please wait...
-                    </motion.p>
-                </motion.div>
+    return () => observer.disconnect();
+  }, []);
 
-                {/* Simple Progress Bar */}
-                <div className={`w-40 h-1 rounded-full overflow-hidden ${
-                    isDark ? "bg-white/10" : "bg-gray-200"
-                }`}>
-                    <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${Math.min(progress, 100)}%` }}
-                        transition={{ duration: 0.2 }}
-                        className={`h-full rounded-full ${
-                            isDark 
-                                ? "bg-gradient-to-r from-cyan-500 to-purple-500" 
-                                : "bg-black"
-                        }`}
-                    />
-                </div>
-            </div>
+  return (
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center overflow-hidden"
+      style={{
+        color: "var(--color-text)",
+        background:
+          "linear-gradient(135deg, color-mix(in srgb, var(--color-accent-a) 12%, transparent), transparent 32%), linear-gradient(225deg, color-mix(in srgb, var(--color-accent-c) 10%, transparent), transparent 34%), linear-gradient(180deg, var(--color-bg), var(--color-bg-strong))",
+      }}
+    >
+      <div className="absolute inset-0 opacity-[0.14] [background-image:linear-gradient(var(--color-border)_1px,transparent_1px),linear-gradient(90deg,var(--color-border)_1px,transparent_1px)] [background-size:44px_44px]" />
+
+      <motion.div
+        className="relative z-10 flex flex-col items-center gap-7 px-6 text-center"
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: "easeOut" }}
+      >
+        <div className="relative flex h-36 w-36 items-center justify-center">
+          {rings.map((ring, index) => (
+            <motion.div
+              key={ring.color}
+              className={`absolute rounded-full border ${ring.size}`}
+              style={{
+                borderColor: ring.color,
+                boxShadow: `0 0 ${18 + index * 8}px color-mix(in srgb, ${ring.color} 35%, transparent)`,
+              }}
+              animate={{
+                rotate: index % 2 === 0 ? 360 : -360,
+                scale: [1, 1.05, 1],
+              }}
+              transition={{
+                rotate: { duration: 2.8 + index * 0.45, repeat: Infinity, ease: "linear" },
+                scale: { duration: 1.4, repeat: Infinity, ease: "easeInOut", delay: ring.delay },
+              }}
+            />
+          ))}
+
+          <motion.div
+            className="relative flex h-20 w-20 items-center justify-center rounded-lg border text-3xl font-black"
+            style={{
+              borderColor: "var(--color-border-strong)",
+              background: isDark ? "rgba(7, 16, 15, 0.82)" : "rgba(255, 255, 255, 0.86)",
+              boxShadow: "var(--shadow-elevated)",
+            }}
+            animate={{ y: [0, -4, 0] }}
+            transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <span className="bg-gradient-to-r from-[var(--color-accent-a)] via-[var(--color-accent-b)] to-[var(--color-accent-c)] bg-clip-text text-transparent">
+              D
+            </span>
+          </motion.div>
         </div>
-    );
+
+        <div>
+          <div className="text-sm font-semibold uppercase tracking-[0.32em] text-[var(--color-faint)]">
+            {ready ? "Almost There" : "Loading"}
+          </div>
+          <div className="mt-2 text-2xl font-black sm:text-3xl">
+            Deepak<span className="text-[var(--color-accent-a)]">.</span>
+          </div>
+          <motion.div
+            className="mx-auto mt-4 h-1 w-44 overflow-hidden rounded-full bg-[var(--color-surface-soft)]"
+            aria-hidden="true"
+          >
+            <motion.div
+              className="h-full w-20 rounded-full bg-gradient-to-r from-[var(--color-accent-a)] via-[var(--color-accent-b)] to-[var(--color-accent-c)]"
+              animate={{ x: [-90, 176] }}
+              transition={{ duration: 1.05, repeat: Infinity, ease: "easeInOut" }}
+            />
+          </motion.div>
+        </div>
+      </motion.div>
+    </div>
+  );
 }

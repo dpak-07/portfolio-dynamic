@@ -185,16 +185,16 @@ export default function Resume() {
               initial={{ opacity: 0, scale: 0.94 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.94 }}
-              className="fixed inset-0 z-[9999] flex items-center justify-center p-2 sm:p-4"
+              className="fixed inset-0 z-[9999] flex items-center justify-center px-2 pb-2 pt-20 sm:p-4"
             >
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="portfolio-secondary-button absolute right-2 top-2 z-[10000] rounded-full p-3 transition-all hover:border-cyan-400 hover:text-cyan-400 sm:right-6 sm:top-6"
+                className="portfolio-secondary-button absolute right-3 top-20 z-[10000] rounded-full p-3 transition-all hover:border-cyan-400 hover:text-cyan-400 sm:right-6 sm:top-6"
               >
                 <X className="h-6 w-6" />
               </button>
-              <iframe src={embedLink} className="h-[86svh] w-full max-w-5xl rounded-lg border border-cyan-400/30 bg-white shadow-2xl sm:h-[82vh]" title="Resume Preview" />
+              <iframe src={embedLink} className="h-[calc(100svh-6rem)] w-full max-w-5xl rounded-lg border border-cyan-400/30 bg-white shadow-2xl sm:h-[82vh]" title="Resume Preview" />
             </motion.div>
           </>
         )}

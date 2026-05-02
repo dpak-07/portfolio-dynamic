@@ -330,7 +330,7 @@ export default function Header() {
 
       {showResume && preview && (
         <div
-          className="portfolio-modal-backdrop fixed inset-0 z-[9999] flex flex-col items-center justify-center p-3 sm:p-4"
+          className="portfolio-modal-backdrop fixed inset-0 z-[9999] flex flex-col items-center justify-center px-3 pb-3 pt-20 sm:p-4"
           onClick={(event) => {
             if (event.target === event.currentTarget) {
               setShowResume(false);
@@ -339,7 +339,7 @@ export default function Header() {
         >
           <motion.button
             onClick={() => setShowResume(false)}
-            className="portfolio-secondary-button absolute right-4 top-4 z-[10000] rounded-full p-3 transition-all hover:border-cyansoft hover:text-cyansoft sm:right-6 sm:top-6"
+            className="portfolio-secondary-button absolute right-4 top-20 z-[10000] rounded-full p-3 transition-all hover:border-cyansoft hover:text-cyansoft sm:right-6 sm:top-6"
             whileHover={lightweightMotion ? undefined : { scale: 1.1 }}
             whileTap={lightweightMotion ? undefined : { scale: 0.9 }}
           >
@@ -350,7 +350,7 @@ export default function Header() {
             initial={lightweightMotion ? { opacity: 1 } : { scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: lightweightMotion ? 0.12 : 0.4, ease: "easeOut" }}
-            className="portfolio-modal-card h-[82svh] w-full max-w-4xl overflow-hidden rounded-lg shadow-2xl lg:max-w-5xl"
+            className="portfolio-modal-card h-[calc(100svh-6rem)] w-full max-w-4xl overflow-hidden rounded-lg shadow-2xl sm:h-[82svh] lg:max-w-5xl"
             onClick={(event) => event.stopPropagation()}
           >
             <iframe src={preview} className="h-full w-full rounded-lg bg-white" title="Resume" />
