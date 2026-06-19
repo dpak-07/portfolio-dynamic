@@ -12,6 +12,35 @@ const EMAILJS_TEMPLATE_ID =
 const EMAILJS_PUBLIC_KEY =
   process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || process.env.VITE_EMAILJS_PUBLIC_KEY;
 
+function Toast({ status, onDismiss }) {
+  if (!status) return null;
+
+  const isSuccess = status.type === "success";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 40, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 20, scale: 0.95 }}
+      transition={{ duration: 0.3 }}
+      className={`fixed bottom-6 right-6 z-[9999] flex items-center gap-3 rounded-xl px-5 py-4 text-sm font-medium text-white shadow-2xl ${
+        isSuccess ? "bg-emerald-500" : "bg-red-500"
+      }`}
+    >
+      <span>{isSuccess ? "Success" : "Error"}</span>
+      <span>{status.text}</span>
+      <button
+        type="button"
+        onClick={onDismiss}
+        className="ml-2 text-white opacity-70 hover:opacity-100"
+        aria-label="Dismiss notification"
+      >
+        x
+      </button>
+    </motion.div>
+  );
+}
+
 export default function Contact() {
   const [form, setForm] = useState({ name: "", email: "", message: "" });
   const [status, setStatus] = useState(null);
@@ -26,6 +55,13 @@ export default function Contact() {
       logSectionView("contact");
     }
   }, [sectionInView]);
+
+  useEffect(() => {
+    if (!status) return undefined;
+
+    const timer = setTimeout(() => setStatus(null), 5000);
+    return () => clearTimeout(timer);
+  }, [status]);
 
   const update = (key) => (e) =>
     setForm((s) => ({ ...s, [key]: e.target.value }));
@@ -50,7 +86,7 @@ export default function Contact() {
       setStatus({ type: "success", text: "Message sent successfully." });
       logLinkClick("contact");
       setForm({ name: "", email: "", message: "" });
-    } catch (err) {
+    } catch {
       setStatus({ type: "error", text: "Failed to send. Try again." });
     } finally {
       setLoading(false);
@@ -61,7 +97,7 @@ export default function Contact() {
     <section
       id="contact"
       ref={sectionRef}
-      className="relative py-16 px-6 overflow-hidden min-h-[85vh] flex items-center"
+      className="portfolio-section relative px-6 overflow-hidden min-h-[85vh] flex items-center"
     >
       {/* Animated Background Elements */}
 
@@ -73,27 +109,11 @@ export default function Contact() {
           transition={{ duration: 0.5 }}
           className="mb-10 text-center md:text-left"
         >
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            className="mb-4 inline-flex items-center gap-2 rounded-full border px-3 py-1.5"
-            style={{ background: "var(--color-accent-soft)", borderColor: "var(--color-border-strong)" }}
-          >
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-            >
-              <Mail className="w-3 h-3 text-cyan-400" />
-            </motion.div>
-            <span className="text-cyan-400 text-xs font-medium uppercase tracking-wider">
-              Get In Touch
-            </span>
-          </motion.div>
-          <h2 className="portfolio-gradient-text mb-2 text-5xl font-black md:text-6xl">
+          <span className="section-label">Start a conversation</span>
+          <h2 className="section-heading portfolio-gradient-text">
             Let's Talk
           </h2>
-          <p className="text-lg text-[var(--color-muted)]">Drop me a line</p>
+          <p className="section-subheading mx-auto md:mx-0">Drop me a line</p>
         </motion.div>
 
         {/* Bento Grid Layout */}
@@ -115,7 +135,7 @@ export default function Contact() {
                   <motion.input
                     animate={{
                       borderColor:
-                        focusedField === "name" ? "#22d3ee" : "rgba(255,255,255,0.1)",
+                        focusedField === "name" ? "var(--cyansoft)" : "rgba(255,255,255,0.1)",
                     }}
                     onFocus={() => setFocusedField("name")}
                     onBlur={() => setFocusedField(null)}
@@ -132,7 +152,7 @@ export default function Contact() {
                   <motion.input
                     animate={{
                       borderColor:
-                        focusedField === "email" ? "#22d3ee" : "rgba(255,255,255,0.1)",
+                        focusedField === "email" ? "var(--cyansoft)" : "rgba(255,255,255,0.1)",
                     }}
                     onFocus={() => setFocusedField("email")}
                     onBlur={() => setFocusedField(null)}
@@ -149,7 +169,7 @@ export default function Contact() {
               <motion.textarea
                 animate={{
                   borderColor:
-                    focusedField === "message" ? "#22d3ee" : "rgba(255,255,255,0.1)",
+                    focusedField === "message" ? "var(--cyansoft)" : "rgba(255,255,255,0.1)",
                 }}
                 onFocus={() => setFocusedField("message")}
                 onBlur={() => setFocusedField(null)}
@@ -162,20 +182,6 @@ export default function Contact() {
               />
 
               <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
-                <AnimatePresence>
-                  {status && (
-                    <motion.span
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0 }}
-                      className={`text-sm font-medium ${status.type === "success" ? "text-green-400" : "text-red-400"
-                        }`}
-                    >
-                      {status.text}
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -279,6 +285,9 @@ export default function Contact() {
           </motion.div>
         </div>
       </div>
+      <AnimatePresence>
+        <Toast status={status} onDismiss={() => setStatus(null)} />
+      </AnimatePresence>
     </section>
   );
 }

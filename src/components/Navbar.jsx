@@ -1,7 +1,7 @@
 "use client";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Home, User, Code, Briefcase, Award, Clock, FileText, Mail, BookOpen, Menu, X, BarChart3, Moon, Sun } from "lucide-react";
+import { Home, User, Code, Briefcase, Award, Clock, FileText, Mail, BookOpen, Menu, X, BarChart3, Moon, Sun, ChevronDown } from "lucide-react";
 import { logLinkClick } from "../utils/analytics";
 import { scrollToSection } from "@/utils/scrollToSection";
 import { useLightweightMotion } from "@/hooks/useLightweightMotion";
@@ -17,6 +17,8 @@ const NAV_ITEMS = [
   { id: "resume", label: "Resume", icon: FileText },
   { id: "contact", label: "Contact", icon: Mail },
 ];
+
+const PRIMARY_NAV_IDS = ["home", "projects", "tech-stack", "contact"];
 
 export default function Navbar({ sectionsConfig, theme = "light", onThemeToggle }) {
   const isDark = theme === "dark";
@@ -43,9 +45,19 @@ export default function Navbar({ sectionsConfig, theme = "light", onThemeToggle 
     () => NAV_ITEMS.filter((item) => resolvedSectionsConfig[item.id]),
     [resolvedSectionsConfig]
   );
+  const primaryNavItems = useMemo(
+    () => PRIMARY_NAV_IDS.map((id) => visibleNavItems.find((item) => item.id === id)).filter(Boolean),
+    [visibleNavItems]
+  );
+  const moreNavItems = useMemo(
+    () => visibleNavItems.filter((item) => !PRIMARY_NAV_IDS.includes(item.id)),
+    [visibleNavItems]
+  );
 
   const [open, setOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [active, setActive] = useState("home");
+  const moreMenuRef = useRef(null);
   const lightweightMotion = useLightweightMotion();
 
   // Active section observer. This avoids a scroll listener firing on every frame.
@@ -100,10 +112,24 @@ export default function Navbar({ sectionsConfig, theme = "light", onThemeToggle 
     if (scrollToSection(id, { offset: 88 })) {
       setActive(id);
       setOpen(false);
+      setMoreOpen(false);
     }
 
     logLinkClick(`nav_${id}`);
   };
+
+  useEffect(() => {
+    if (!moreOpen) return undefined;
+
+    const handleClickOutside = (event) => {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(event.target)) {
+        setMoreOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [moreOpen]);
 
   // Prevent background scroll when mobile menu open
   useEffect(() => {
@@ -118,8 +144,6 @@ export default function Navbar({ sectionsConfig, theme = "light", onThemeToggle 
     logLinkClick(`theme_${isDark ? "light" : "dark"}`);
   };
 
-  const ThemeIcon = isDark ? Sun : Moon;
-
   return (
     <>
       {/* Desktop Navbar */}
@@ -127,7 +151,7 @@ export default function Navbar({ sectionsConfig, theme = "light", onThemeToggle 
         initial={lightweightMotion ? false : { y: -48, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: lightweightMotion ? 0.1 : 0.25, ease: "easeOut" }}
-        className="fixed top-0 left-0 right-0 z-[999] hidden pt-1 xl:block"
+        className="fixed top-0 left-0 right-0 z-[999] hidden pt-1 lg:block"
       >
         <nav className="mx-auto max-w-[92rem] px-4 sm:px-6 lg:px-8">
           <div
@@ -144,6 +168,7 @@ export default function Navbar({ sectionsConfig, theme = "light", onThemeToggle 
               whileHover={lightweightMotion ? undefined : { scale: 1.04 }}
               whileTap={lightweightMotion ? undefined : { scale: 0.97 }}
               className="group flex items-center gap-2"
+              aria-label="Go to home"
             >
               <span
                 className="bg-clip-text text-lg font-bold text-transparent"
@@ -157,7 +182,7 @@ export default function Navbar({ sectionsConfig, theme = "light", onThemeToggle 
 
             {/* Desktop Navigation */}
             <div className="flex items-center gap-0.5">
-              {visibleNavItems.map(({ id, label, icon: Icon }) => (
+              {primaryNavItems.map(({ id, label, icon: Icon }) => (
                 <motion.button
                   key={id}
                   onClick={() => scrollTo(id)}
@@ -184,6 +209,66 @@ export default function Navbar({ sectionsConfig, theme = "light", onThemeToggle 
                   </span>
                 </motion.button>
               ))}
+
+              {resolvedSectionsConfig.blog && (
+                <motion.a
+                  href="/blog"
+                  onClick={() => logLinkClick("nav_blog")}
+                  whileHover={lightweightMotion ? undefined : { scale: 1.04 }}
+                  whileTap={lightweightMotion ? undefined : { scale: 0.97 }}
+                  className="relative rounded-lg px-3 py-2 text-sm font-medium text-[var(--color-muted)] transition-all duration-300 hover:text-[var(--color-text)]"
+                >
+                  <span className="relative z-10 flex items-center gap-2">
+                    <BookOpen size={16} />
+                    Blog
+                  </span>
+                </motion.a>
+              )}
+
+              {moreNavItems.length > 0 && (
+                <div className="relative" ref={moreMenuRef}>
+                  <button
+                    type="button"
+                    onClick={() => setMoreOpen((value) => !value)}
+                    className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-[var(--color-muted)] transition-colors hover:text-[var(--color-text)]"
+                    aria-haspopup="menu"
+                    aria-expanded={moreOpen}
+                  >
+                    More
+                    <ChevronDown className={`h-4 w-4 transition-transform ${moreOpen ? "rotate-180" : ""}`} />
+                  </button>
+
+                  <AnimatePresence>
+                    {moreOpen && (
+                      <motion.div
+                        role="menu"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 8 }}
+                        transition={{ duration: 0.16 }}
+                        className="absolute right-0 top-full z-50 mt-2 min-w-[180px] rounded-lg border border-[var(--color-border)] bg-[var(--color-nav)] p-2 shadow-xl"
+                      >
+                        {moreNavItems.map(({ id, label, icon: Icon }) => (
+                          <button
+                            key={id}
+                            type="button"
+                            role="menuitem"
+                            onClick={() => scrollTo(id)}
+                            className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors ${
+                              active === id
+                                ? "text-[var(--color-text)]"
+                                : "text-[var(--color-muted)] hover:bg-black/5 hover:text-[var(--color-text)]"
+                            }`}
+                          >
+                            <Icon size={16} />
+                            {label}
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
             </div>
 
             <button
@@ -194,27 +279,36 @@ export default function Navbar({ sectionsConfig, theme = "light", onThemeToggle 
               aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
               title={isDark ? "Light theme" : "Dark theme"}
             >
-              <ThemeIcon size={17} />
+              <AnimatePresence mode="wait" initial={false}>
+                {isDark ? (
+                  <motion.span
+                    key="sun"
+                    initial={{ opacity: 0, rotate: -90 }}
+                    animate={{ opacity: 1, rotate: 0 }}
+                    exit={{ opacity: 0, rotate: 90 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Sun size={17} />
+                  </motion.span>
+                ) : (
+                  <motion.span
+                    key="moon"
+                    initial={{ opacity: 0, rotate: -90 }}
+                    animate={{ opacity: 1, rotate: 0 }}
+                    exit={{ opacity: 0, rotate: 90 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Moon size={17} />
+                  </motion.span>
+                )}
+              </AnimatePresence>
             </button>
-
-            {/* Blog Link (Desktop) - Conditional */}
-            {resolvedSectionsConfig.blog && (
-              <motion.a
-                href="/blog"
-                whileHover={lightweightMotion ? undefined : { scale: 1.04 }}
-                whileTap={lightweightMotion ? undefined : { scale: 0.97 }}
-                className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-teal-400 to-amber-300 px-4 py-2 font-semibold text-slate-950 shadow-lg shadow-emerald-950/15 transition-colors hover:from-teal-300 hover:to-amber-200"
-              >
-                <BookOpen size={16} />
-                Blog
-              </motion.a>
-            )}
           </div>
         </nav>
       </motion.header>
 
       {/* Mobile Navigation */}
-      <div className="xl:hidden">
+      <div className="lg:hidden">
         <motion.header
           initial={lightweightMotion ? false : { y: -32, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -266,18 +360,40 @@ export default function Navbar({ sectionsConfig, theme = "light", onThemeToggle 
                 onClick={toggleTheme}
                 className="flex h-10 w-10 items-center justify-center rounded-lg border text-[var(--color-muted)] transition-colors hover:text-[var(--color-text)]"
                 style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface-soft)" }}
-                aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
-                title={isDark ? "Light theme" : "Dark theme"}
-              >
-                <ThemeIcon size={17} />
-              </button>
+              aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
+              title={isDark ? "Light theme" : "Dark theme"}
+            >
+                <AnimatePresence mode="wait" initial={false}>
+                  {isDark ? (
+                    <motion.span
+                      key="sun-mobile"
+                      initial={{ opacity: 0, rotate: -90 }}
+                      animate={{ opacity: 1, rotate: 0 }}
+                      exit={{ opacity: 0, rotate: 90 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <Sun size={17} />
+                    </motion.span>
+                  ) : (
+                    <motion.span
+                      key="moon-mobile"
+                      initial={{ opacity: 0, rotate: -90 }}
+                      animate={{ opacity: 1, rotate: 0 }}
+                      exit={{ opacity: 0, rotate: 90 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <Moon size={17} />
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+            </button>
 
               <motion.button
                 type="button"
                 whileTap={lightweightMotion ? undefined : { scale: 0.94 }}
                 onClick={() => setOpen((value) => !value)}
                 className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-r from-teal-400 to-amber-300 text-slate-950 shadow-lg shadow-black/15"
-                aria-label={open ? "Close navigation" : "Open navigation"}
+                aria-label="Toggle navigation menu"
                 aria-expanded={open}
                 aria-controls="mobile-navigation"
               >

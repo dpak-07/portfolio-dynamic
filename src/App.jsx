@@ -17,6 +17,7 @@ import { useLightweightMotion } from "./hooks/useLightweightMotion";
 import { scrollToSection } from "./utils/scrollToSection";
 
 import Navbar from "./components/Navbar";
+import SEO from "./components/SEO";
 import GlobalBackgroundEffects from "./components/GlobalBackgroundEffects";
 import Header from "./components/Header";
 import About from "./components/About";
@@ -29,7 +30,7 @@ import Certifications from "./components/certifications";
 import TimelineSection from "./components/timeline";
 import Footer from "./components/Footer";
 import Loader from "./components/ModernLoadingScreen";
-import OfflinePage from "./components/offiline";
+import OfflinePage from "./components/offline";
 
 import AdminLogin from "./components/admin/adminlogin";
 import AdminDashboard from "./components/admin/admindashboard";
@@ -301,12 +302,19 @@ function HomeShell({ sectionsConfig, theme, onThemeToggle }) {
 
   return (
     <div className="portfolio-shell relative overflow-x-hidden" data-theme={theme}>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[99999] focus:bg-cyansoft focus:text-slate-900 focus:px-4 focus:py-2 focus:rounded-lg focus:font-semibold focus:shadow-lg"
+      >
+        Skip to main content
+      </a>
+      <SEO />
       <GlobalBackgroundEffects />
       <Navbar sectionsConfig={sectionsConfig} theme={theme} onThemeToggle={onThemeToggle} />
 
       {sectionsConfig.home && <Header showBlogLink={Boolean(sectionsConfig.blog)} />}
 
-      <main className="relative z-10">
+      <main id="main-content" className="relative z-10">
         {sectionsConfig.about && <About />}
         {sectionsConfig["tech-stack"] && <TechStack />}
         {sectionsConfig["github-stats"] && <GitHubStats />}

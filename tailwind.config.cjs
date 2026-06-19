@@ -9,8 +9,8 @@ module.exports = {
     extend: {
       // 🌈 Custom Colors
       colors: {
-        cyanglow: '#9ca3af',
-        cyansoft: '#e5e7eb',
+        cyanglow: '#22d3ee',
+        cyansoft: '#67e8f9',
         'bg-dark': '#0a0a0a',
         panel: '#18181b',
       },

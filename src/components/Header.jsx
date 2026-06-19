@@ -34,6 +34,7 @@ export default function Header({ showBlogLink = false }) {
   const [error, setError] = useState(null);
   const [showResume, setShowResume] = useState(false);
   const [showAllRoles, setShowAllRoles] = useState(false);
+  const [photoFailed, setPhotoFailed] = useState(false);
   const sectionRef = useRef(null);
   const loggedOnce = useRef(false);
   const lightweightMotion = useLightweightMotion();
@@ -58,6 +59,10 @@ export default function Header({ showBlogLink = false }) {
   }, [firestoreProfileData, firestoreError, firestoreLoading]);
 
   const { preview, download } = useResumeResource();
+
+  useEffect(() => {
+    setPhotoFailed(false);
+  }, [profileData?.photoURL]);
 
   const processedRoles = useMemo(() => {
     if (!profileData?.roles) {
@@ -159,6 +164,9 @@ export default function Header({ showBlogLink = false }) {
     );
   }
 
+  const photoUrl = typeof profileData.photoURL === "string" ? profileData.photoURL.trim() : "";
+  const displayInitial = String(profileData.name || "D").trim().charAt(0).toUpperCase() || "D";
+
   return (
     <header
       id="home"
@@ -178,173 +186,204 @@ export default function Header({ showBlogLink = false }) {
       </div>
 
       <motion.div
-        className="relative z-10 mx-auto flex w-full max-w-4xl flex-col items-center px-4 text-center sm:px-6 lg:px-8"
+        className="relative z-10 mx-auto flex w-full max-w-6xl flex-col-reverse items-center gap-10 px-4 text-center sm:px-6 md:flex-row-reverse md:gap-12 md:text-left lg:px-8"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
-        <motion.h1
-          className="mb-4 text-4xl font-extrabold leading-tight text-[var(--color-text)] drop-shadow-sm sm:mb-6 sm:text-5xl md:text-6xl lg:text-7xl"
-          variants={itemVariants}
-        >
-          Hi, I&apos;m {profileData.name}
-        </motion.h1>
+        <div className="flex w-full max-w-4xl flex-col items-center md:items-start">
+          <motion.h1
+            className="mb-4 text-4xl font-extrabold leading-tight text-[var(--color-text)] drop-shadow-sm sm:mb-6 sm:text-5xl md:text-6xl lg:text-7xl"
+            variants={itemVariants}
+          >
+            Hi, I&apos;m {profileData.name}
+          </motion.h1>
 
-        <motion.div className="mb-4 max-w-5xl px-4 sm:mb-6" variants={itemVariants}>
-          <div className="block sm:hidden">
-            <p className="text-center text-base text-[var(--color-muted)]">
-              {showAllRoles ? processedRoles.full : processedRoles.first2}
+          <motion.div className="mb-4 max-w-5xl px-4 md:px-0 sm:mb-6" variants={itemVariants}>
+            <div className="block sm:hidden">
+              <p className="text-center text-base text-[var(--color-muted)] md:text-left">
+                {showAllRoles ? processedRoles.full : processedRoles.first2}
+              </p>
+              {processedRoles.hasMore && (
+                <button
+                  onClick={() => setShowAllRoles((prev) => !prev)}
+                  className="mt-2 text-sm font-medium text-cyansoft underline transition-colors hover:text-cyan-300"
+                >
+                  {showAllRoles ? "Show Less" : "Read More"}
+                </button>
+              )}
+            </div>
+
+            <p
+              className="hidden overflow-x-auto whitespace-nowrap text-base text-[var(--color-muted)] sm:block sm:text-lg md:text-xl"
+              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            >
+              <style jsx="true">{`
+                p::-webkit-scrollbar {
+                  display: none;
+                }
+              `}</style>
+              {processedRoles.full}
             </p>
-            {processedRoles.hasMore && (
-              <button
-                onClick={() => setShowAllRoles((prev) => !prev)}
-                className="mt-2 text-sm font-medium text-cyansoft underline transition-colors hover:text-cyan-300"
-              >
-                {showAllRoles ? "Show Less" : "Read More"}
-              </button>
-            )}
-          </div>
+          </motion.div>
 
-          <p
-            className="hidden overflow-x-auto whitespace-nowrap text-base text-[var(--color-muted)] sm:block sm:text-lg md:text-xl"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          <motion.div className="mb-6 min-h-[34px] max-w-2xl sm:mb-8" variants={itemVariants}>
+            <span className="inline-block rounded-md bg-black/5 px-3 py-1 font-mono text-sm text-[var(--color-faint)] dark:bg-white/5">
+              {lightweightMotion ? (
+                typewriterLines[0] || ""
+              ) : (
+                <Typewriter
+                  words={typewriterLines}
+                  loop={0}
+                  cursor
+                  cursorStyle="|"
+                  typeSpeed={44}
+                  deleteSpeed={24}
+                  delaySpeed={2000}
+                />
+              )}
+            </span>
+          </motion.div>
+
+          <motion.div
+            className="mb-6 flex w-full max-w-3xl flex-col items-stretch justify-center gap-3 sm:mb-8 sm:flex-row sm:flex-wrap sm:items-center md:justify-start"
+            variants={itemVariants}
           >
-            <style jsx="true">{`
-              p::-webkit-scrollbar {
-                display: none;
-              }
-            `}</style>
-            {processedRoles.full}
-          </p>
-        </motion.div>
-
-        <motion.div
-          className="mb-6 h-[28px] max-w-2xl px-4 font-mono text-sm text-[var(--color-faint)] sm:mb-8 sm:h-[32px] sm:text-base md:text-lg"
-          variants={itemVariants}
-        >
-          {lightweightMotion ? (
-            <span>{typewriterLines[0] || ""}</span>
-          ) : (
-            <Typewriter
-              words={typewriterLines}
-              loop={0}
-              cursor
-              cursorStyle="|"
-              typeSpeed={44}
-              deleteSpeed={24}
-              delaySpeed={2000}
-            />
-          )}
-        </motion.div>
-
-        <motion.div
-          className="mx-auto mb-6 flex w-full max-w-3xl flex-col items-stretch justify-center gap-3 px-4 sm:mb-8 sm:flex-row sm:items-center"
-          variants={itemVariants}
-        >
-          <a
-            href="#projects"
-            onClick={(event) => {
-              event.preventDefault();
-              scrollToSection("projects", { offset: 88 });
-            }}
-            className="flex-1 whitespace-nowrap rounded-lg bg-cyansoft px-5 py-2.5 text-center text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-950/15 transition-colors hover:bg-emerald-200 sm:flex-none sm:text-base"
-          >
-            View Projects
-          </a>
-
-          <a
-            href="#contact"
-            onClick={(event) => {
-              event.preventDefault();
-              scrollToSection("contact", { offset: 88 });
-            }}
-            className="flex-1 whitespace-nowrap rounded-lg border px-5 py-2.5 text-center text-sm font-medium text-[var(--color-text)] transition-colors hover:bg-amber-200/10 sm:flex-none sm:text-base"
-            style={{ borderColor: "var(--color-border-strong)" }}
-          >
-            Contact
-          </a>
-
-          <button
-            onClick={handleOpenResume}
-            className="flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-cyansoft px-5 py-2.5 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-950/20 transition-colors hover:bg-emerald-200 sm:flex-none sm:text-base"
-          >
-            <FaFileAlt className="h-3.5 w-3.5" /> Open Resume
-          </button>
-
-          <a
-            href={download}
-            download
-            onClick={(event) => {
-              if (!download) {
-                event.preventDefault();
-                scrollToSection("resume", { offset: 88 });
-                return;
-              }
-
-              logDownload("resume");
-            }}
-            className={`flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-lg border px-5 py-2.5 text-sm font-medium text-[var(--color-text)] transition-colors sm:flex-none sm:text-base ${
-              download ? "hover:border-cyansoft hover:bg-white/10" : "pointer-events-none opacity-50"
-            }`}
-            style={{ borderColor: "var(--color-border-strong)" }}
-          >
-            <FaDownload className="h-3.5 w-3.5" /> Download
-          </a>
-        </motion.div>
-
-        <motion.div
-          className="flex flex-wrap items-center justify-center gap-4 px-4 sm:gap-6"
-          variants={itemVariants}
-        >
-          {allSocials.map(([key, url], index) => {
-            const Icon = iconMap[key] || FaGlobe;
-            return (
-              <a
-                key={`${key}-${index}`}
-                href={url}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => logLinkClick(key)}
-                className="text-[var(--color-muted)] transition-all hover:scale-110 hover:text-cyansoft"
-              >
-                <Icon className="h-6 w-6" />
-              </a>
-            );
-          })}
-        </motion.div>
-
-        <motion.div className="mt-12 flex w-full justify-center sm:mt-16" variants={itemVariants}>
-          <div className="flex flex-col items-center gap-4">
-            <button
+            <a
+              href="#projects"
               onClick={(event) => {
                 event.preventDefault();
-                scrollToSection("about", { offset: 88 });
+                scrollToSection("projects", { offset: 88 });
               }}
-              className="group flex flex-col items-center gap-2 text-cyansoft transition-colors hover:text-cyan-300"
+              className="flex-1 whitespace-nowrap rounded-lg bg-cyansoft px-5 py-2.5 text-center text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-950/15 transition-colors hover:bg-emerald-200 sm:flex-none sm:text-base"
             >
-              <span className="text-sm font-medium opacity-75 transition-opacity group-hover:opacity-100">
-                Explore More
-              </span>
-              <FaChevronDown className="h-5 w-5 transition-transform group-hover:scale-125" />
-            </button>
+              View Projects
+            </a>
 
-            {showBlogLink && (
-              <motion.a
-                href="/blog"
-                onClick={() => logLinkClick("header_blog")}
-                initial={lightweightMotion ? false : { opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                whileHover={lightweightMotion ? undefined : { y: -3, scale: 1.03 }}
-                whileTap={lightweightMotion ? undefined : { scale: 0.97 }}
-                className="group inline-flex items-center gap-2 rounded-full border border-[var(--color-border-strong)] bg-[var(--color-surface)]/80 px-5 py-3 text-sm font-bold text-[var(--color-text)] shadow-lg shadow-black/10 backdrop-blur-xl transition hover:border-cyansoft hover:text-cyansoft sm:text-base"
+            <a
+              href="#contact"
+              onClick={(event) => {
+                event.preventDefault();
+                scrollToSection("contact", { offset: 88 });
+              }}
+              className="flex-1 whitespace-nowrap rounded-lg border px-5 py-2.5 text-center text-sm font-medium text-[var(--color-text)] transition-colors hover:bg-white/10 sm:flex-none sm:text-base"
+              style={{ borderColor: "var(--color-border-strong)" }}
+            >
+              Contact Me
+            </a>
+
+            <div
+              className="inline-flex flex-1 overflow-hidden rounded-full border text-sm font-medium text-[var(--color-text)] sm:flex-none sm:text-base"
+              style={{ borderColor: "var(--color-border-strong)" }}
+              role="group"
+              aria-label="Resume actions"
+            >
+              <button
+                type="button"
+                onClick={handleOpenResume}
+                className="inline-flex flex-1 items-center justify-center gap-2 whitespace-nowrap px-5 py-2.5 transition-colors hover:bg-white/10 sm:flex-none"
               >
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-teal-400 to-amber-300 text-slate-950 transition group-hover:scale-105">
-                  <FaBookOpen className="h-3.5 w-3.5" />
+                <FaFileAlt className="h-3.5 w-3.5" />
+                Resume
+              </button>
+              <a
+                href={download || "#resume"}
+                download={Boolean(download)}
+                aria-label="Download resume"
+                onClick={(event) => {
+                  if (!download) {
+                    event.preventDefault();
+                    scrollToSection("resume", { offset: 88 });
+                    return;
+                  }
+
+                  logDownload("resume");
+                }}
+                className={`inline-flex items-center justify-center border-l px-4 py-2.5 transition-colors hover:bg-white/10 ${
+                  download ? "" : "opacity-50"
+                }`}
+                style={{ borderColor: "var(--color-border-strong)" }}
+              >
+                <FaDownload className="h-3.5 w-3.5" />
+              </a>
+            </div>
+          </motion.div>
+
+          <motion.div
+            className="flex flex-wrap items-center justify-center gap-4 px-4 md:justify-start md:px-0 sm:gap-6"
+            variants={itemVariants}
+          >
+            {allSocials.map(([key, url], index) => {
+              const Icon = iconMap[key] || FaGlobe;
+              return (
+                <a
+                  key={`${key}-${index}`}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Visit my ${key} profile`}
+                  onClick={() => logLinkClick(key)}
+                  className="text-[var(--color-muted)] transition-all hover:scale-110 hover:text-cyansoft"
+                >
+                  <Icon className="h-6 w-6" />
+                </a>
+              );
+            })}
+          </motion.div>
+
+          <motion.div className="mt-12 flex w-full justify-center md:justify-start sm:mt-16" variants={itemVariants}>
+            <div className="flex flex-col items-center gap-4 md:items-start">
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.preventDefault();
+                  scrollToSection("about", { offset: 88 });
+                }}
+                className="group flex flex-col items-center gap-2 text-cyansoft transition-colors hover:text-cyan-300"
+              >
+                <span className="text-sm font-medium opacity-75 transition-opacity group-hover:opacity-100">
+                  Explore More
                 </span>
-                Visit My Blog
-              </motion.a>
-            )}
-          </div>
+                <FaChevronDown className="h-5 w-5 transition-transform group-hover:scale-125" />
+              </button>
+
+              {showBlogLink && (
+                <motion.a
+                  href="/blog"
+                  onClick={() => logLinkClick("header_blog")}
+                  initial={lightweightMotion ? false : { opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  whileHover={lightweightMotion ? undefined : { y: -3, scale: 1.03 }}
+                  whileTap={lightweightMotion ? undefined : { scale: 0.97 }}
+                  className="group inline-flex items-center gap-2 rounded-full border border-[var(--color-border-strong)] bg-[var(--color-surface)]/80 px-5 py-3 text-sm font-bold text-[var(--color-text)] shadow-lg shadow-black/10 backdrop-blur-xl transition hover:border-cyansoft hover:text-cyansoft sm:text-base"
+                >
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-teal-400 to-amber-300 text-slate-950 transition group-hover:scale-105">
+                    <FaBookOpen className="h-3.5 w-3.5" />
+                  </span>
+                  Visit My Blog
+                </motion.a>
+              )}
+            </div>
+          </motion.div>
+        </div>
+
+        <motion.div
+          className="flex shrink-0 justify-center md:justify-start"
+          variants={itemVariants}
+          aria-hidden={!photoUrl || photoFailed}
+        >
+          {photoUrl && !photoFailed ? (
+            <img
+              src={photoUrl}
+              alt={`${profileData.name} profile`}
+              onError={() => setPhotoFailed(true)}
+              className="h-28 w-28 rounded-full object-cover ring-2 ring-cyansoft/40 shadow-xl shadow-black/10 md:h-40 md:w-40"
+            />
+          ) : (
+            <div className="flex h-28 w-28 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-violet-500 text-2xl font-bold text-white ring-2 ring-cyansoft/40 shadow-xl shadow-black/10 md:h-40 md:w-40 md:text-4xl">
+              {displayInitial}
+            </div>
+          )}
         </motion.div>
       </motion.div>
 
@@ -362,6 +401,7 @@ export default function Header({ showBlogLink = false }) {
             className="portfolio-secondary-button absolute right-4 top-20 z-[10000] rounded-full p-3 transition-all hover:border-cyansoft hover:text-cyansoft sm:right-6 sm:top-6"
             whileHover={lightweightMotion ? undefined : { scale: 1.1 }}
             whileTap={lightweightMotion ? undefined : { scale: 0.9 }}
+            aria-label="Close resume preview"
           >
             <FaTimes className="h-6 w-6" />
           </motion.button>

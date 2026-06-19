@@ -4,9 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useInView } from "framer-motion";
 import {
   ArrowUpRight,
-  Code2,
   ExternalLink,
-  FolderKanban,
   Github,
   ImageIcon,
   Layers3,
@@ -86,14 +84,11 @@ function SectionHeader({ totalProjects, featuredCount }) {
   return (
     <div className="mb-10 grid gap-5 lg:grid-cols-[0.9fr_0.55fr] lg:items-end">
       <div>
-        <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-soft)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-faint)]">
-          <FolderKanban className="h-3.5 w-3.5" />
-          Project Gallery
-        </div>
-        <h2 className="portfolio-rainbow-text text-4xl font-extrabold leading-tight sm:text-5xl">
+        <span className="section-label">What I've built</span>
+        <h2 className="section-heading portfolio-rainbow-text">
           Selected work, shipped with intent
         </h2>
-        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[var(--color-muted)] sm:text-base">
+        <p className="section-subheading mt-3">
           A focused look at full-stack products, AI systems, cloud work, and team-led builds.
         </p>
       </div>
@@ -115,10 +110,10 @@ function SectionHeader({ totalProjects, featuredCount }) {
 function ProjectCard({ project, index, onOpen }) {
   return (
     <MotionArticle
-      initial={{ opacity: 0, y: 18 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.2 }}
-      transition={{ delay: index * 0.035, duration: 0.3 }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.2, delay: index * 0.04 }}
       whileHover={{ y: -6 }}
       className="portfolio-panel group overflow-hidden rounded-2xl"
     >
@@ -139,7 +134,7 @@ function ProjectCard({ project, index, onOpen }) {
         {project.desc && <p className="mb-4 line-clamp-2 text-xs leading-relaxed text-[var(--color-muted)]">{project.desc}</p>}
 
 <div className="mb-4 flex flex-wrap gap-1.5">
-          {project.tech?.slice(0, 5).map((tool, idx) => (
+          {project.tech?.slice(0, 5).map((tool) => (
             <span key={tool} className="rounded-full px-2.5 py-1 text-[11px] font-semibold" style={{ background: "var(--color-accent-soft)", border: "1px solid var(--color-accent-a)", color: "var(--color-accent-a)" }}>
               {tool}
             </span>
@@ -212,7 +207,7 @@ function SpotlightProject({ project, active, onOpen }) {
         <p className="mt-4 line-clamp-7 text-sm leading-relaxed text-[var(--color-muted)]">{project.long || project.desc}</p>
 
 <div className="mt-5 flex flex-wrap gap-2">
-          {project.tech?.slice(0, 8).map((tool, idx) => (
+          {project.tech?.slice(0, 8).map((tool) => (
             <span key={tool} className="rounded-full px-3 py-2 text-xs font-semibold" style={{ background: "var(--color-accent-soft)", border: "1px solid var(--color-accent-a)", color: "var(--color-accent-a)" }}>
               {tool}
             </span>
@@ -266,7 +261,7 @@ function ProjectModal({ project, onClose }) {
             <p className="mt-5 text-sm leading-relaxed text-[var(--color-muted)]">{project.long || project.desc}</p>
 
 <div className="mt-6 flex flex-wrap gap-2">
-              {project.tech?.map((tool, idx) => (
+              {project.tech?.map((tool) => (
                 <span key={tool} className="rounded-full px-3 py-2 text-xs font-semibold" style={{ background: "var(--color-accent-soft)", border: "1px solid var(--color-accent-a)", color: "var(--color-accent-a)" }}>
                   {tool}
                 </span>
@@ -335,7 +330,7 @@ export default function Projects() {
 
   if (loading && !projectsData) {
     return (
-      <section id="projects" ref={sectionRef} className="relative flex min-h-[70vh] items-center justify-center px-4 py-20">
+      <section id="projects" ref={sectionRef} className="portfolio-section relative flex min-h-[70vh] items-center justify-center px-4">
         <div className="portfolio-panel flex items-center gap-3 rounded-2xl px-5 py-4">
           <MotionDiv animate={{ rotate: 360 }} transition={{ duration: 1.1, repeat: Infinity, ease: "linear" }}>
             <Loader2 className="h-5 w-5 text-[var(--color-text)]" />
@@ -348,7 +343,7 @@ export default function Projects() {
 
   if (error || categoryKeys.length === 0) {
     return (
-      <section id="projects" ref={sectionRef} className="relative flex min-h-[70vh] items-center justify-center px-4 py-20">
+      <section id="projects" ref={sectionRef} className="portfolio-section relative flex min-h-[70vh] items-center justify-center px-4">
         <div className="portfolio-panel max-w-xl rounded-2xl p-6 text-center">
           <Layers3 className="mx-auto mb-3 h-8 w-8 text-[var(--color-text)]" />
           <h2 className="portfolio-gradient-text text-3xl font-black">Projects</h2>
@@ -359,7 +354,7 @@ export default function Projects() {
   }
 
   return (
-    <section id="projects" ref={sectionRef} className="relative overflow-hidden px-4 py-16 scroll-mt-24 sm:px-6 lg:px-8 lg:py-24">
+    <section id="projects" ref={sectionRef} className="portfolio-section relative overflow-hidden px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
         <SectionHeader totalProjects={allProjects.length} featuredCount={featuredCount} />
 
@@ -373,24 +368,29 @@ export default function Projects() {
                 setSpotlightIndex(0);
                 logLinkClick(`project_category_${category}`);
               }}
-className={`shrink-0 rounded-full border px-4 py-2 text-sm font-bold transition-all ${
+              className={`relative shrink-0 overflow-hidden rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-200 ${
                 active === category
-                  ? "border-[var(--color-accent-a)] bg-[var(--color-accent-a)] text-white"
-                  : "border-[var(--color-border)] bg-[var(--color-surface-muted)] text-[var(--color-muted)] hover:border-[var(--color-accent-a)] hover:text-[var(--color-accent-a)]"
+                  ? "text-slate-900 shadow-md shadow-cyan-400/20"
+                  : "border border-[var(--color-border)] bg-transparent text-[var(--color-muted)] hover:bg-white/10 hover:text-[var(--color-text)]"
               }`}
             >
-              {category}
+              {active === category && (
+                <motion.span layoutId="activeTab" className="absolute inset-0 rounded-full bg-cyansoft" />
+              )}
+              <span className="relative z-10">{category}</span>
             </button>
           ))}
         </div>
 
         {spotlight && <SpotlightProject project={spotlight} active={active} onOpen={setOpen} />}
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {remaining.map((project, index) => (
-            <ProjectCard key={`${project.title}-${index}`} project={project} index={index} onOpen={setOpen} />
-          ))}
-        </div>
+        <AnimatePresence mode="wait">
+          <motion.div key={active} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {remaining.map((project, index) => (
+              <ProjectCard key={`${project.title}-${index}`} project={project} index={index} onOpen={setOpen} />
+            ))}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       <AnimatePresence>{open && <ProjectModal project={open} onClose={() => setOpen(null)} />}</AnimatePresence>
