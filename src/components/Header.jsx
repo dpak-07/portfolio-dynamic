@@ -28,6 +28,7 @@ export default function Header({ showBlogLink = false }) {
     loading: firestoreLoading,
     error: firestoreError,
   } = useFirestoreData("portfolio", "profile");
+  const { data: aboutData } = useFirestoreData("aboutpage", "main");
 
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -62,7 +63,7 @@ export default function Header({ showBlogLink = false }) {
 
   useEffect(() => {
     setPhotoFailed(false);
-  }, [profileData?.photoURL]);
+  }, [profileData?.photoURL, aboutData?.image?.url]);
 
   const processedRoles = useMemo(() => {
     if (!profileData?.roles) {
@@ -164,7 +165,9 @@ export default function Header({ showBlogLink = false }) {
     );
   }
 
-  const photoUrl = typeof profileData.photoURL === "string" ? profileData.photoURL.trim() : "";
+  const aboutPhotoUrl = typeof aboutData?.image?.url === "string" ? aboutData.image.url.trim() : "";
+  const profilePhotoUrl = typeof profileData.photoURL === "string" ? profileData.photoURL.trim() : "";
+  const photoUrl = aboutPhotoUrl || profilePhotoUrl;
   const displayInitial = String(profileData.name || "D").trim().charAt(0).toUpperCase() || "D";
 
   return (
@@ -367,23 +370,85 @@ export default function Header({ showBlogLink = false }) {
           </motion.div>
         </div>
 
-        <motion.div
-          className="flex shrink-0 justify-center md:justify-start"
-          variants={itemVariants}
-          aria-hidden={!photoUrl || photoFailed}
-        >
-          {photoUrl && !photoFailed ? (
-            <img
-              src={photoUrl}
-              alt={`${profileData.name} profile`}
-              onError={() => setPhotoFailed(true)}
-              className="h-28 w-28 rounded-full object-cover ring-2 ring-cyansoft/40 shadow-xl shadow-black/10 md:h-40 md:w-40"
+        <motion.div className="flex shrink-0 justify-center md:justify-start" variants={itemVariants}>
+          <motion.div
+            className="group relative"
+            animate={
+              lightweightMotion
+                ? undefined
+                : {
+                    y: [0, -10, 0],
+                    rotate: [0, 1.4, -1.1, 0],
+                  }
+            }
+            transition={{
+              duration: 6,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            whileHover={lightweightMotion ? undefined : { scale: 1.035, rotate: 0 }}
+          >
+            <motion.div
+              className="absolute -inset-5 rounded-3xl border border-cyansoft/20"
+              animate={
+                lightweightMotion
+                  ? undefined
+                  : {
+                      scale: [0.96, 1.08, 0.96],
+                      opacity: [0.32, 0.72, 0.32],
+                      rotate: [0, 4, 0],
+                    }
+              }
+              transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut" }}
             />
-          ) : (
-            <div className="flex h-28 w-28 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-violet-500 text-2xl font-bold text-white ring-2 ring-cyansoft/40 shadow-xl shadow-black/10 md:h-40 md:w-40 md:text-4xl">
-              {displayInitial}
+            <motion.div
+              className="absolute -inset-8 rounded-[2rem] border border-[var(--color-accent-c)]/15"
+              animate={
+                lightweightMotion
+                  ? undefined
+                  : {
+                      scale: [1.08, 0.98, 1.08],
+                      opacity: [0.2, 0.54, 0.2],
+                      rotate: [3, -4, 3],
+                    }
+              }
+              transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
+            />
+            <div className="absolute -inset-3 rounded-2xl border border-[var(--color-border-strong)] bg-[var(--color-surface-soft)]/45 backdrop-blur-sm" />
+            <motion.div
+              className="absolute -right-4 top-6 h-24 w-2 rounded-full bg-gradient-to-b from-cyansoft via-[var(--color-accent-b)] to-[var(--color-accent-c)] shadow-lg shadow-black/10"
+              animate={lightweightMotion ? undefined : { opacity: [0.55, 1, 0.55], scaleY: [0.84, 1.12, 0.84] }}
+              transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut" }}
+            />
+            <div className="relative aspect-[4/5] w-36 overflow-hidden rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface)] shadow-2xl shadow-black/15 sm:w-40 md:w-56">
+              <motion.div
+                className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-tr from-transparent via-white/24 to-transparent opacity-0"
+                animate={lightweightMotion ? undefined : { x: ["-140%", "140%"], opacity: [0, 0.34, 0] }}
+                transition={{ duration: 4.8, repeat: Infinity, ease: "easeInOut", repeatDelay: 1.2 }}
+              />
+              {photoUrl && !photoFailed ? (
+                <motion.img
+                  src={photoUrl}
+                  alt={`${profileData.name} profile`}
+                  onError={() => setPhotoFailed(true)}
+                  className="h-full w-full object-cover object-center"
+                  loading="eager"
+                  decoding="async"
+                  animate={lightweightMotion ? undefined : { scale: [1, 1.045, 1] }}
+                  transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+                />
+              ) : (
+                <motion.div
+                  className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-900 via-cyan-700 to-amber-500 text-4xl font-bold text-white md:text-6xl"
+                  animate={lightweightMotion ? undefined : { backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
+                  transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+                  style={{ backgroundSize: "180% 180%" }}
+                >
+                  {displayInitial}
+                </motion.div>
+              )}
             </div>
-          )}
+          </motion.div>
         </motion.div>
       </motion.div>
 

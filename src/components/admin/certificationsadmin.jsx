@@ -674,7 +674,7 @@ export default function CertificatesAdminPanel() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <h1 className="text-2xl font-bold crt-text crt-header">
-                CERTIFICATES.ADMIN TERMINAL
+                Certifications Admin
               </h1>
               <div className="flex items-center gap-2">
                 {isOnline ? (

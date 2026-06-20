@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Eye, Save, RotateCcw, Download, Upload,
   Plus, X, ArrowUp, ArrowDown, FileText, Type, KeyRound,
-  Loader, AlertCircle, CheckCircle, Wifi, WifiOff
+  Loader, AlertCircle, CheckCircle, Wifi, WifiOff, Image as ImageIcon
 } from "lucide-react";
 import { Typewriter } from "react-simple-typewriter";
 import { deleteField, doc, setDoc, getDoc, Timestamp } from "firebase/firestore";
@@ -19,6 +19,15 @@ const STORAGE_SAVED_KEY = "header_config_saved";
 const FIRESTORE_HEADER_DOC = "portfolio/profile";
 const FIRESTORE_ADMIN_DOC = "admin/credentials";
 const SYNC_DEBOUNCE = 500;
+
+function withTimeout(promise, ms = 4500) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      window.setTimeout(() => reject(new Error("Request timed out")), ms);
+    }),
+  ]);
+}
 
 /* ================================
    CRT STYLES
@@ -60,6 +69,7 @@ const CRTStyles = () => (
 ================================== */
 const defaultConfig = {
   name: "Deepak",
+  photoURL: "",
   roles: "Full-Stack Developer • Cloud Engineer • AI Enthusiast",
   typewriterLines: [
     "Deploying apps on AWS EC2 & S3 ☁️",
@@ -89,6 +99,7 @@ function sanitizeHeaderConfig(config = {}) {
   return {
     ...defaultConfig,
     ...rest,
+    photoURL: typeof rest.photoURL === "string" ? rest.photoURL.trim() : defaultConfig.photoURL,
     socials: {
       ...(defaultConfig.socials || {}),
       ...(rest.socials || {}),
@@ -102,6 +113,7 @@ function sanitizeHeaderConfig(config = {}) {
 function computeChanges(prev = {}, next = {}) {
   const diff = [];
   if ((prev.name || "") !== (next.name || "")) diff.push("name");
+  if ((prev.photoURL || "") !== (next.photoURL || "")) diff.push("photoURL");
   if ((prev.roles || "") !== (next.roles || "")) diff.push("roles");
   if (!same(prev.typewriterLines || [], next.typewriterLines || [])) diff.push("typewriterLines");
   if (!same(prev.socials || {}, next.socials || {})) diff.push("socials");
@@ -215,7 +227,7 @@ export default function HeaderAdminCRT() {
     try {
       // Fetch admin code
       const adminDocRef = doc(db, FIRESTORE_ADMIN_DOC);
-      const adminSnap = await getDoc(adminDocRef);
+      const adminSnap = await withTimeout(getDoc(adminDocRef));
       
       if (adminSnap.exists()) {
         const adminData = adminSnap.data();
@@ -228,7 +240,7 @@ export default function HeaderAdminCRT() {
 
       // Load header data from Firestore
       const headerDocRef = doc(db, FIRESTORE_HEADER_DOC);
-      const headerSnap = await getDoc(headerDocRef);
+      const headerSnap = await withTimeout(getDoc(headerDocRef));
       
       let initialDraft = null;
       
@@ -563,7 +575,7 @@ export default function HeaderAdminCRT() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <h1 className="text-2xl font-bold crt-text crt-header">
-                HEADER.ADMIN TERMINAL
+                Header Admin
               </h1>
               <div className="flex items-center gap-2">
                 {isOnline ? (
@@ -742,6 +754,44 @@ export default function HeaderAdminCRT() {
                             onChange={(e) => update("roles", e.target.value)}
                             placeholder="Full-Stack • Cloud • AI"
                           />
+                        </div>
+                      </div>
+
+                      <div className="crt-panel rounded p-4">
+                        <label className="block text-sm crt-text mb-3 opacity-70">
+                          <span className="inline-flex items-center gap-2"><ImageIcon size={14}/> PROFILE PHOTO URL</span>
+                        </label>
+                        <div className="grid grid-cols-[auto,minmax(0,1fr)] items-center gap-4">
+                          <div className="h-24 w-24 overflow-hidden rounded-lg border border-cyan-500/30 bg-black/30">
+                            {draft.photoURL ? (
+                              <img
+                                src={draft.photoURL}
+                                alt="Profile preview"
+                                className="h-full w-full object-cover"
+                                onLoad={(event) => {
+                                  event.currentTarget.style.display = "block";
+                                }}
+                                onError={(event) => {
+                                  event.currentTarget.style.display = "none";
+                                }}
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-2xl font-bold crt-text">
+                                {(draft.name || "D").trim().charAt(0).toUpperCase() || "D"}
+                              </div>
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <input
+                              className="w-full crt-input px-4 py-2 rounded"
+                              value={draft.photoURL || ""}
+                              onChange={(e) => update("photoURL", e.target.value)}
+                              placeholder="https://example.com/photo.jpg"
+                            />
+                            <p className="mt-2 text-xs crt-text opacity-60">
+                              This image appears in the public hero header.
+                            </p>
+                          </div>
                         </div>
                       </div>
 
@@ -955,6 +1005,25 @@ export default function HeaderAdminCRT() {
                   <h2 className="text-2xl mb-6">PREVIEW MODE</h2>
 
                   <div className="crt-panel p-5 rounded space-y-2 mb-6">
+                    <div className="mb-4 flex items-center gap-4">
+                      <div className="h-20 w-20 overflow-hidden rounded-lg border border-cyan-500/30 bg-black/30">
+                        {draft.photoURL ? (
+                          <img
+                            src={draft.photoURL}
+                            alt="Profile preview"
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-2xl font-bold">
+                            {(draft.name || "D").trim().charAt(0).toUpperCase() || "D"}
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs opacity-60">Hero photo</div>
+                        <div className="break-all text-sm">{draft.photoURL || "Using initial fallback"}</div>
+                      </div>
+                    </div>
                     <div className="text-xl">Hi, I'm {draft.name || "—"}</div>
                     <div className="text-base opacity-80">{draft.roles || "—"}</div>
                     <div className="mt-2 text-lg">

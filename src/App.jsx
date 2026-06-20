@@ -1,6 +1,24 @@
 import { useEffect, useRef, useState } from "react";
 import { Routes, Route, Navigate, useLocation, Link } from "react-router-dom";
 import { motion, AnimatePresence, MotionConfig } from "framer-motion";
+import {
+  Award,
+  BarChart3,
+  BookOpen,
+  Code2,
+  ExternalLink,
+  FileText,
+  FolderKanban,
+  Github,
+  Home,
+  Image as ImageIcon,
+  LayoutDashboard,
+  Linkedin,
+  Menu,
+  TimerReset,
+  UserRound,
+  X,
+} from "lucide-react";
 
 import {
   initializeGA,
@@ -48,6 +66,7 @@ import MassiveAnimatedBlogPage from "./components/blogpage";
 import BlogEditor from "./components/admin/BlogEditor";
 import LinkedInEditor from "./components/admin/LinkedInEditor";
 import AdminResponsiveStyles from "./components/admin/AdminResponsiveStyles";
+import AdminBackground3D from "./components/admin/AdminBackground3D";
 
 import { useFirestoreData } from "./hooks/useFirestoreData";
 
@@ -171,18 +190,18 @@ function AdminNavbar() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const links = [
-    { name: "Dashboard", path: "/admindsh" },
-    { name: "Header", path: "/admin/header" },
-    { name: "About", path: "/admin/about" },
-    { name: "Tech", path: "/admin/techadmin" },
-    { name: "Projects", path: "/admin/projects" },
-    { name: "GitHub Stats", path: "/admin/githubstats" },
-    { name: "Resume", path: "/admin/resume" },
-    { name: "Certifications", path: "/admin/certifications" },
-    { name: "Timeline", path: "/admin/timeline" },
-    { name: "Blog", path: "/admin/blog" },
-    { name: "LinkedIn", path: "/admin/linkedin" },
-    { name: "Analysis", path: "/admin/analysis" },
+    { name: "Dashboard", path: "/admindsh", icon: LayoutDashboard },
+    { name: "Header", path: "/admin/header", icon: ImageIcon },
+    { name: "About", path: "/admin/about", icon: UserRound },
+    { name: "Tech", path: "/admin/techadmin", icon: Code2 },
+    { name: "Projects", path: "/admin/projects", icon: FolderKanban },
+    { name: "GitHub", path: "/admin/githubstats", icon: Github },
+    { name: "Resume", path: "/admin/resume", icon: FileText },
+    { name: "Certs", path: "/admin/certifications", icon: Award },
+    { name: "Timeline", path: "/admin/timeline", icon: TimerReset },
+    { name: "Blog", path: "/admin/blog", icon: BookOpen },
+    { name: "LinkedIn", path: "/admin/linkedin", icon: Linkedin },
+    { name: "Analysis", path: "/admin/analysis", icon: BarChart3 },
   ];
   const currentLink = links.find((link) => link.path === location.pathname);
 
@@ -191,65 +210,99 @@ function AdminNavbar() {
   }, [location.pathname]);
 
   return (
-    <div className="sticky top-0 z-50 border-b border-white/10 bg-[#0a0a0a] p-4">
-      <div className="mx-auto max-w-6xl">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <div className="font-semibold text-white/80">Admin Panel</div>
-            <div className="text-xs text-white/45 md:hidden">
+    <nav className="admin-top-nav sticky top-0 z-50 px-3 py-3 sm:px-4" aria-label="Admin navigation">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
+        <Link to="/admindsh" className="flex min-w-0 shrink-0 items-center gap-3 text-left">
+          <span className="admin-brand-mark flex h-10 w-10 shrink-0 items-center justify-center rounded-lg">
+            <LayoutDashboard className="h-5 w-5 text-cyan-200" />
+          </span>
+          <span className="min-w-0">
+            <span className="block max-w-[9rem] truncate text-sm font-semibold text-white 2xl:max-w-none">
+              Portfolio Admin
+            </span>
+            <span className="block max-w-[9rem] truncate text-xs text-slate-400 2xl:max-w-none">
               {currentLink?.name || "Editor"}
-            </div>
-          </div>
+            </span>
+          </span>
+        </Link>
 
-          <div className="hidden flex-wrap gap-3 md:flex">
-            {links.map((link) => (
+        <div className="no-scrollbar hidden min-w-0 flex-1 items-center justify-start gap-2 overflow-x-auto lg:flex">
+          {links.map((link) => {
+            const Icon = link.icon;
+            const active = location.pathname === link.path;
+            return (
               <Link
                 key={link.path}
                 to={link.path}
-                className={`rounded px-3 py-1 text-sm transition-all ${
-                  location.pathname === link.path
-                    ? "bg-white/20 text-white"
-                    : "bg-white/5 text-white/70 hover:bg-white/10"
-                }`}
+                data-active={active}
+                className="admin-nav-link inline-flex shrink-0 items-center gap-2 px-3 py-2 text-xs font-medium"
               >
-                {link.name}
+                <Icon className="h-4 w-4" />
+                <span>{link.name}</span>
               </Link>
-            ))}
-            <Link to="/" className="rounded bg-white/5 px-3 py-1 text-sm text-white/70 hover:bg-white/10">
-              Back to site
-            </Link>
-          </div>
-
-          <div className="flex items-center gap-2 md:hidden">
-            <button
-              onClick={() => setMobileOpen((open) => !open)}
-              className="rounded bg-white/10 px-3 py-2 text-sm text-white/80 transition-colors hover:bg-white/15"
-            >
-              {mobileOpen ? "Close" : "Modules"}
-            </button>
-            <Link to="/" className="rounded bg-white/5 px-3 py-2 text-sm text-white/70 hover:bg-white/10">
-              Site
-            </Link>
-          </div>
+            );
+          })}
+          <Link to="/" className="admin-nav-action inline-flex shrink-0 items-center gap-2 px-3 py-2 text-xs font-medium">
+            <ExternalLink className="h-4 w-4" />
+            Site
+          </Link>
         </div>
 
+        <div className="flex items-center gap-2 lg:hidden">
+          <button
+            type="button"
+            onClick={() => setMobileOpen((open) => !open)}
+            className="admin-nav-action inline-flex items-center gap-2 px-3 py-2 text-sm"
+            aria-expanded={mobileOpen}
+          >
+            {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            <span>Modules</span>
+          </button>
+          <Link to="/" className="admin-nav-action inline-flex items-center gap-2 px-3 py-2 text-sm">
+            <Home className="h-4 w-4" />
+            <span>Site</span>
+          </Link>
+        </div>
+      </div>
+
+      <AnimatePresence>
         {mobileOpen && (
-          <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 md:hidden">
-            {links.map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                className={`rounded px-3 py-2 text-sm transition-all ${
-                  location.pathname === link.path
-                    ? "bg-white/20 text-white"
-                    : "bg-white/5 text-white/70 hover:bg-white/10"
-                }`}
-              >
-                {link.name}
-              </Link>
-            ))}
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.18 }}
+            className="mx-auto mt-3 grid max-w-7xl grid-cols-2 gap-2 sm:grid-cols-3 lg:hidden"
+          >
+            {links.map((link) => {
+              const Icon = link.icon;
+              const active = location.pathname === link.path;
+              return (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  data-active={active}
+                  className="admin-nav-link inline-flex items-center gap-2 px-3 py-2 text-sm"
+                >
+                  <Icon className="h-4 w-4" />
+                  <span className="truncate">{link.name}</span>
+                </Link>
+              );
+            })}
+          </motion.div>
         )}
+      </AnimatePresence>
+    </nav>
+  );
+}
+
+function AdminScene({ children, withNavbar = false }) {
+  return (
+    <div className="admin-mobile-shell admin-modern-shell relative min-h-screen overflow-x-hidden text-slate-100">
+      <AdminBackground3D />
+      <div className="relative z-10 min-h-screen">
+        {withNavbar && <AdminNavbar />}
+        {children}
       </div>
     </div>
   );
@@ -347,12 +400,9 @@ function AppRoutes({ sectionsConfig, theme, onThemeToggle }) {
       <Route
         path="/admin/login"
         element={
-          <div className="admin-mobile-shell relative min-h-screen">
-            <GlobalBackgroundEffects />
-            <div className="relative z-10">
-              <AdminLogin />
-            </div>
-          </div>
+          <AdminScene>
+            <AdminLogin />
+          </AdminScene>
         }
       />
 
@@ -360,12 +410,9 @@ function AppRoutes({ sectionsConfig, theme, onThemeToggle }) {
         path="/admindsh"
         element={
           <AdminRoute>
-            <div className="admin-mobile-shell relative min-h-screen">
-              <GlobalBackgroundEffects />
-              <div className="relative z-10">
-                <AdminDashboard />
-              </div>
-            </div>
+            <AdminScene>
+              <AdminDashboard />
+            </AdminScene>
           </AdminRoute>
         }
       />
@@ -388,13 +435,9 @@ function AppRoutes({ sectionsConfig, theme, onThemeToggle }) {
           path={`/admin/${path}`}
           element={
             <AdminRoute>
-              <div className="admin-mobile-shell relative min-h-screen bg-[#000] text-white">
-                <GlobalBackgroundEffects />
-                <AdminNavbar />
-                <div className="relative z-10">
-                  <Component />
-                </div>
-              </div>
+              <AdminScene withNavbar>
+                <Component />
+              </AdminScene>
             </AdminRoute>
           }
         />

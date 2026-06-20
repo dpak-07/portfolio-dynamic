@@ -614,7 +614,7 @@ export default function CRTAdminPanel() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <h1 className="text-2xl font-bold crt-text crt-header">
-                ABOUT.US ADMIN TERMINAL
+                About Admin
               </h1>
               <div className="text-xs crt-text opacity-60">v2.0.1</div>
               <div className="flex items-center gap-2">
