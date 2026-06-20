@@ -38,6 +38,7 @@ import Navbar from "./components/Navbar";
 import SEO from "./components/SEO";
 import GlobalBackgroundEffects from "./components/GlobalBackgroundEffects";
 import Header from "./components/Header";
+import ScrollPortraitBridge from "./components/ScrollPortraitBridge";
 import About from "./components/About";
 import TechStack from "./components/TechStack";
 import GitHubStats from "./components/GitHubStats";
@@ -366,6 +367,7 @@ function HomeShell({ sectionsConfig, theme, onThemeToggle }) {
       <Navbar sectionsConfig={sectionsConfig} theme={theme} onThemeToggle={onThemeToggle} />
 
       {sectionsConfig.home && <Header showBlogLink={Boolean(sectionsConfig.blog)} />}
+      {sectionsConfig.home && sectionsConfig.about && <ScrollPortraitBridge />}
 
       <main id="main-content" className="relative z-10">
         {sectionsConfig.about && <About />}

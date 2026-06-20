@@ -298,7 +298,10 @@ export default function AboutWithDriveImage({ overrideConfig }) {
 
           <div className="order-1 lg:order-2 grid gap-4 lg:sticky lg:top-24">
             <motion.aside variants={itemVariants} className="portfolio-panel overflow-hidden rounded-2xl">
-              <div className="relative aspect-[4/5] bg-[var(--color-surface-muted)] sm:aspect-[5/4] lg:aspect-[4/5]">
+              <div
+                data-scroll-portrait-target
+                className="relative aspect-[4/5] bg-[var(--color-surface-muted)] sm:aspect-[5/4] lg:aspect-[4/5]"
+              >
                 {imageUrl && !imgFailed ? (
                   <img
                     src={imageUrl}

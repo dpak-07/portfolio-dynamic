@@ -420,7 +420,10 @@ export default function Header({ showBlogLink = false }) {
               animate={lightweightMotion ? undefined : { opacity: [0.55, 1, 0.55], scaleY: [0.84, 1.12, 0.84] }}
               transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut" }}
             />
-            <div className="relative aspect-[4/5] w-36 overflow-hidden rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface)] shadow-2xl shadow-black/15 sm:w-40 md:w-56">
+            <div
+              data-scroll-portrait-source
+              className="relative aspect-[4/5] w-36 overflow-hidden rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface)] shadow-2xl shadow-black/15 sm:w-40 md:w-56"
+            >
               <motion.div
                 className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-tr from-transparent via-white/24 to-transparent opacity-0"
                 animate={lightweightMotion ? undefined : { x: ["-140%", "140%"], opacity: [0, 0.34, 0] }}
