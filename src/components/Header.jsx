@@ -249,7 +249,7 @@ export default function Header({ showBlogLink = false }) {
           </motion.div>
 
           <motion.div
-            className="mb-6 flex w-full max-w-3xl flex-col items-stretch justify-center gap-3 sm:mb-8 sm:flex-row sm:flex-wrap sm:items-center md:justify-start"
+            className="mb-6 flex w-full max-w-4xl flex-col items-stretch justify-center gap-2.5 sm:mb-8 sm:flex-row sm:flex-wrap sm:items-center md:justify-start"
             variants={itemVariants}
           >
             <a
@@ -258,7 +258,7 @@ export default function Header({ showBlogLink = false }) {
                 event.preventDefault();
                 scrollToSection("projects", { offset: 88 });
               }}
-              className="flex-1 whitespace-nowrap rounded-lg bg-cyansoft px-5 py-2.5 text-center text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-950/15 transition-colors hover:bg-emerald-200 sm:flex-none sm:text-base"
+              className="inline-flex h-12 min-w-[10.5rem] flex-1 items-center justify-center whitespace-nowrap rounded-lg bg-cyansoft px-5 text-center text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-950/15 transition-all hover:-translate-y-0.5 hover:bg-emerald-200 sm:flex-none sm:text-base"
             >
               View Projects
             </a>
@@ -269,14 +269,14 @@ export default function Header({ showBlogLink = false }) {
                 event.preventDefault();
                 scrollToSection("contact", { offset: 88 });
               }}
-              className="flex-1 whitespace-nowrap rounded-lg border px-5 py-2.5 text-center text-sm font-medium text-[var(--color-text)] transition-colors hover:bg-white/10 sm:flex-none sm:text-base"
+              className="inline-flex h-12 min-w-[10.5rem] flex-1 items-center justify-center whitespace-nowrap rounded-lg border bg-[var(--color-surface-soft)]/60 px-5 text-center text-sm font-semibold text-[var(--color-text)] transition-all hover:-translate-y-0.5 hover:bg-white/10 sm:flex-none sm:text-base"
               style={{ borderColor: "var(--color-border-strong)" }}
             >
               Contact Me
             </a>
 
             <div
-              className="inline-flex flex-1 overflow-hidden rounded-full border text-sm font-medium text-[var(--color-text)] sm:flex-none sm:text-base"
+              className="inline-flex h-12 min-w-[13.5rem] flex-1 overflow-hidden rounded-lg border bg-[var(--color-surface-soft)]/60 text-sm font-semibold text-[var(--color-text)] transition-all hover:-translate-y-0.5 sm:flex-none sm:text-base"
               style={{ borderColor: "var(--color-border-strong)" }}
               role="group"
               aria-label="Resume actions"
@@ -284,7 +284,7 @@ export default function Header({ showBlogLink = false }) {
               <button
                 type="button"
                 onClick={handleOpenResume}
-                className="inline-flex flex-1 items-center justify-center gap-2 whitespace-nowrap px-5 py-2.5 transition-colors hover:bg-white/10 sm:flex-none"
+                className="inline-flex flex-1 items-center justify-center gap-2 whitespace-nowrap px-5 transition-colors hover:bg-white/10"
               >
                 <FaFileAlt className="h-3.5 w-3.5" />
                 Resume
@@ -302,7 +302,7 @@ export default function Header({ showBlogLink = false }) {
 
                   logDownload("resume");
                 }}
-                className={`inline-flex items-center justify-center border-l px-4 py-2.5 transition-colors hover:bg-white/10 ${
+                className={`inline-flex w-12 items-center justify-center border-l transition-colors hover:bg-white/10 ${
                   download ? "" : "opacity-50"
                 }`}
                 style={{ borderColor: "var(--color-border-strong)" }}
@@ -334,20 +334,18 @@ export default function Header({ showBlogLink = false }) {
             })}
           </motion.div>
 
-          <motion.div className="mt-12 flex w-full justify-center md:justify-start sm:mt-16" variants={itemVariants}>
-            <div className="flex flex-col items-center gap-4 md:items-start">
+          <motion.div className="mt-10 flex w-full justify-center md:justify-start sm:mt-14" variants={itemVariants}>
+            <div className="flex w-full max-w-4xl flex-col items-stretch justify-center gap-2.5 sm:flex-row sm:flex-wrap sm:items-center md:justify-start">
               <button
                 type="button"
                 onClick={(event) => {
                   event.preventDefault();
                   scrollToSection("about", { offset: 88 });
                 }}
-                className="group flex flex-col items-center gap-2 text-cyansoft transition-colors hover:text-cyan-300"
+                className="group inline-flex h-11 min-w-[10.5rem] items-center justify-center gap-2 rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-surface-soft)]/60 px-4 text-sm font-semibold text-[var(--color-text)] transition-all hover:-translate-y-0.5 hover:border-cyansoft hover:text-cyansoft"
               >
-                <span className="text-sm font-medium opacity-75 transition-opacity group-hover:opacity-100">
-                  Explore More
-                </span>
-                <FaChevronDown className="h-5 w-5 transition-transform group-hover:scale-125" />
+                <span>Explore More</span>
+                <FaChevronDown className="h-4 w-4 transition-transform group-hover:translate-y-0.5" />
               </button>
 
               {showBlogLink && (
@@ -358,9 +356,9 @@ export default function Header({ showBlogLink = false }) {
                   animate={{ opacity: 1, y: 0 }}
                   whileHover={lightweightMotion ? undefined : { y: -3, scale: 1.03 }}
                   whileTap={lightweightMotion ? undefined : { scale: 0.97 }}
-                  className="group inline-flex items-center gap-2 rounded-full border border-[var(--color-border-strong)] bg-[var(--color-surface)]/80 px-5 py-3 text-sm font-bold text-[var(--color-text)] shadow-lg shadow-black/10 backdrop-blur-xl transition hover:border-cyansoft hover:text-cyansoft sm:text-base"
+                  className="group inline-flex h-11 min-w-[11.5rem] items-center justify-center gap-2 rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-surface-soft)]/60 px-4 text-sm font-semibold text-[var(--color-text)] shadow-lg shadow-black/10 backdrop-blur-xl transition hover:border-cyansoft hover:text-cyansoft"
                 >
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-teal-400 to-amber-300 text-slate-950 transition group-hover:scale-105">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-gradient-to-r from-teal-400 to-amber-300 text-slate-950 transition group-hover:scale-105">
                     <FaBookOpen className="h-3.5 w-3.5" />
                   </span>
                   Visit My Blog
