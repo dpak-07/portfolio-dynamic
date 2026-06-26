@@ -7,6 +7,12 @@ import {
   Download,
   FileDown,
   FileText,
+  Github,
+  Globe,
+  Linkedin,
+  Mail,
+  MapPin,
+  Phone,
   Printer,
   RotateCcw,
   Upload,
@@ -15,64 +21,132 @@ import {
 const STORAGE_KEY = "ats_resume_builder_json";
 
 const defaultResume = {
-  name: "Deepak Saminathan",
-  title: "Full Stack Developer | AI/ML | Cloud",
-  location: "India",
-  email: "deepak@example.com",
-  phone: "+91 00000 00000",
+  name: "Deepak S",
+  title: "B.Tech Artificial Intelligence & Data Science Student",
+  location: "Chennai, India",
+  email: "deepakofficial0103@gmail.com",
+  phone: "+91 63690 21716",
+  linkedinUsername: "deepak-saminathan",
+  githubUsername: "dpak-07",
+  portfolioUrl: "deepakportfolio-0607",
+  showLinkIcons: true,
   links: [
-    { label: "Portfolio", url: "https://example.com" },
-    { label: "GitHub", url: "https://github.com/your-handle" },
-    { label: "LinkedIn", url: "https://linkedin.com/in/your-handle" },
+    { type: "linkedin", label: "deepak-saminathan", url: "https://linkedin.com/in/deepak-saminathan" },
+    { type: "github", label: "dpak-07", url: "https://github.com/dpak-07" },
+    { type: "portfolio", label: "deepakportfolio-0607", url: "https://deepakportfolio-0607.web.app" },
   ],
+  objective:
+    "Motivated AI and Data Science student seeking backend development or software engineering roles with opportunities to work on AI/ML projects. Passionate about building scalable systems, cloud infrastructure, and intelligent applications that solve real-world problems.",
   summary:
-    "Full-stack developer focused on building scalable web applications, AI-enabled workflows, and cloud-ready systems with clean user experiences.",
-  skills: [
-    "React",
-    "Next.js",
-    "Node.js",
-    "Python",
-    "Firebase",
-    "Supabase",
-    "AI/ML",
-    "REST APIs",
-    "Cloud Deployment",
-    "Git",
-  ],
+    "Pre-final year B.Tech AI & Data Science student with hands-on experience in backend development, cloud infrastructure (AWS EC2, S3), and AI/ML application development. Proven expertise in REST APIs, ML solutions, and enterprise-grade applications for 300+ users.",
+  skills: {
+    Languages: ["Python", "C", "C++", "Java (Basic)", "JavaScript", "SQL", "HTML", "CSS"],
+    Frameworks: ["React", "Node.js", "Flask", "Express.js", "Tailwind CSS"],
+    "AI / ML": ["Machine Learning", "Deep Learning", "CNN", "Model Training", "PySpark"],
+    Databases: ["MongoDB", "Firebase", "MySQL", "PostgreSQL"],
+    "Cloud & DevOps": ["AWS (EC2, S3)", "Hostinger", "Git", "Linux"],
+    Specialization: ["Backend Development", "REST API Development", "Cloud Deployment & Management"],
+  },
   experience: [
     {
-      company: "Your Company",
-      role: "Full Stack Developer",
-      location: "Remote",
-      start: "Jan 2025",
-      end: "Present",
+      company: "Velammal Engineering College Official Website",
+      role: "Backend & Cloud Engineer",
+      start: "2025",
+      end: "",
+      tech: "Node.js, Backend Systems, AWS (EC2, S3), Cloud Hosting",
       bullets: [
-        "Built responsive React and Next.js interfaces with reusable components and production-focused performance practices.",
-        "Integrated Firebase and Supabase services for authentication, storage, database operations, and admin workflows.",
-        "Improved user-facing workflows by translating product requirements into maintainable full-stack features.",
+        "Architected and deployed backend infrastructure on AWS EC2 with S3 storage for the official college website.",
+        "Built and maintained Node.js backend services supporting dynamic content and administrative operations.",
+        "Managed cloud deployment, server configuration, and production environment for high-availability systems.",
+      ],
+    },
+    {
+      company: "Velammal Engineering College",
+      role: "QA Examination Portal",
+      start: "2025",
+      end: "",
+      tech: "Node.js, Express, MongoDB, AWS (EC2, S3)",
+      bullets: [
+        "Engineered backend infrastructure supporting 300+ concurrent students during live examinations.",
+        "Implemented secure admin panel with exam scheduling, question management, and automated result generation.",
+        "Deployed on AWS EC2 with S3 storage for scalable and reliable performance in production.",
       ],
     },
   ],
   projects: [
     {
-      name: "Portfolio Dynamic",
-      tech: "React, Next.js, Firebase, Tailwind CSS",
+      name: "Study Spark - AI Learning Platform",
+      year: "2025",
+      tech: "MERN Stack, Firebase, AI/ML",
       bullets: [
-        "Created a dynamic portfolio with editable admin content, analytics summaries, blog management, and resume publishing.",
-        "Optimized static export routes for reliable deployment and fast page loads.",
+        "Developed AI-powered platform with automated content summarization and flashcard generation.",
+        "Implemented Teach-Back AI chatbot for personalized and interactive learning experiences.",
       ],
+    },
+    {
+      name: "AI-Powered Fake Website Detection",
+      year: "2025",
+      tech: "Flask, Flutter, Machine Learning (CNN)",
+      bullets: [
+        "Built and trained CNN-based ML model to detect fraudulent websites with real-time alerts.",
+        "Integrated Flutter mobile frontend with Flask REST API backend for seamless functionality.",
+      ],
+    },
+    {
+      name: "CiviSense",
+      year: "2025",
+      tech: "Python, AI/ML, Civic Tech",
+      bullets: [
+        "Built an AI-powered civic issue detection and reporting platform for smart city use cases.",
+        "Integrated real-time data processing with automated classification of public complaints.",
+      ],
+    },
+    {
+      name: "Dynamic Portfolio",
+      year: "2025",
+      tech: "React, Node.js, Tailwind CSS",
+      bullets: [
+        "Developed a fully dynamic personal portfolio with admin panel for content management and updates.",
+        "Deployed on Firebase Hosting for seamless deployment and scaling.",
+      ],
+    },
+  ],
+  internships: [
+    {
+      company: "Zidio",
+      role: "Backend Developer Intern",
+      year: "2025",
+      bullets: [
+        "Developed MERN stack applications with advanced backend functionalities and database management.",
+        "Worked on REST API development, authentication systems, and production deployment workflows.",
+      ],
+    },
+    {
+      company: "CodeSoft",
+      role: "Web Development Intern",
+      year: "2024",
+      bullets: ["Built interactive web applications including calculators, landing pages, and portfolio sites."],
     },
   ],
   education: [
     {
-      school: "Your University",
-      degree: "Bachelor of Engineering in Computer Science",
-      location: "India",
-      start: "2021",
-      end: "2025",
+      school: "Velammal Engineering College",
+      degree: "B.Tech - Artificial Intelligence & Data Science",
+      location: "Chennai",
+      details: "CGPA: 7.10",
     },
   ],
-  certifications: ["Cloud Fundamentals", "Machine Learning Basics"],
+  certifications: [
+    { name: "Full Stack Web Development", issuer: "CSC - HDFC Skill Development Center", year: "Aug 2024" },
+    { name: "UI/UX Design Master Class", issuer: "Noviteck Solutions", year: "2025" },
+    { name: "AI Agents with MongoDB", issuer: "MongoDB, Inc.", year: "2025" },
+  ],
+  achievements: [
+    "Backend & Cloud Engineer for Velammal Engineering College official website.",
+    "Developed production examination system serving 300+ students.",
+    "Successfully deployed and managed cloud infrastructure on AWS (EC2, S3).",
+    "Built scalable REST APIs handling real-time workflows and automated processing.",
+  ],
 };
 
 const sampleJson = JSON.stringify(defaultResume, null, 2);
@@ -95,8 +169,106 @@ function toText(value) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function withProtocol(value) {
+  const text = toText(value);
+  if (!text) return "";
+  if (/^https?:\/\//i.test(text) || /^mailto:/i.test(text) || /^tel:/i.test(text)) return text;
+  return `https://${text}`;
+}
+
+function normalizeLink(link) {
+  if (typeof link === "string") {
+    return { type: "link", label: link, url: withProtocol(link) };
+  }
+
+  return {
+    type: toText(link.type) || "link",
+    label: toText(link.label) || toText(link.url),
+    url: withProtocol(link.url || link.label),
+  };
+}
+
+function getGeneratedLinks(data) {
+  const generated = [];
+  const linkedinUsername = toText(data.linkedinUsername);
+  const githubUsername = toText(data.githubUsername);
+  const portfolioUrl = toText(data.portfolioUrl);
+
+  if (linkedinUsername) {
+    generated.push({
+      type: "linkedin",
+      label: linkedinUsername,
+      url: withProtocol(`linkedin.com/in/${linkedinUsername.replace(/^https?:\/\/(www\.)?linkedin\.com\/in\//i, "")}`),
+    });
+  }
+
+  if (githubUsername) {
+    generated.push({
+      type: "github",
+      label: githubUsername,
+      url: withProtocol(`github.com/${githubUsername.replace(/^https?:\/\/(www\.)?github\.com\//i, "")}`),
+    });
+  }
+
+  if (portfolioUrl) {
+    generated.push({
+      type: "portfolio",
+      label: portfolioUrl.replace(/^https?:\/\//i, ""),
+      url: withProtocol(portfolioUrl),
+    });
+  }
+
+  return generated;
+}
+
+function normalizeSkills(skills) {
+  if (Array.isArray(skills)) {
+    return [{ label: "", items: skills.filter(Boolean).map(String) }];
+  }
+
+  if (skills && typeof skills === "object") {
+    return Object.entries(skills).map(([label, items]) => ({
+      label,
+      items: asArray(items).map(String),
+    }));
+  }
+
+  return [];
+}
+
+function normalizeCertification(item) {
+  if (typeof item === "string") {
+    return { name: item, issuer: "", year: "" };
+  }
+
+  return {
+    name: toText(item.name),
+    issuer: toText(item.issuer),
+    year: toText(item.year || item.date),
+  };
+}
+
+function normalizeRoleItem(item) {
+  return {
+    company: toText(item.company),
+    role: toText(item.role),
+    location: toText(item.location),
+    start: toText(item.start),
+    end: toText(item.end),
+    year: toText(item.year),
+    tech: toText(item.tech),
+    bullets: asArray(item.bullets).map(String),
+  };
+}
+
 function normalizeResume(input) {
   const data = input && typeof input === "object" ? input : {};
+  const links = [...getGeneratedLinks(data), ...asArray(data.links).map(normalizeLink)];
+  const uniqueLinks = links.filter(
+    (link, index, allLinks) =>
+      (link.label || link.url) &&
+      allLinks.findIndex((candidate) => candidate.type === link.type && candidate.label === link.label) === index
+  );
 
   return {
     name: toText(data.name) || "Your Name",
@@ -104,34 +276,29 @@ function normalizeResume(input) {
     location: toText(data.location),
     email: toText(data.email),
     phone: toText(data.phone),
-    links: asArray(data.links).map((link) =>
-      typeof link === "string"
-        ? { label: link, url: link }
-        : { label: toText(link.label) || toText(link.url), url: toText(link.url) }
-    ),
+    showLinkIcons: data.showLinkIcons !== false,
+    links: uniqueLinks,
+    objective: toText(data.objective),
     summary: toText(data.summary),
-    skills: asArray(data.skills).map(String),
-    experience: asArray(data.experience).map((item) => ({
-      company: toText(item.company),
-      role: toText(item.role),
-      location: toText(item.location),
-      start: toText(item.start),
-      end: toText(item.end),
-      bullets: asArray(item.bullets).map(String),
-    })),
+    skills: normalizeSkills(data.skills),
+    experience: asArray(data.experience).map(normalizeRoleItem),
     projects: asArray(data.projects).map((item) => ({
       name: toText(item.name),
       tech: toText(item.tech),
+      year: toText(item.year),
       bullets: asArray(item.bullets).map(String),
     })),
+    internships: asArray(data.internships).map(normalizeRoleItem),
     education: asArray(data.education).map((item) => ({
       school: toText(item.school),
       degree: toText(item.degree),
       location: toText(item.location),
+      details: toText(item.details),
       start: toText(item.start),
       end: toText(item.end),
     })),
-    certifications: asArray(data.certifications).map(String),
+    certifications: asArray(data.certifications).map(normalizeCertification),
+    achievements: asArray(data.achievements).map(String),
   };
 }
 
@@ -144,6 +311,26 @@ function escapeHtml(value) {
     .replace(/'/g, "&#039;");
 }
 
+function getLinkMark(type) {
+  const normalized = String(type || "").toLowerCase();
+  if (normalized === "linkedin") return "in";
+  if (normalized === "github") return "GH";
+  if (normalized === "portfolio" || normalized === "website") return "WEB";
+  return "LINK";
+}
+
+function getLinkIcon(type) {
+  const normalized = String(type || "").toLowerCase();
+  if (normalized === "linkedin") return Linkedin;
+  if (normalized === "github") return Github;
+  if (normalized === "portfolio" || normalized === "website") return Globe;
+  return Globe;
+}
+
+function getItemDate(item) {
+  return item.year || [item.start, item.end].filter(Boolean).join(" - ");
+}
+
 function createResumeHtml(resume) {
   const contact = [resume.location, resume.email, resume.phone]
     .filter(Boolean)
@@ -154,7 +341,8 @@ function createResumeHtml(resume) {
     .filter((link) => link.label || link.url)
     .map((link) => {
       const href = escapeHtml(link.url || link.label);
-      return `<a href="${href}">${escapeHtml(link.label || link.url)}</a>`;
+      const mark = resume.showLinkIcons ? `<span class="link-mark">${escapeHtml(getLinkMark(link.type))}</span> ` : "";
+      return `<a href="${href}">${mark}${escapeHtml(link.label || link.url)}</a>`;
     })
     .join(" | ");
 
@@ -162,6 +350,14 @@ function createResumeHtml(resume) {
     body ? `<section><h2>${escapeHtml(title)}</h2>${body}</section>` : "";
 
   const bullets = (items) => `<ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
+  const skills = resume.skills
+    .filter((group) => group.items.length)
+    .map((group) =>
+      group.label
+        ? `<p class="skills"><strong>${escapeHtml(group.label)}:</strong> ${group.items.map(escapeHtml).join(", ")}</p>`
+        : `<p class="skills">${group.items.map(escapeHtml).join(" | ")}</p>`
+    )
+    .join("");
 
   const html = `
 <!doctype html>
@@ -179,6 +375,7 @@ function createResumeHtml(resume) {
     .title { margin-top: 3px; text-align: center; font-size: 10.5pt; font-weight: 700; }
     .contact { margin-top: 5px; text-align: center; font-size: 9.2pt; }
     a { color: #111827; text-decoration: none; }
+    .link-mark { display: inline-block; min-width: 17px; border: 1px solid #111827; border-radius: 2px; padding: 0 2px; font-size: 6.8pt; font-weight: 700; line-height: 1.2; text-align: center; vertical-align: 1px; }
     section { margin-top: 10px; break-inside: avoid; }
     h2 { margin: 0 0 4px; border-bottom: 1px solid #111827; font-size: 10.8pt; line-height: 1.25; text-transform: uppercase; }
     h3 { margin: 0; font-size: 10.2pt; }
@@ -198,8 +395,9 @@ function createResumeHtml(resume) {
       ${resume.title ? `<p class="title">${escapeHtml(resume.title)}</p>` : ""}
       ${contact || links ? `<p class="contact">${contact}${contact && links ? " | " : ""}${links}</p>` : ""}
     </header>
-    ${section("Summary", resume.summary ? `<p>${escapeHtml(resume.summary)}</p>` : "")}
-    ${section("Skills", resume.skills.length ? `<p class="skills">${resume.skills.map(escapeHtml).join(" | ")}</p>` : "")}
+    ${section("Career Objective", resume.objective ? `<p>${escapeHtml(resume.objective)}</p>` : "")}
+    ${section("Professional Summary", resume.summary ? `<p>${escapeHtml(resume.summary)}</p>` : "")}
+    ${section("Skills", skills)}
     ${section(
       "Experience",
       resume.experience
@@ -208,9 +406,9 @@ function createResumeHtml(resume) {
           <div class="item">
             <div class="row">
               <h3>${escapeHtml(item.role)}${item.company ? `, ${escapeHtml(item.company)}` : ""}</h3>
-              <strong>${escapeHtml([item.start, item.end].filter(Boolean).join(" - "))}</strong>
+              <strong>${escapeHtml(getItemDate(item))}</strong>
             </div>
-            <p class="muted">${escapeHtml([item.location].filter(Boolean).join(" | "))}</p>
+            ${item.tech || item.location ? `<p class="muted">${escapeHtml([item.tech, item.location].filter(Boolean).join(" | "))}</p>` : ""}
             ${item.bullets.length ? bullets(item.bullets) : ""}
           </div>`
         )
@@ -224,7 +422,23 @@ function createResumeHtml(resume) {
           <div class="item">
             <div class="row">
               <h3>${escapeHtml(item.name)}</h3>
-              <strong>${escapeHtml(item.tech)}</strong>
+              <strong>${escapeHtml(item.year)}</strong>
+            </div>
+            ${item.tech ? `<p class="muted">${escapeHtml(item.tech)}</p>` : ""}
+            ${item.bullets.length ? bullets(item.bullets) : ""}
+          </div>`
+        )
+        .join("")
+    )}
+    ${section(
+      "Internships",
+      resume.internships
+        .map(
+          (item) => `
+          <div class="item">
+            <div class="row">
+              <h3>${escapeHtml(item.role)}${item.company ? `, ${escapeHtml(item.company)}` : ""}</h3>
+              <strong>${escapeHtml(getItemDate(item))}</strong>
             </div>
             ${item.bullets.length ? bullets(item.bullets) : ""}
           </div>`
@@ -241,13 +455,28 @@ function createResumeHtml(resume) {
               <h3>${escapeHtml(item.degree || item.school)}</h3>
               <strong>${escapeHtml([item.start, item.end].filter(Boolean).join(" - "))}</strong>
             </div>
-            <p>${escapeHtml(item.school)}</p>
-            <p class="muted">${escapeHtml(item.location)}</p>
+            ${item.school && item.degree ? `<p>${escapeHtml(item.school)}</p>` : ""}
+            <p class="muted">${escapeHtml([item.location, item.details].filter(Boolean).join(" | "))}</p>
           </div>`
         )
         .join("")
     )}
-    ${section("Certifications", resume.certifications.length ? bullets(resume.certifications) : "")}
+    ${section(
+      "Certifications",
+      resume.certifications
+        .map(
+          (item) => `
+          <div class="item">
+            <div class="row">
+              <h3>${escapeHtml(item.name)}</h3>
+              <strong>${escapeHtml(item.year)}</strong>
+            </div>
+            ${item.issuer ? `<p class="muted">${escapeHtml(item.issuer)}</p>` : ""}
+          </div>`
+        )
+        .join("")
+    )}
+    ${section("Achievements", resume.achievements.length ? bullets(resume.achievements) : "")}
   </main>
 </body>
 </html>`;
@@ -268,24 +497,51 @@ function downloadTextFile(filename, content, type = "text/plain") {
 }
 
 function ResumeDocument({ resume }) {
+  const contactItems = [
+    resume.location ? { icon: MapPin, label: resume.location } : null,
+    resume.phone ? { icon: Phone, label: resume.phone } : null,
+    resume.email ? { icon: Mail, label: resume.email, href: `mailto:${resume.email}` } : null,
+    ...resume.links
+      .filter((link) => link.label || link.url)
+      .map((link) => ({ icon: getLinkIcon(link.type), label: link.label || link.url, href: link.url })),
+  ].filter(Boolean);
+
   return (
     <article className="resume-paper" id="resume-document">
       <header className="resume-header">
         <h1>{resume.name}</h1>
         {resume.title && <p className="resume-title">{resume.title}</p>}
-        <p className="resume-contact">
-          {[resume.location, resume.email, resume.phone].filter(Boolean).join(" | ")}
-          {resume.links.length > 0 && [resume.location, resume.email, resume.phone].some(Boolean) ? " | " : ""}
-          {resume.links
-            .filter((link) => link.label || link.url)
-            .map((link) => link.label || link.url)
-            .join(" | ")}
-        </p>
+        <div className="resume-contact">
+          {contactItems.map((item) => {
+            const Icon = item.icon;
+            const content = (
+              <>
+                {resume.showLinkIcons && <Icon size={11} strokeWidth={2.4} aria-hidden="true" />}
+                <span>{item.label}</span>
+              </>
+            );
+
+            return item.href ? (
+              <a href={item.href} key={`${item.label}-${item.href}`}>
+                {content}
+              </a>
+            ) : (
+              <span key={item.label}>{content}</span>
+            );
+          })}
+        </div>
       </header>
+
+      {resume.objective && (
+        <section>
+          <h2>Career Objective</h2>
+          <p>{resume.objective}</p>
+        </section>
+      )}
 
       {resume.summary && (
         <section>
-          <h2>Summary</h2>
+          <h2>Professional Summary</h2>
           <p>{resume.summary}</p>
         </section>
       )}
@@ -293,7 +549,14 @@ function ResumeDocument({ resume }) {
       {resume.skills.length > 0 && (
         <section>
           <h2>Skills</h2>
-          <p>{resume.skills.join(" | ")}</p>
+          {resume.skills.map((group) =>
+            group.items.length ? (
+              <p className="resume-skill-line" key={group.label || group.items.join("|")}>
+                {group.label && <strong>{group.label}: </strong>}
+                {group.items.join(group.label ? ", " : " | ")}
+              </p>
+            ) : null
+          )}
         </section>
       )}
 
@@ -306,9 +569,9 @@ function ResumeDocument({ resume }) {
                 <h3>
                   {[item.role, item.company].filter(Boolean).join(", ")}
                 </h3>
-                <strong>{[item.start, item.end].filter(Boolean).join(" - ")}</strong>
+                <strong>{getItemDate(item)}</strong>
               </div>
-              {item.location && <p className="resume-muted">{item.location}</p>}
+              {(item.tech || item.location) && <p className="resume-muted">{[item.tech, item.location].filter(Boolean).join(" | ")}</p>}
               {item.bullets.length > 0 && (
                 <ul>
                   {item.bullets.map((bullet) => (
@@ -328,7 +591,29 @@ function ResumeDocument({ resume }) {
             <div className="resume-item" key={`${item.name}-${index}`}>
               <div className="resume-row">
                 <h3>{item.name}</h3>
-                <strong>{item.tech}</strong>
+                <strong>{item.year}</strong>
+              </div>
+              {item.tech && <p className="resume-muted">{item.tech}</p>}
+              {item.bullets.length > 0 && (
+                <ul>
+                  {item.bullets.map((bullet) => (
+                    <li key={bullet}>{bullet}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ))}
+        </section>
+      )}
+
+      {resume.internships.length > 0 && (
+        <section>
+          <h2>Internships</h2>
+          {resume.internships.map((item, index) => (
+            <div className="resume-item" key={`${item.company}-${item.role}-${index}`}>
+              <div className="resume-row">
+                <h3>{[item.role, item.company].filter(Boolean).join(", ")}</h3>
+                <strong>{getItemDate(item)}</strong>
               </div>
               {item.bullets.length > 0 && (
                 <ul>
@@ -352,7 +637,7 @@ function ResumeDocument({ resume }) {
                 <strong>{[item.start, item.end].filter(Boolean).join(" - ")}</strong>
               </div>
               {item.school && item.degree && <p>{item.school}</p>}
-              {item.location && <p className="resume-muted">{item.location}</p>}
+              {(item.location || item.details) && <p className="resume-muted">{[item.location, item.details].filter(Boolean).join(" | ")}</p>}
             </div>
           ))}
         </section>
@@ -361,9 +646,24 @@ function ResumeDocument({ resume }) {
       {resume.certifications.length > 0 && (
         <section>
           <h2>Certifications</h2>
+          {resume.certifications.map((certification) => (
+            <div className="resume-item" key={`${certification.name}-${certification.issuer}`}>
+              <div className="resume-row">
+                <h3>{certification.name}</h3>
+                <strong>{certification.year}</strong>
+              </div>
+              {certification.issuer && <p className="resume-muted">{certification.issuer}</p>}
+            </div>
+          ))}
+        </section>
+      )}
+
+      {resume.achievements.length > 0 && (
+        <section>
+          <h2>Achievements</h2>
           <ul>
-            {resume.certifications.map((certification) => (
-              <li key={certification}>{certification}</li>
+            {resume.achievements.map((achievement) => (
+              <li key={achievement}>{achievement}</li>
             ))}
           </ul>
         </section>
@@ -807,13 +1107,34 @@ export default function AtsResumeBuilderPage() {
         }
 
         .resume-contact {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 3px 10px;
           margin: 5px 0 0;
           font-size: 9.2pt;
+        }
+
+        .resume-contact a,
+        .resume-contact span {
+          display: inline-flex;
+          align-items: center;
+          gap: 3px;
+          color: #111827;
+          text-decoration: none;
+        }
+
+        .resume-contact svg {
+          flex: 0 0 auto;
         }
 
         .resume-paper section {
           margin-top: 10px;
           break-inside: avoid;
+        }
+
+        .resume-skill-line + .resume-skill-line {
+          margin-top: 1px;
         }
 
         .resume-paper h2 {
