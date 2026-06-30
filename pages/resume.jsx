@@ -256,8 +256,9 @@ function fitResumeToOnePage() {
 
   page.style.setProperty("--print-scale", "1");
   const a4HeightPx = 1122;
-  const scale = Math.min(1, a4HeightPx / page.scrollHeight);
-  page.style.setProperty("--print-scale", String(Math.max(scale, 0.9)));
+  const printPaddingAllowance = 44;
+  const scale = Math.min(1, (a4HeightPx - printPaddingAllowance) / page.scrollHeight);
+  page.style.setProperty("--print-scale", String(Math.max(scale, 0.78)));
 }
 
 function downloadTextFile(filename, content, type) {
@@ -502,8 +503,8 @@ function fitResumeToOnePage() {
   const page = document.querySelector('.page');
   if (!page) return;
   page.style.setProperty('--print-scale', '1');
-  const scale = Math.min(1, 1122 / page.scrollHeight);
-  page.style.setProperty('--print-scale', String(Math.max(scale, 0.9)));
+  const scale = Math.min(1, (1122 - 44) / page.scrollHeight);
+  page.style.setProperty('--print-scale', String(Math.max(scale, 0.78)));
 }
 function printResume() {
   const btn = document.querySelector('.dl-btn');
@@ -697,13 +698,17 @@ body {
   .dl-btn,
   .edit-toggle,
   .editor-panel { display: none !important; }
+  body {
+    margin: 0 !important;
+    overflow: hidden !important;
+  }
   .page {
     margin: 0 !important;
     box-shadow: none !important;
-    padding: 18px 28px !important;
+    padding: 14px 24px !important;
     width: 100% !important;
     min-height: unset !important;
-    zoom: var(--print-scale, 1);
+    zoom: var(--print-scale, 0.86);
   }
   .header { margin-bottom: 5px !important; }
   .header-name { font-size: 24px !important; margin-bottom: 2px !important; }
@@ -714,16 +719,16 @@ body {
   .skills-table tr td,
   .entry-bullets li,
   .ach-list li {
-    font-size: 10.55px !important;
-    line-height: 1.42 !important;
+    font-size: 10.2px !important;
+    line-height: 1.36 !important;
   }
   .entry,
-  .projects-grid .entry { margin-bottom: 5px !important; }
-  .entry-tech { margin: 1px 0 3px !important; }
-  .entry-bullets li { margin-bottom: 0.5px !important; }
-  .cert-card { padding: 5px 8px !important; }
-  .cert-grid { gap: 6px !important; }
-  .ach-list { gap: 2px 3px !important; }
+  .projects-grid .entry { margin-bottom: 4px !important; }
+  .entry-tech { margin: 0 0 2px !important; }
+  .entry-bullets li { margin-bottom: 0 !important; }
+  .cert-card { padding: 4px 7px !important; }
+  .cert-grid { gap: 5px !important; }
+  .ach-list { gap: 1px 3px !important; }
 }`;
 
 export default function ResumePage() {
